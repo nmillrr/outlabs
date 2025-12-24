@@ -49,7 +49,7 @@ $$\text{SHBG-bound}=\frac{[\text{SHBG}]_{\text{total}}\cdot K_{\text{SHBG}} \cdo
 
 $$\text{Albumin-bound}=K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$$
 
-Now if we substitute our variables in the mass balance, we get:
+Now if we substitute our variables in the mass action, we get:
 
 $$TT=FT+\frac{[\text{SHBG}] \cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}+K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$$
 
