@@ -41,27 +41,27 @@ When it’s **high**, we might see excessive androgen signaling, resulting in:
 ## Building the model
 I started by deriving a quadratic equation for free testosterone (FT) from the mass action equation, which is: 
 
-$TT = FT + \text{SHBG-bound} + \text{Albumin-bound}$
+$$TT = FT + \text{SHBG-bound} + \text{Albumin-bound}$$
 
 We can also write our binding equilibria with Langmuir/Michaelis-Menten kinetics built-in. This accounts for the selectivity of biochemical reactions that involve a single substrate:
 
 $$\text{SHBG-bound}=\frac{[\text{SHBG}]_{\text{total}}\cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}$$
 
-$\text{Albumin-bound}=K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$
+$$\text{Albumin-bound}=K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$$
 
 Now if we substitute our variables in the mass balance, we get:
 
-$TT=FT+\frac{[\text{SHBG}] \cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}+K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$
+$$TT=FT+\frac{[\text{SHBG}] \cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}+K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$$
 
 >Some notes here: the Vermeulen model simplifies the SHBG binding process by assuming a single binding constant, $K_{\text{SHBG}}$, even though SHBG has two binding sites. This simplification was addressed by the [Zakharov model](https://doi.org/10.1016/j.mce.2014.09.001) in 2015, but the Vermeulen still remains the clinical favorite.
 
 Our model does *not* factor in competitors, like DHT or E2, so our resulting equation is quadratic (rather than cubic).
 ### Physical Bounds
 Free testosterone must be positive, but also less than total testosterone. Thus, we can express FT constraints as:
-$0<FT<TT$
+$$0<FT<TT$$
 The binding function is also increasing in free testosterone, meaning that the equation is **monotonic** (one, unique solution). This can be expressed through the differential proof:
 
-$\frac{dFT}{dTT}=\frac{1}{(FT+\frac{b}{2a})+\sqrt{(FT+\frac{b}{2a})^2+FT^2}}>0$
+$$\frac{dFT}{dTT}=\frac{1}{(FT+\frac{b}{2a})+\sqrt{(FT+\frac{b}{2a})^2+FT^2}}>0$$
 
 ### Association Constants & Units
 I collected the following parameters from Vermeulen et al. (1999):
