@@ -45,7 +45,7 @@ $TT = FT + \text{SHBG-bound} + \text{Albumin-bound}$
 
 We can also write our binding equilibria with Langmuir/Michaelis-Menten kinetics built-in. This accounts for the selectivity of biochemical reactions that involve a single substrate:
 
-$\text{SHBG-bound}=\frac{[\text{SHBG}]_{\text{total}}\cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}$
+$$\text{SHBG-bound}=\frac{[\text{SHBG}]_{\text{total}}\cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}$$
 
 $\text{Albumin-bound}=K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$
 
