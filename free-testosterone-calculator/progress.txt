@@ -298,3 +298,52 @@
   - joblib is preferred over pickle for sklearn models (efficient numpy array handling)
   - Use inline imports for sklearn/joblib to avoid circular imports
 ---
+
+## Iteration 17 - US-017: Train Random Forest model
+- Implemented `train_random_forest()` function in `freeT/train.py`
+- Function trains sklearn RandomForestRegressor with configurable n_estimators parameter
+- Default n_estimators=200 for robust predictions
+- Uses random_state=42 for reproducibility
+- Uses n_jobs=-1 to parallelize across all cores
+- Returns fitted RandomForestRegressor model
+- Typecheck passes via `py_compile`
+- All 49 existing tests pass
+- Learnings for future iterations:
+  - Random Forest captures nonlinear relationships between features
+  - No feature scaling needed unlike Ridge regression
+  - n_jobs=-1 leverages all CPU cores for faster training
+---
+
+## Iteration 18 - US-018: Train LightGBM model
+- Implemented `train_lightgbm()` function in `freeT/train.py`
+- Function trains LightGBM gradient boosting regressor with early stopping
+- Parameters:
+  - n_estimators=1000 (max iterations, early stopping finds optimal)
+  - learning_rate=0.05
+  - num_leaves=31 (default)
+  - random_state=42 for reproducibility
+  - verbosity=-1 to suppress warnings
+- Early stopping with 20 rounds using callbacks
+- Requires validation set (X_val, y_val) for early stopping
+- Typecheck passes via `py_compile`
+- All 49 existing tests pass
+- Learnings for future iterations:
+  - LightGBM uses callbacks for early stopping (not eval_callback)
+  - Use `__import__('lightgbm').early_stopping()` for inline callback import
+  - n_jobs=-1 for parallel training on all cores
+---
+
+## Iteration 19 - US-019: Implement cross-validation wrapper
+- Implemented `cross_validate_model()` function in `freeT/train.py`
+- Function performs k-fold cross-validation with configurable n_splits (default 10)
+- Uses sklearn's KFold for splitting and clone for fresh model instances
+- Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
+- Uses shuffle=True and random_state=42 for reproducibility
+- Typecheck passes via `py_compile`
+- All 49 existing tests pass
+- Learnings for future iterations:
+  - sklearn.base.clone() creates fresh unfitted model instance for each fold
+  - RMSE computed as np.sqrt(mean_squared_error()) for consistency
+  - Return float() wrapped values for JSON serialization compatibility
+---
+

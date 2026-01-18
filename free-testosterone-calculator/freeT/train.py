@@ -308,6 +308,75 @@ def train_lightgbm(
     return model
 
 
+def cross_validate_model(
+    model,
+    X: np.ndarray,
+    y: np.ndarray,
+    n_splits: int = 10
+) -> dict:
+    """
+    Perform k-fold cross-validation to evaluate a model consistently.
+    
+    Parameters
+    ----------
+    model : sklearn-compatible estimator
+        Model to evaluate (must implement fit and predict methods)
+    X : np.ndarray
+        Feature matrix of shape (n_samples, n_features)
+    y : np.ndarray
+        Target values of shape (n_samples,)
+    n_splits : int, optional
+        Number of cross-validation folds (default: 10)
+        
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - RMSE_mean: Mean RMSE across folds
+        - RMSE_std: Standard deviation of RMSE across folds
+        - MAE_mean: Mean MAE across folds
+        - MAE_std: Standard deviation of MAE across folds
+        
+    Notes
+    -----
+    Uses sklearn's KFold for cross-validation and clone for creating
+    fresh model instances for each fold. RMSE and MAE are computed
+    on each fold's test set for robust performance estimation.
+    """
+    from sklearn.model_selection import KFold
+    from sklearn.base import clone
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+    
+    kfold = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
+    rmse_scores = []
+    mae_scores = []
+    
+    for train_idx, test_idx in kfold.split(X):
+        X_train, X_test = X[train_idx], X[test_idx]
+        y_train, y_test = y[train_idx], y[test_idx]
+        
+        # Clone model to get fresh instance for each fold
+        model_clone = clone(model)
+        model_clone.fit(X_train, y_train)
+        
+        y_pred = model_clone.predict(X_test)
+        
+        # Calculate metrics
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        mae = mean_absolute_error(y_test, y_pred)
+        
+        rmse_scores.append(rmse)
+        mae_scores.append(mae)
+    
+    return {
+        'RMSE_mean': float(np.mean(rmse_scores)),
+        'RMSE_std': float(np.std(rmse_scores)),
+        'MAE_mean': float(np.mean(mae_scores)),
+        'MAE_std': float(np.std(mae_scores))
+    }
+
+
 def save_model(model, filepath: str) -> None:
     """
     Save a trained model to disk using joblib.
