@@ -314,3 +314,119 @@ def clean_nhanes_data(
         print(f"Removed as outliers: {before_outliers - after_outliers}")
     
     return result
+
+
+def generate_quality_report(df: pd.DataFrame, output_path: str) -> dict:
+    """
+    Generate a data quality report for cleaned NHANES data.
+    
+    Creates a comprehensive quality report including record counts,
+    descriptive statistics (mean, SD) for key variables, and missing
+    value analysis. The report is saved to a text file and returned
+    as a dictionary.
+    
+    Args:
+        df: Cleaned DataFrame with columns: tt_nmoll, shbg_nmoll, alb_gl
+            (from clean_nhanes_data output)
+        output_path: File path where the report will be saved.
+    
+    Returns:
+        dict: Quality report with structure:
+            {
+                "record_count": int,
+                "statistics": {
+                    "tt_nmoll": {"mean": float, "sd": float, "min": float, "max": float},
+                    "shbg_nmoll": {"mean": float, "sd": float, "min": float, "max": float},
+                    "alb_gl": {"mean": float, "sd": float, "min": float, "max": float}
+                },
+                "missing_values": {
+                    "tt_nmoll": int,
+                    "shbg_nmoll": int,
+                    "alb_gl": int
+                }
+            }
+    
+    Example:
+        >>> clean_df = clean_nhanes_data(tst, shbg, alb)
+        >>> report = generate_quality_report(clean_df, "reports/quality.txt")
+        >>> print(f"Total records: {report['record_count']}")
+    """
+    # Define the key columns for analysis
+    key_columns = ['tt_nmoll', 'shbg_nmoll', 'alb_gl']
+    column_labels = {
+        'tt_nmoll': 'Total Testosterone (nmol/L)',
+        'shbg_nmoll': 'SHBG (nmol/L)',
+        'alb_gl': 'Albumin (g/L)'
+    }
+    
+    # Build the report dictionary
+    report = {
+        "record_count": len(df),
+        "statistics": {},
+        "missing_values": {}
+    }
+    
+    # Calculate statistics for each key column
+    for col in key_columns:
+        if col in df.columns:
+            report["statistics"][col] = {
+                "mean": float(df[col].mean()),
+                "sd": float(df[col].std()),
+                "min": float(df[col].min()),
+                "max": float(df[col].max())
+            }
+            report["missing_values"][col] = int(df[col].isna().sum())
+        else:
+            report["statistics"][col] = {"mean": None, "sd": None, "min": None, "max": None}
+            report["missing_values"][col] = len(df)  # All missing if column doesn't exist
+    
+    # Generate text report
+    lines = []
+    lines.append("=" * 60)
+    lines.append("NHANES Data Quality Report")
+    lines.append("=" * 60)
+    lines.append("")
+    lines.append(f"Total Records: {report['record_count']}")
+    lines.append("")
+    lines.append("-" * 60)
+    lines.append("Descriptive Statistics")
+    lines.append("-" * 60)
+    
+    for col in key_columns:
+        label = column_labels.get(col, col)
+        stats = report["statistics"][col]
+        lines.append(f"\n{label}:")
+        if stats["mean"] is not None:
+            lines.append(f"  Mean: {stats['mean']:.2f}")
+            lines.append(f"  SD:   {stats['sd']:.2f}")
+            lines.append(f"  Min:  {stats['min']:.2f}")
+            lines.append(f"  Max:  {stats['max']:.2f}")
+        else:
+            lines.append("  (Column not found in data)")
+    
+    lines.append("")
+    lines.append("-" * 60)
+    lines.append("Missing Values")
+    lines.append("-" * 60)
+    
+    total_missing = 0
+    for col in key_columns:
+        label = column_labels.get(col, col)
+        missing = report["missing_values"][col]
+        total_missing += missing
+        lines.append(f"  {label}: {missing}")
+    
+    lines.append(f"\n  Total missing values: {total_missing}")
+    lines.append("")
+    lines.append("=" * 60)
+    lines.append("End of Report")
+    lines.append("=" * 60)
+    
+    # Write report to file
+    output_path_obj = Path(output_path)
+    output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_path_obj, 'w') as f:
+        f.write('\n'.join(lines))
+    
+    return report
