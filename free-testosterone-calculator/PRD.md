@@ -193,11 +193,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want feature engineering functions for ML training.
 
 **Acceptance Criteria:**
-- [ ] Add `create_features(df)` function in `freeT/train.py`
-- [ ] Creates features: tt_nmoll, shbg_nmoll, alb_gl, shbg_tt_ratio
-- [ ] Adds ft_vermeulen baseline feature
-- [ ] Returns feature matrix X and column names
-- [ ] Typecheck passes
+- [x] Add `create_features(df)` function in `freeT/train.py`
+- [x] Creates features: tt_nmoll, shbg_nmoll, alb_gl, shbg_tt_ratio
+- [x] Adds ft_vermeulen baseline feature
+- [x] Returns feature matrix X and column names
+- [x] Typecheck passes
 
 ---
 

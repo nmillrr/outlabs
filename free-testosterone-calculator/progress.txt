@@ -227,3 +227,42 @@
   - SHBG-bound fraction uses same binding equilibrium as in Vermeulen solver
   - Typical bioavailable T is 30-60% of total T
 ---
+
+## Iteration 13 - US-013: Create solver comparison notebook
+- Created `notebooks/02_solver_comparison.ipynb` comparing all three FT solvers
+- Notebook includes:
+  1. Synthetic grid: TT 5-30 nmol/L, SHBG 10-80 nmol/L, Albumin 43 g/L (fixed)
+  2. Line plots: FT vs TT at low/medium/high SHBG levels
+  3. Scatter plots: Pairwise solver agreement with identity lines
+  4. Heatmaps: % difference from Vermeulen reference across grid
+  5. Summary statistics: Mean/max differences, correlations
+  6. Example calculations at key parameter combinations
+  7. Interpretation section with clinical implications
+- Notebook JSON validated successfully
+- All 49 existing tests pass
+- Commit: feat: US-013 Create solver comparison notebook
+- Learnings for future iterations:
+  - Södergård uses higher K_shbg (1.2e9) and lower K_alb (2.4e4) vs Vermeulen
+  - Zakharov with cooperativity=0.5 yields slightly higher FT estimates
+  - All solvers correlate >0.99 across physiological range
+  - matplotlib imshow with origin='lower' for correct heatmap orientation
+---
+
+## Iteration 14 - US-014: Create feature engineering module
+- Created `freeT/train.py` with `create_features(df)` function
+- Function generates 5 features:
+  - tt_nmoll: Total testosterone (nmol/L)
+  - shbg_nmoll: SHBG (nmol/L)
+  - alb_gl: Albumin (g/L)
+  - shbg_tt_ratio: SHBG/TT ratio (derived feature)
+  - ft_vermeulen: Baseline FT from Vermeulen solver (hybrid feature)
+- Returns tuple of (X: numpy array, feature_names: list of strings)
+- Includes input validation for required columns
+- Handles Vermeulen calculation errors with NaN fallback
+- Typecheck passes via `py_compile`
+- All 49 existing tests pass
+- Learnings for future iterations:
+  - Using Vermeulen FT as a feature enables hybrid mechanistic+ML approach
+  - SHBG/TT ratio is inversely related to FT percentage
+  - Use epsilon (1e-10) to avoid division by zero in ratio calculations
+---
