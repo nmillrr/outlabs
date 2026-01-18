@@ -347,3 +347,24 @@
   - Return float() wrapped values for JSON serialization compatibility
 ---
 
+
+## Iteration 20 - US-020: Create model training notebook
+- Created `notebooks/03_model_training.ipynb` documenting full ML workflow
+- Notebook demonstrates:
+  1. Data loading (real NHANES or synthetic fallback)
+  2. Feature engineering with create_features()
+  3. Stratified train/test split by SHBG tertiles
+  4. Training Ridge, Random Forest, LightGBM models
+  5. 10-fold cross-validation comparison table
+  6. Predicted vs Actual scatter plots
+  7. Model saving to models/ directory
+- Uses early stopping (patience=20) for LightGBM
+- Identifies and saves best model based on Test RMSE
+- Notebook JSON validated successfully
+- All 49 existing tests pass
+- Learnings for future iterations:
+  - Use projection root / 'data' / 'processed' for processed data
+  - Create validation set from training data for early stopping
+  - Random Forest n_estimators=100 for faster CV runs
+---
+
