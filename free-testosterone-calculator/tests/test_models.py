@@ -8,7 +8,7 @@ the ISSAM Free Testosterone Calculator (https://www.issam.ch/freetesto.htm).
 import math
 import pytest
 
-from freeT.models import calc_ft_vermeulen, calc_ft_sodergard, calc_ft_zakharov
+from freeT.models import calc_ft_vermeulen, calc_ft_sodergard, calc_ft_zakharov, calc_bioavailable_t
 
 
 class TestVermeulenSolver:
@@ -309,3 +309,64 @@ class TestZakharovSolver:
         with pytest.raises(ValueError, match="NaN"):
             calc_ft_zakharov(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=43.0, cooperativity=float('nan'))
 
+
+class TestBioavailableT:
+    """Tests for the bioavailable testosterone calculation."""
+    
+    def test_bioavailable_greater_than_ft(self):
+        """Bioavailable T must be greater than free T."""
+        tt, shbg, alb = 15.0, 40.0, 45.0
+        
+        ft = calc_ft_vermeulen(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        bio_t = calc_bioavailable_t(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        
+        assert bio_t > ft, f"Bioavailable T ({bio_t}) should be greater than FT ({ft})"
+    
+    def test_bioavailable_less_than_tt(self):
+        """Bioavailable T must be less than total testosterone."""
+        tt, shbg, alb = 15.0, 40.0, 45.0
+        
+        bio_t = calc_bioavailable_t(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        
+        assert bio_t < tt, f"Bioavailable T ({bio_t}) should be less than TT ({tt})"
+    
+    def test_bioavailable_positive(self):
+        """Bioavailable T must be positive for valid inputs."""
+        result = calc_bioavailable_t(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=45.0)
+        assert result > 0, "Bioavailable testosterone must be positive"
+    
+    def test_bioavailable_multiple_cases(self):
+        """Verify bioavailable T > FT for multiple test cases."""
+        test_cases = [
+            (10.0, 20.0, 42.0),
+            (20.0, 50.0, 43.0),
+            (25.0, 35.0, 45.0),
+            (30.0, 60.0, 40.0),
+        ]
+        
+        for tt, shbg, alb in test_cases:
+            ft = calc_ft_vermeulen(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+            bio_t = calc_bioavailable_t(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+            assert bio_t > ft, f"Case TT={tt}, SHBG={shbg}: Bio T should > FT"
+            assert bio_t < tt, f"Case TT={tt}, SHBG={shbg}: Bio T should < TT"
+    
+    def test_zero_tt_returns_zero(self):
+        """Zero total testosterone should return zero bioavailable."""
+        result = calc_bioavailable_t(tt_nmoll=0.0, shbg_nmoll=40.0, alb_gl=43.0)
+        assert result == 0.0, "Zero TT should yield zero bioavailable T"
+    
+    def test_inherits_input_validation(self):
+        """Bioavailable T should inherit input validation from Vermeulen."""
+        with pytest.raises(ValueError, match="cannot be negative"):
+            calc_bioavailable_t(tt_nmoll=-5.0, shbg_nmoll=40.0, alb_gl=43.0)
+        
+        with pytest.raises(ValueError, match="NaN"):
+            calc_bioavailable_t(tt_nmoll=float('nan'), shbg_nmoll=40.0, alb_gl=43.0)
+    
+    def test_physiological_range(self):
+        """Bioavailable T should be ~30-60% of TT typically."""
+        tt = 20.0
+        bio_t = calc_bioavailable_t(tt_nmoll=tt, shbg_nmoll=35.0, alb_gl=43.0)
+        bio_t_percent = (bio_t / tt) * 100
+        # Bioavailable typically 30-60% of total testosterone
+        assert 20 < bio_t_percent < 70, f"Bio T% {bio_t_percent} outside normal range"

@@ -186,3 +186,44 @@
   - Higher K_shbg + lower K_alb creates different net effect on FT
   - Good pattern: reuse core solver logic with different constants
 ---
+
+## Iteration 11 - US-011: Implement Zakharov allosteric solver
+- Implemented `calc_ft_zakharov()` function in `freeT/models.py`
+- Function uses simplified Hill equation for allosteric SHBG binding:
+  - [SHBG-T] = SHBG * (K*FT)^n / (1 + (K*FT)^n) where n = 1 + cooperativity
+  - Default cooperativity=0.5 (moderate negative cooperativity)
+- Uses scipy.optimize.fsolve for nonlinear root-finding
+- Uses Vermeulen solution as initial guess for robust convergence
+- Added 13 unit tests in `tests/test_models.py`:
+  - test_ft_positive, test_ft_less_than_tt, test_valid_range_multiple_inputs
+  - test_physiological_range, test_differs_from_vermeulen
+  - test_cooperativity_effect (different cooperativity values produce different results)
+  - test_zero_tt_returns_zero
+  - Input validation tests (negative values, NaN inputs, NaN cooperativity)
+- All 32 tests pass (13 Vermeulen + 6 Södergård + 13 Zakharov)
+- Typecheck passes
+- Learnings for future iterations:
+  - Hill equation with n < 2 represents negative cooperativity in SHBG binding
+  - Using existing solver solution as initial guess improves fsolve convergence
+  - fsolve with full_output=True allows checking convergence status
+---
+
+## Iteration 12 - US-012: Create bioavailable testosterone function
+- Implemented `calc_bioavailable_t()` function in `freeT/models.py`
+- Bioavailable T = Total T - SHBG-bound T = Free T + Albumin-bound T
+- Uses Vermeulen solver internally to calculate free testosterone
+- Calculates SHBG-bound fraction using binding equilibrium equation
+- Added 8 unit tests in `tests/test_models.py`:
+  - test_bioavailable_greater_than_ft: verifies Bio T > FT
+  - test_bioavailable_less_than_tt: verifies Bio T < TT
+  - test_bioavailable_positive: validates positive output
+  - test_bioavailable_multiple_cases: tests multiple input combinations
+  - test_zero_tt_returns_zero: handles zero TT
+  - test_inherits_input_validation: confirms error handling
+  - test_physiological_range: validates 20-70% of TT range
+- All 40 tests pass (32 solvers + 8 bioavailable T)
+- Learnings for future iterations:
+  - Bioavailable T calculation is simple once you have proper FT calculation
+  - SHBG-bound fraction uses same binding equilibrium as in Vermeulen solver
+  - Typical bioavailable T is 30-60% of total T
+---

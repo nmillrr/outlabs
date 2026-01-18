@@ -328,3 +328,66 @@ def calc_ft_zakharov(
     
     return ft_nmoll
 
+
+def calc_bioavailable_t(
+    tt_nmoll: float,
+    shbg_nmoll: float,
+    alb_gl: float
+) -> float:
+    """
+    Calculate bioavailable testosterone (free + albumin-bound).
+    
+    Bioavailable testosterone represents the fraction of total testosterone
+    that is available to tissues: the unbound (free) fraction plus the
+    weakly albumin-bound fraction. SHBG-bound testosterone is excluded
+    as it is considered biologically inactive.
+    
+    Parameters
+    ----------
+    tt_nmoll : float
+        Total testosterone concentration in nmol/L
+    shbg_nmoll : float
+        SHBG concentration in nmol/L
+    alb_gl : float
+        Albumin concentration in g/L
+    
+    Returns
+    -------
+    float
+        Bioavailable testosterone concentration in nmol/L
+    
+    Raises
+    ------
+    ValueError
+        If any input is negative, NaN, or logically invalid
+    
+    Notes
+    -----
+    Bioavailable T = Free T + Albumin-bound T
+                   = TT - SHBG-bound T
+    
+    Uses the Vermeulen solver to calculate free testosterone and
+    derives the albumin-bound fraction from mass balance.
+    """
+    # Input validation done in calc_ft_vermeulen
+    # Handle edge case of zero TT
+    if tt_nmoll == 0:
+        return 0.0
+    
+    # Calculate free testosterone using Vermeulen
+    ft_nmoll = calc_ft_vermeulen(tt_nmoll, shbg_nmoll, alb_gl)
+    
+    # Calculate SHBG-bound fraction using binding equilibrium
+    # [SHBG-T] = SHBG * K_shbg * FT / (1 + K_shbg * FT)
+    K_shbg = 1e9  # Vermeulen constant (L/mol)
+    ft_mol = ft_nmoll * 1e-9  # Convert to mol/L
+    shbg_mol = shbg_nmoll * 1e-9  # Convert to mol/L
+    
+    shbg_bound_mol = shbg_mol * K_shbg * ft_mol / (1 + K_shbg * ft_mol)
+    shbg_bound_nmoll = shbg_bound_mol * 1e9  # Convert back to nmol/L
+    
+    # Bioavailable = Total - SHBG-bound = Free + Albumin-bound
+    bioavailable_nmoll = tt_nmoll - shbg_bound_nmoll
+    
+    return bioavailable_nmoll
+

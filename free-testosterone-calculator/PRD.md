@@ -165,10 +165,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want to calculate bioavailable testosterone so the package is complete.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_bioavailable_t(tt_nmoll, shbg_nmoll, alb_gl)` in `freeT/models.py`
-- [ ] Bioavailable = FT + albumin-bound fraction
-- [ ] Add unit test verifying Bioavailable > FT
-- [ ] Tests pass
+- [x] Add `calc_bioavailable_t(tt_nmoll, shbg_nmoll, alb_gl)` in `freeT/models.py`
+- [x] Bioavailable = FT + albumin-bound fraction
+- [x] Add unit test verifying Bioavailable > FT
+- [x] Tests pass
+
 
 ---
 
