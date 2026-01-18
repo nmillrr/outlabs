@@ -131,10 +131,10 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want unit tests validating Vermeulen against published examples.
 
 **Acceptance Criteria:**
-- [ ] Add test in `tests/test_models.py` for Vermeulen
-- [ ] Test case: TT=15, SHBG=40, Alb=45 → FT ≈ 0.30 nmol/L
-- [ ] Test case: TT=10, SHBG=20, Alb=42 → verify against ISSAM calculator
-- [ ] Tests pass: `pytest tests/test_models.py`
+- [x] Add test in `tests/test_models.py` for Vermeulen
+- [x] Test case: TT=15, SHBG=40, Alb=45 → FT ≈ 0.30 nmol/L
+- [x] Test case: TT=10, SHBG=20, Alb=42 → verify against ISSAM calculator
+- [x] Tests pass: `pytest tests/test_models.py`
 
 ---
 
