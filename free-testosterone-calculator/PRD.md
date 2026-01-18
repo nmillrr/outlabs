@@ -296,9 +296,9 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a researcher, I want a single function returning all metrics.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_model(y_true, y_pred, model_name)` in `freeT/evaluate.py`
-- [ ] Returns dict: rmse, mae, bias, r_pearson, lin_ccc, ba_stats
-- [ ] Typecheck passes
+- [x] Add `evaluate_model(y_true, y_pred, model_name)` in `freeT/evaluate.py`
+- [x] Returns dict: rmse, mae, bias, r_pearson, lin_ccc, ba_stats
+- [x] Typecheck passes
 
 ---
 

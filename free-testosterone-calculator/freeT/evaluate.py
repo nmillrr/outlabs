@@ -179,3 +179,105 @@ def lins_ccc(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     ccc = numerator / denominator
     
     return float(ccc)
+
+
+def evaluate_model(
+    y_true: np.ndarray, y_pred: np.ndarray, model_name: str
+) -> Dict[str, float | str | Dict[str, float]]:
+    """
+    Compute comprehensive evaluation metrics for a regression model.
+    
+    This function calculates all standard metrics needed for model validation
+    in free testosterone estimation: RMSE, MAE, bias, Pearson correlation,
+    Lin's CCC, and Bland-Altman statistics.
+    
+    Parameters
+    ----------
+    y_true : array-like
+        True/reference values (e.g., measured free testosterone)
+    y_pred : array-like
+        Predicted values (e.g., estimated free testosterone)
+    model_name : str
+        Name identifier for the model being evaluated
+    
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - model_name: Name of the model
+        - rmse: Root Mean Squared Error
+        - mae: Mean Absolute Error
+        - bias: Mean bias (mean of y_pred - y_true)
+        - r_pearson: Pearson correlation coefficient
+        - lin_ccc: Lin's Concordance Correlation Coefficient
+        - ba_stats: Bland-Altman statistics dict (mean_bias, std_diff, loa_lower, loa_upper)
+    
+    Raises
+    ------
+    ValueError
+        If inputs have different lengths, contain fewer than 2 observations,
+        or contain NaN values
+    
+    Examples
+    --------
+    >>> y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    >>> y_pred = np.array([1.1, 2.0, 2.9, 4.1, 5.0])
+    >>> metrics = evaluate_model(y_true, y_pred, 'ridge')
+    >>> print(f"RMSE: {metrics['rmse']:.4f}")
+    RMSE: 0.0775
+    """
+    # Convert to numpy arrays
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    
+    # Input validation
+    if y_true.shape != y_pred.shape:
+        raise ValueError(
+            f"y_true and y_pred must have the same shape. "
+            f"Got {y_true.shape} and {y_pred.shape}"
+        )
+    
+    if len(y_true) < 2:
+        raise ValueError(
+            f"At least 2 observations required for evaluation. "
+            f"Got {len(y_true)}"
+        )
+    
+    # Check for NaN values
+    if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
+        raise ValueError("Input arrays must not contain NaN values")
+    
+    # Calculate RMSE
+    mse = np.mean((y_pred - y_true) ** 2)
+    rmse = float(np.sqrt(mse))
+    
+    # Calculate MAE
+    mae = float(np.mean(np.abs(y_pred - y_true)))
+    
+    # Calculate bias (mean difference)
+    bias = float(np.mean(y_pred - y_true))
+    
+    # Calculate Pearson correlation
+    # Handle edge case of constant arrays
+    std_true = np.std(y_true)
+    std_pred = np.std(y_pred)
+    if std_true == 0 or std_pred == 0:
+        r_pearson = 0.0
+    else:
+        r_pearson = float(np.corrcoef(y_true, y_pred)[0, 1])
+    
+    # Calculate Lin's CCC (using existing function)
+    lin_ccc_val = lins_ccc(y_true, y_pred)
+    
+    # Calculate Bland-Altman stats (using existing function)
+    ba_stats = bland_altman_stats(y_true, y_pred)
+    
+    return {
+        'model_name': model_name,
+        'rmse': rmse,
+        'mae': mae,
+        'bias': bias,
+        'r_pearson': r_pearson,
+        'lin_ccc': lin_ccc_val,
+        'ba_stats': ba_stats,
+    }

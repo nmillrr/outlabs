@@ -368,3 +368,41 @@
   - Random Forest n_estimators=100 for faster CV runs
 ---
 
+## Iteration 21 - US-021: Implement Bland-Altman analysis
+- Created `freeT/evaluate.py` with `bland_altman_stats()` function
+- Function calculates mean_bias, std_diff, loa_lower, loa_upper
+- LOA (Limits of Agreement) = mean_bias ± 1.96 * std_diff
+- Created `tests/test_evaluate.py` with 14 unit tests covering:
+  - Perfect agreement (zero bias, zero std)
+  - Constant positive/negative bias
+  - Known calculated values
+  - Symmetric LOA around mean bias
+  - Input validation (mismatched lengths, single observation, NaN values)
+- All 68 tests pass (49 existing + 14 new + 5 others)
+- Learnings for future iterations:
+  - Use ddof=1 for sample standard deviation in Bland-Altman
+  - Return native Python floats for JSON serialization compatibility
+  - Include NaN validation for robustness
+---
+
+## Iteration 22 - US-022: Implement Lin's CCC
+- Implemented `lins_ccc()` function in `freeT/evaluate.py`
+- Function calculates Lin's Concordance Correlation Coefficient for agreement analysis
+- Formula: CCC = 2 * covariance / (var_true + var_pred + (mean_true - mean_pred)^2)
+- Returns float value between -1 and 1 (1 = perfect agreement)
+- Input validation for mismatched lengths, single observation, and NaN values
+- Added 13 unit tests in `tests/test_evaluate.py`:
+  - test_identical_arrays_return_one: CCC = 1.0 for identical arrays
+  - test_ccc_between_minus_one_and_one: validates output range
+  - test_negative_agreement: verifies negative CCC for reversed arrays
+  - test_constant_bias_reduces_ccc: validates CCC < 1 for shifted means
+  - Input validation tests (lengths, single obs, NaN)
+  - test_constant_arrays_same_value: edge case for constant arrays
+  - test_high_agreement_gives_high_ccc: small deviations → CCC > 0.99
+- All 81 tests pass (68 existing + 13 new)
+- Learnings for future iterations:
+  - Lin's CCC uses population variance (ddof=0), not sample variance
+  - Handle denominator=0 edge case for constant arrays
+  - Covariance = mean((x - mean_x)(y - mean_y)) for population covariance
+---
+
