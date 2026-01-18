@@ -35,8 +35,6 @@ When it’s **high**, we might see excessive androgen signaling, resulting in:
 - Increased drive and restlessness
 - Impulsive behaviors under stress
 
-### How can I use this model?
-
 
 ## Building the model
 I started by deriving a quadratic equation for free testosterone (FT) from the mass action equation, which is: 

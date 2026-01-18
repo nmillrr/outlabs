@@ -177,11 +177,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a researcher, I want a notebook comparing the three solvers visually.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/02_solver_comparison.ipynb`
-- [ ] Compare Vermeulen, Södergård, Zakharov on synthetic grid (TT: 5-30, SHBG: 10-80)
-- [ ] Generate scatter/line plots showing differences
-- [ ] Include markdown interpretation of results
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/02_solver_comparison.ipynb`
+- [x] Compare Vermeulen, Södergård, Zakharov on synthetic grid (TT: 5-30, SHBG: 10-80)
+- [x] Generate scatter/line plots showing differences
+- [x] Include markdown interpretation of results
+- [x] Notebook executes without errors
 
 ---
 
