@@ -4,3 +4,27 @@
 (Patterns discovered during implementation)
 
 ---
+
+## Iteration 1 - US-001: Create project structure and dependencies
+- Created `freeT/` package with `__init__.py`, `models.py`, `utils.py`, `data.py`
+- Created `tests/` directory with `test_models.py`
+- Created `notebooks/` directory with `.gitkeep`
+- Created `requirements.txt` with all dependencies
+- All Python files pass syntax check (`py_compile`)
+- Learnings for future iterations:
+  - Use PowerShell semicolon (`;`) not `&&` for command chaining on Windows
+  - Package init imports submodules for easier access
+---
+
+## Iteration 2 - US-002: Implement unit conversion utilities
+- Implemented 4 conversion functions in `freeT/utils.py`:
+  - `ng_dl_to_nmol_l()` - testosterone ng/dL to nmol/L (factor: 0.0347)
+  - `nmol_l_to_ng_dl()` - reverse conversion
+  - `mg_dl_to_g_l()` - albumin mg/dL to g/L (factor: 0.01)
+  - `g_l_to_mg_dl()` - reverse conversion
+- Created `tests/test_utils.py` with 9 test cases covering typical values, edge cases, and roundtrip consistency
+- All tests pass via `python -m pytest tests/test_utils.py -v`
+- Learnings for future iterations:
+  - Use `python -m pytest` instead of `pytest` when pytest isn't in PATH
+  - Testosterone conversion factor 0.0347 derived from MW 288.4 g/mol
+---

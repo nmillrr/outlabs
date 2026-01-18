@@ -42,11 +42,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want reliable unit conversion functions so that data from different sources can be harmonized.
 
 **Acceptance Criteria:**
-- [ ] Add `ng_dl_to_nmol_l(value)` function in `freeT/utils.py`
-- [ ] Add `nmol_l_to_ng_dl(value)` function
-- [ ] Add `mg_dl_to_g_l(value)` and `g_l_to_mg_dl(value)` functions
-- [ ] Add unit tests in `tests/test_utils.py` verifying conversions
-- [ ] Tests pass: `pytest tests/test_utils.py`
+- [x] Add `ng_dl_to_nmol_l(value)` function in `freeT/utils.py`
+- [x] Add `nmol_l_to_ng_dl(value)` function
+- [x] Add `mg_dl_to_g_l(value)` and `g_l_to_mg_dl(value)` functions
+- [x] Add unit tests in `tests/test_utils.py` verifying conversions
+- [x] Tests pass: `pytest tests/test_utils.py`
 
 ---
 
