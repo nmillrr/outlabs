@@ -6,7 +6,58 @@ import os
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
+
+import pandas as pd
+
+
+def read_xpt(filepath: Union[str, Path]) -> pd.DataFrame:
+    """
+    Read a SAS transport (XPT) file and return a pandas DataFrame.
+    
+    This function parses NHANES XPT files, which use the SAS transport format
+    (SAS XPORT version 5/8). It's commonly used for CDC data distribution.
+    
+    Args:
+        filepath: Path to the XPT file. Can be a string or Path object.
+    
+    Returns:
+        pd.DataFrame: Contents of the XPT file as a DataFrame.
+    
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        ValueError: If the file cannot be parsed as XPT format.
+    
+    Example:
+        >>> df = read_xpt("data/raw/2015_2016/TST_I.XPT")
+        >>> print(df.columns.tolist())
+        ['SEQN', 'LBXTST', ...]
+    """
+    filepath = Path(filepath)
+    
+    # Check if file exists
+    if not filepath.exists():
+        raise FileNotFoundError(
+            f"XPT file not found: {filepath}. "
+            f"Please ensure the file exists or download it using download_nhanes()."
+        )
+    
+    # Check if file has correct extension (case-insensitive)
+    if filepath.suffix.upper() != ".XPT":
+        raise ValueError(
+            f"Expected XPT file, got: {filepath.suffix}. "
+            f"File must have .xpt or .XPT extension."
+        )
+    
+    try:
+        # Read the XPT file using pandas
+        df = pd.read_sas(filepath, format='xport')
+        return df
+    except Exception as e:
+        raise ValueError(
+            f"Failed to parse XPT file '{filepath}': {str(e)}. "
+            f"The file may be corrupted or not in valid XPT format."
+        )
 
 
 # NHANES data file URL templates

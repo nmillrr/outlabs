@@ -42,3 +42,27 @@
   - Albumin data is in BIOPRO (biochemistry profile) files, not a separate ALB file
   - Use `urllib.request.urlretrieve` for simple file downloads
 ---
+
+## Iteration 4 - US-004: Implement XPT file parser
+- Implemented `read_xpt()` function in `freeT/data.py`
+- Function uses pandas `read_sas()` with format='xport' to parse XPT files
+- Added error handling for:
+  - FileNotFoundError for missing files (with helpful message about download_nhanes())
+  - ValueError for wrong file extension (must be .xpt or .XPT)
+  - ValueError for invalid/corrupted XPT content
+- Created `tests/test_data.py` with 8 unit tests:
+  - test_file_not_found_error
+  - test_wrong_extension_error
+  - test_accepts_path_object
+  - test_accepts_string_path
+  - test_invalid_xpt_content_error
+  - test_lowercase_extension_accepted
+  - test_successful_read_with_mock
+  - test_returns_dataframe
+- All tests pass via `python -m pytest tests/test_data.py -v`
+- Learnings for future iterations:
+  - pandas `read_sas()` with format='xport' handles XPT files natively
+  - Use `unittest.mock` to mock pandas.read_sas for success tests without real XPT files
+  - tempfile.NamedTemporaryFile with custom suffix for testing file extension handling
+---
+
