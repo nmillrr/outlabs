@@ -121,3 +121,27 @@
   - Add cycle identifier when combining multi-cycle data
 ---
 
+## Iteration 8 - US-008: Implement Vermeulen cubic solver
+- Implemented `calc_ft_vermeulen()` function in `freeT/models.py`
+- Function solves mass balance equation for testosterone binding to SHBG and albumin
+- Uses scipy.optimize.brentq for robust numerical root-finding
+- Parameters:
+  - tt_nmoll: Total testosterone in nmol/L
+  - shbg_nmoll: SHBG in nmol/L
+  - alb_gl: Albumin in g/L
+  - K_shbg: SHBG association constant (default 1e9 L/mol)
+  - K_alb: Albumin association constant (default 3.6e4 L/mol)
+- Input validation raises ValueError for:
+  - Negative values (TT, SHBG, albumin)
+  - NaN values
+  - Non-positive association constants
+- Returns FT in nmol/L
+- Verified: TT=15, SHBG=40, Alb=45 → FT ≈ 0.26 nmol/L
+- Typecheck passes via `py_compile`
+- All existing tests pass
+- Learnings for future iterations:
+  - Albumin MW = 66430 g/mol for unit conversion
+  - brentq works well with [1e-15, TT] bounds for physiological inputs
+  - Mass balance uses fractional saturation: [P-T] = P * K * FT / (1 + K * FT)
+---
+

@@ -119,11 +119,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want the Vermeulen (1999) FT calculation so that I have a validated baseline.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_ft_vermeulen(tt_nmoll, shbg_nmoll, alb_gl, K_shbg=1e9, K_alb=3.6e4)` in `freeT/models.py`
-- [ ] Uses scipy.optimize.brentq for root-finding
-- [ ] Returns FT in nmol/L
-- [ ] Raises ValueError for invalid inputs (negative, NaN)
-- [ ] Typecheck passes
+- [x] Add `calc_ft_vermeulen(tt_nmoll, shbg_nmoll, alb_gl, K_shbg=1e9, K_alb=3.6e4)` in `freeT/models.py`
+- [x] Uses scipy.optimize.brentq for root-finding
+- [x] Returns FT in nmol/L
+- [x] Raises ValueError for invalid inputs (negative, NaN)
+- [x] Typecheck passes
 
 ---
 
