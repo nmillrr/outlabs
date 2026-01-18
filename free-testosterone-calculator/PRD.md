@@ -237,10 +237,10 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a researcher, I want a LightGBM model for best performance.
 
 **Acceptance Criteria:**
-- [ ] Add `train_lightgbm(X_train, y_train, X_val, y_val)` in `freeT/train.py`
-- [ ] Uses early stopping with 20 rounds
-- [ ] Returns fitted LGBMRegressor
-- [ ] Typecheck passes
+- [x] Add `train_lightgbm(X_train, y_train, X_val, y_val)` in `freeT/train.py`
+- [x] Uses early stopping with 20 rounds
+- [x] Returns fitted LGBMRegressor
+- [x] Typecheck passes
 
 ---
 

@@ -249,6 +249,65 @@ def train_random_forest(
     return model
 
 
+def train_lightgbm(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_val: np.ndarray,
+    y_val: np.ndarray
+):
+    """
+    Train a LightGBM regression model for free testosterone estimation.
+    
+    Uses early stopping to prevent overfitting by monitoring validation loss
+    and stopping when performance no longer improves.
+    
+    Parameters
+    ----------
+    X_train : np.ndarray
+        Training feature matrix of shape (n_samples, n_features)
+    y_train : np.ndarray
+        Training target values of shape (n_samples,)
+    X_val : np.ndarray
+        Validation feature matrix of shape (n_val_samples, n_features)
+    y_val : np.ndarray
+        Validation target values of shape (n_val_samples,)
+        
+    Returns
+    -------
+    lightgbm.LGBMRegressor
+        Fitted LightGBM regression model
+        
+    Notes
+    -----
+    LightGBM is a gradient boosting framework that uses tree-based learning.
+    It is fast, memory-efficient, and often achieves state-of-the-art 
+    performance on tabular data. Early stopping with 20 rounds prevents
+    overfitting by halting training when validation loss stops improving.
+    """
+    from lightgbm import LGBMRegressor
+    
+    model = LGBMRegressor(
+        n_estimators=1000,  # High value, early stopping will find optimal
+        learning_rate=0.05,
+        num_leaves=31,
+        random_state=42,
+        n_jobs=-1,
+        verbosity=-1  # Suppress warnings
+    )
+    
+    # Fit with early stopping
+    model.fit(
+        X_train,
+        y_train,
+        eval_set=[(X_val, y_val)],
+        callbacks=[
+            __import__('lightgbm').early_stopping(stopping_rounds=20, verbose=False)
+        ]
+    )
+    
+    return model
+
+
 def save_model(model, filepath: str) -> None:
     """
     Save a trained model to disk using joblib.
