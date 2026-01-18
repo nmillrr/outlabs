@@ -142,11 +142,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want the Södergård solver so that I can compare equation variants.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_ft_sodergard(tt_nmoll, shbg_nmoll, alb_gl)` in `freeT/models.py`
-- [ ] Uses K_shbg=1.2e9, K_alb=2.4e4
-- [ ] Internally calls Vermeulen with modified constants
-- [ ] Add unit test comparing to Vermeulen (should differ slightly)
-- [ ] Tests pass
+- [x] Add `calc_ft_sodergard(tt_nmoll, shbg_nmoll, alb_gl)` in `freeT/models.py`
+- [x] Uses K_shbg=1.2e9, K_alb=2.4e4
+- [x] Internally calls Vermeulen with modified constants
+- [x] Add unit test comparing to Vermeulen (should differ slightly)
+- [x] Tests pass
 
 ---
 

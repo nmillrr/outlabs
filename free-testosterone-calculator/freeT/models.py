@@ -125,3 +125,55 @@ def calc_ft_vermeulen(
     ft_nmoll = ft_mol * 1e9
     
     return ft_nmoll
+
+
+def calc_ft_sodergard(
+    tt_nmoll: float,
+    shbg_nmoll: float,
+    alb_gl: float
+) -> float:
+    """
+    Calculate free testosterone using the Södergård equation variant.
+    
+    This method uses different binding constants from the Vermeulen original:
+    - K_shbg = 1.2e9 L/mol (vs Vermeulen's 1e9)
+    - K_alb = 2.4e4 L/mol (vs Vermeulen's 3.6e4)
+    
+    Reference: Södergård R et al. (1982) J Steroid Biochem
+    
+    Parameters
+    ----------
+    tt_nmoll : float
+        Total testosterone concentration in nmol/L
+    shbg_nmoll : float
+        SHBG concentration in nmol/L
+    alb_gl : float
+        Albumin concentration in g/L
+    
+    Returns
+    -------
+    float
+        Free testosterone concentration in nmol/L
+    
+    Raises
+    ------
+    ValueError
+        If any input is negative, NaN, or logically invalid
+    
+    Notes
+    -----
+    Internally calls calc_ft_vermeulen with modified binding constants.
+    The Södergård constants typically yield slightly different FT estimates
+    compared to the Vermeulen constants.
+    """
+    # Södergård binding constants
+    K_SHBG_SODERGARD = 1.2e9  # L/mol
+    K_ALB_SODERGARD = 2.4e4   # L/mol
+    
+    return calc_ft_vermeulen(
+        tt_nmoll=tt_nmoll,
+        shbg_nmoll=shbg_nmoll,
+        alb_gl=alb_gl,
+        K_shbg=K_SHBG_SODERGARD,
+        K_alb=K_ALB_SODERGARD
+    )

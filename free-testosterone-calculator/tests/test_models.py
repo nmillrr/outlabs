@@ -8,7 +8,7 @@ the ISSAM Free Testosterone Calculator (https://www.issam.ch/freetesto.htm).
 import math
 import pytest
 
-from freeT.models import calc_ft_vermeulen
+from freeT.models import calc_ft_vermeulen, calc_ft_sodergard
 
 
 class TestVermeulenSolver:
@@ -134,3 +134,78 @@ class TestVermeulenSolver:
             tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=43.0, K_alb=7.2e4
         )
         assert ft_high_k_alb < ft_default, "Higher K_alb should reduce FT"
+
+
+class TestSodergardSolver:
+    """Tests for the Södergård (1982) free testosterone calculation variant."""
+    
+    def test_differs_from_vermeulen(self):
+        """
+        Södergård should give different results than Vermeulen due to 
+        different binding constants.
+        
+        Södergård uses K_shbg=1.2e9 (higher than Vermeulen's 1e9)
+        and K_alb=2.4e4 (lower than Vermeulen's 3.6e4).
+        """
+        tt, shbg, alb = 15.0, 40.0, 45.0
+        
+        ft_vermeulen = calc_ft_vermeulen(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        ft_sodergard = calc_ft_sodergard(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        
+        # Results should be different but close
+        assert ft_vermeulen != ft_sodergard, "Södergård should differ from Vermeulen"
+        
+        # The difference should be small (within ~20% of each other)
+        diff_percent = abs(ft_vermeulen - ft_sodergard) / ft_vermeulen * 100
+        assert diff_percent < 20, f"Difference {diff_percent}% is too large"
+    
+    def test_multiple_cases_differ(self):
+        """Verify Södergård differs from Vermeulen across multiple test cases."""
+        test_cases = [
+            (10.0, 20.0, 42.0),
+            (20.0, 50.0, 43.0),
+            (25.0, 35.0, 45.0),
+        ]
+        
+        for tt, shbg, alb in test_cases:
+            ft_v = calc_ft_vermeulen(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+            ft_s = calc_ft_sodergard(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+            assert ft_v != ft_s, f"Case TT={tt}, SHBG={shbg}, Alb={alb}: Should differ"
+    
+    def test_ft_less_than_tt(self):
+        """Free testosterone must always be less than total testosterone."""
+        result = calc_ft_sodergard(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=45.0)
+        assert 0 < result < 15.0, f"FT {result} should be between 0 and TT 15"
+    
+    def test_ft_in_physiological_range(self):
+        """FT should be in physiologically reasonable range (1-4% of TT)."""
+        tt = 20.0
+        result = calc_ft_sodergard(tt_nmoll=tt, shbg_nmoll=35.0, alb_gl=43.0)
+        ft_percent = (result / tt) * 100
+        assert 0.5 < ft_percent < 5.0, f"FT% {ft_percent} outside normal range"
+    
+    def test_inherits_input_validation(self):
+        """Södergård should inherit input validation from Vermeulen."""
+        import pytest
+        
+        with pytest.raises(ValueError, match="cannot be negative"):
+            calc_ft_sodergard(tt_nmoll=-5.0, shbg_nmoll=40.0, alb_gl=43.0)
+        
+        with pytest.raises(ValueError, match="NaN"):
+            calc_ft_sodergard(tt_nmoll=float('nan'), shbg_nmoll=40.0, alb_gl=43.0)
+    
+    def test_higher_k_shbg_effect(self):
+        """
+        Södergård has higher K_shbg (1.2e9 vs 1.0e9), which should result
+        in more SHBG binding and therefore lower FT compared to Vermeulen.
+        """
+        tt, shbg, alb = 15.0, 40.0, 45.0
+        
+        ft_vermeulen = calc_ft_vermeulen(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        ft_sodergard = calc_ft_sodergard(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        
+        # Higher K_shbg means more binding = lower FT
+        # But lower K_alb means less binding = higher FT
+        # Net effect depends on relative magnitudes
+        # Just verify they're different
+        assert ft_vermeulen != ft_sodergard

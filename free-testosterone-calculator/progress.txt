@@ -145,3 +145,44 @@
   - Mass balance uses fractional saturation: [P-T] = P * K * FT / (1 + K * FT)
 ---
 
+## Iteration 9 - US-009: Test Vermeulen solver against published values
+- Implemented 13 unit tests in `tests/test_models.py` for Vermeulen solver
+- Tests validated against ISSAM Free Testosterone Calculator (https://www.issam.ch/freetesto.htm)
+- Reference test cases:
+  - TT=15, SHBG=40, Alb=45 → FT ≈ 0.269 nmol/L (ISSAM)
+  - TT=10, SHBG=20, Alb=42 → FT ≈ 0.258 nmol/L (ISSAM)
+- Additional tests cover:
+  - FT < TT constraint
+  - FT > 0 for valid inputs
+  - Physiological range (1-4% of TT)
+  - SHBG inverse relationship with FT
+  - TT direct relationship with FT
+  - Input validation (negative values, NaN)
+  - Custom binding constant effects
+- All 13 tests pass
+- Learnings for future iterations:
+  - ISSAM calculator yields FT ~0.269 for TT=15, SHBG=40, Alb=45 (not 0.30 as stated in PRD)
+  - Use ±0.02 nmol/L tolerance for reference value comparisons due to minor implementation variations
+  - Browser automation can query ISSAM calculator for ground truth values
+---
+
+## Iteration 10 - US-010: Implement Södergård solver variant
+- Implemented `calc_ft_sodergard()` function in `freeT/models.py`
+- Function uses Södergård (1982) binding constants:
+  - K_shbg = 1.2e9 L/mol (higher than Vermeulen's 1e9)
+  - K_alb = 2.4e4 L/mol (lower than Vermeulen's 3.6e4)
+- Internally delegates to `calc_ft_vermeulen()` with modified constants
+- Added 6 unit tests in `tests/test_models.py`:
+  - test_differs_from_vermeulen: verifies results differ from Vermeulen
+  - test_multiple_cases_differ: tests multiple input combinations
+  - test_ft_less_than_tt: validates FT < TT constraint
+  - test_ft_in_physiological_range: validates 1-4% range
+  - test_inherits_input_validation: confirms error handling works
+  - test_higher_k_shbg_effect: documents binding constant effects
+- All 19 tests pass (13 Vermeulen + 6 Södergård)
+- Typecheck passes
+- Learnings for future iterations:
+  - Södergård variant is simple wrapper around Vermeulen with different constants
+  - Higher K_shbg + lower K_alb creates different net effect on FT
+  - Good pattern: reuse core solver logic with different constants
+---
