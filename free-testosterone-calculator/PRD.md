@@ -78,12 +78,13 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a researcher, I want automated data cleaning so that outliers and missing values are handled consistently.
 
 **Acceptance Criteria:**
-- [ ] Add `clean_nhanes_data(tst_df, shbg_df, alb_df)` function in `freeT/data.py`
-- [ ] Merges datasets on SEQN (sample ID)
-- [ ] Applies unit conversions (TT: ng/dL → nmol/L, Albumin: g/dL → g/L)
-- [ ] Removes physiologic outliers (TT < 0.5, SHBG > 250, Alb < 30)
-- [ ] Returns cleaned DataFrame with standardized column names
-- [ ] Typecheck passes
+- [x] Add `clean_nhanes_data(tst_df, shbg_df, alb_df)` function in `freeT/data.py`
+- [x] Merges datasets on SEQN (sample ID)
+- [x] Applies unit conversions (TT: ng/dL → nmol/L, Albumin: g/dL → g/L)
+- [x] Removes physiologic outliers (TT < 0.5, SHBG > 250, Alb < 30)
+- [x] Returns cleaned DataFrame with standardized column names
+- [x] Typecheck passes
+
 
 ---
 

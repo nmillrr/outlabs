@@ -198,3 +198,119 @@ def download_nhanes(
         print(f"Failed: {len(result['failed'])} files")
     
     return result
+
+
+def clean_nhanes_data(
+    tst_df: pd.DataFrame,
+    shbg_df: pd.DataFrame,
+    alb_df: pd.DataFrame,
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Clean and merge NHANES testosterone, SHBG, and albumin data.
+    
+    This function merges the three datasets on SEQN (participant ID),
+    applies unit conversions to standardize measurements, and removes
+    physiologically implausible outliers.
+    
+    Args:
+        tst_df: DataFrame from TST XPT file containing testosterone data.
+                Expected column: LBXTST (TT in ng/dL)
+        shbg_df: DataFrame from SHBG XPT file containing SHBG data.
+                 Expected column: LBXSHBG (SHBG in nmol/L)
+        alb_df: DataFrame from BIOPRO XPT file containing albumin data.
+                Expected column: LBXSAL (Albumin in g/dL)
+        verbose: If True, print cleaning statistics.
+    
+    Returns:
+        pd.DataFrame: Cleaned DataFrame with standardized columns:
+            - seqn: Participant ID
+            - tt_nmoll: Total testosterone in nmol/L
+            - shbg_nmoll: SHBG in nmol/L
+            - alb_gl: Albumin in g/L
+    
+    Notes:
+        Unit conversions applied:
+        - TT: ng/dL → nmol/L (multiply by 0.0347)
+        - Albumin: g/dL → g/L (multiply by 10)
+        - SHBG: Already in nmol/L (no conversion needed)
+        
+        Outlier removal criteria (physiologically implausible):
+        - TT < 0.5 nmol/L (after conversion)
+        - SHBG > 250 nmol/L
+        - Albumin < 30 g/L (after conversion)
+    
+    Example:
+        >>> tst = read_xpt("data/raw/2015_2016/TST_I.XPT")
+        >>> shbg = read_xpt("data/raw/2015_2016/SHBG_I.XPT")
+        >>> alb = read_xpt("data/raw/2015_2016/BIOPRO_I.XPT")
+        >>> clean_df = clean_nhanes_data(tst, shbg, alb)
+    """
+    from .utils import ng_dl_to_nmol_l
+    
+    # Store initial counts for stats
+    initial_tst = len(tst_df)
+    initial_shbg = len(shbg_df)
+    initial_alb = len(alb_df)
+    
+    # Step 1: Select relevant columns and rename for merge
+    # TST data - testosterone in ng/dL
+    tst_clean = tst_df[['SEQN', 'LBXTST']].copy()
+    tst_clean = tst_clean.rename(columns={'LBXTST': 'tt_ngdl'})
+    
+    # SHBG data - already in nmol/L
+    shbg_clean = shbg_df[['SEQN', 'LBXSHBG']].copy()
+    shbg_clean = shbg_clean.rename(columns={'LBXSHBG': 'shbg_nmoll'})
+    
+    # Albumin data from biochemistry profile - in g/dL
+    alb_clean = alb_df[['SEQN', 'LBXSAL']].copy()
+    alb_clean = alb_clean.rename(columns={'LBXSAL': 'alb_gdl'})
+    
+    # Step 2: Merge datasets on SEQN (inner join to keep only complete cases)
+    merged = tst_clean.merge(shbg_clean, on='SEQN', how='inner')
+    merged = merged.merge(alb_clean, on='SEQN', how='inner')
+    
+    after_merge = len(merged)
+    
+    # Step 3: Remove rows with missing values in key columns
+    merged = merged.dropna(subset=['tt_ngdl', 'shbg_nmoll', 'alb_gdl'])
+    after_dropna = len(merged)
+    
+    # Step 4: Apply unit conversions
+    # TT: ng/dL → nmol/L
+    merged['tt_nmoll'] = merged['tt_ngdl'].apply(ng_dl_to_nmol_l)
+    
+    # Albumin: g/dL → g/L (multiply by 10)
+    merged['alb_gl'] = merged['alb_gdl'] * 10
+    
+    # Step 5: Remove physiologic outliers
+    before_outliers = len(merged)
+    
+    # TT < 0.5 nmol/L is physiologically implausible
+    merged = merged[merged['tt_nmoll'] >= 0.5]
+    
+    # SHBG > 250 nmol/L is very high, likely erroneous
+    merged = merged[merged['shbg_nmoll'] <= 250]
+    
+    # Albumin < 30 g/L indicates severe hypoalbuminemia
+    merged = merged[merged['alb_gl'] >= 30]
+    
+    after_outliers = len(merged)
+    
+    # Step 6: Select and rename final columns
+    result = merged[['SEQN', 'tt_nmoll', 'shbg_nmoll', 'alb_gl']].copy()
+    result = result.rename(columns={'SEQN': 'seqn'})
+    
+    # Reset index
+    result = result.reset_index(drop=True)
+    
+    if verbose:
+        print("--- NHANES Data Cleaning Summary ---")
+        print(f"Input records: TST={initial_tst}, SHBG={initial_shbg}, ALB={initial_alb}")
+        print(f"After merge (inner join): {after_merge}")
+        print(f"After dropping NA: {after_dropna}")
+        print(f"After outlier removal: {after_outliers}")
+        print(f"Final cleaned records: {len(result)}")
+        print(f"Removed as outliers: {before_outliers - after_outliers}")
+    
+    return result

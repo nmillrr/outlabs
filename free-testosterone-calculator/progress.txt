@@ -66,3 +66,25 @@
   - tempfile.NamedTemporaryFile with custom suffix for testing file extension handling
 ---
 
+## Iteration 5 - US-005: Create NHANES data cleaning pipeline
+- Implemented `clean_nhanes_data()` function in `freeT/data.py`
+- Function takes tst_df, shbg_df, alb_df DataFrames as input
+- Merges datasets on SEQN using inner join
+- Unit conversions:
+  - TT: ng/dL → nmol/L using ng_dl_to_nmol_l from utils
+  - Albumin: g/dL → g/L (multiply by 10)
+  - SHBG: already in nmol/L (no conversion needed)
+- Outlier removal criteria:
+  - TT < 0.5 nmol/L (after conversion)
+  - SHBG > 250 nmol/L
+  - Albumin < 30 g/L (after conversion)
+- Returns DataFrame with standardized columns: seqn, tt_nmoll, shbg_nmoll, alb_gl
+- Verbose mode prints cleaning statistics
+- Typecheck passes via `py_compile`
+- All existing tests pass
+- Learnings for future iterations:
+  - NHANES column names: LBXTST (testosterone), LBXSHBG (SHBG), LBXSAL (albumin)
+  - Albumin in NHANES is in g/dL (not mg/dL), so multiply by 10 for g/L
+  - Inner join on SEQN ensures only complete cases are kept
+---
+
