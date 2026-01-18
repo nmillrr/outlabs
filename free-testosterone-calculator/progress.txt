@@ -28,3 +28,17 @@
   - Use `python -m pytest` instead of `pytest` when pytest isn't in PATH
   - Testosterone conversion factor 0.0347 derived from MW 288.4 g/mol
 ---
+
+## Iteration 3 - US-003: Create NHANES download module
+- Implemented `download_nhanes()` function in `freeT/data.py`
+- Function downloads TST, SHBG, ALB XPT files from CDC NHANES website
+- Supports cycles 2011-2012, 2013-2014, 2015-2016
+- Creates directory structure automatically: `data/raw/{cycle}/`
+- Handles HTTP errors, URL errors, and unexpected exceptions gracefully
+- Returns summary dict with downloaded/failed/skipped files
+- Typecheck passes via `py_compile`
+- Learnings for future iterations:
+  - NHANES data uses XPT (SAS transport) format
+  - Albumin data is in BIOPRO (biochemistry profile) files, not a separate ALB file
+  - Use `urllib.request.urlretrieve` for simple file downloads
+---

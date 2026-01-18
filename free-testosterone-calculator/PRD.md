@@ -54,11 +54,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a researcher, I want to programmatically download NHANES testosterone data so that I have a reproducible data pipeline.
 
 **Acceptance Criteria:**
-- [ ] Add `download_nhanes(output_dir, cycles)` function in `freeT/data.py`
-- [ ] Function downloads TST, SHBG, ALB XPT files for cycles 2011-2016
-- [ ] Creates `data/raw/` directory if not exists
-- [ ] Handles download errors gracefully with informative messages
-- [ ] Typecheck passes
+- [x] Add `download_nhanes(output_dir, cycles)` function in `freeT/data.py`
+- [x] Function downloads TST, SHBG, ALB XPT files for cycles 2011-2016
+- [x] Creates `data/raw/` directory if not exists
+- [x] Handles download errors gracefully with informative messages
+- [x] Typecheck passes
 
 ---
 
