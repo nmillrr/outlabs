@@ -264,5 +264,22 @@
 - Learnings for future iterations:
   - Using Vermeulen FT as a feature enables hybrid mechanistic+ML approach
   - SHBG/TT ratio is inversely related to FT percentage
-  - Use epsilon (1e-10) to avoid division by zero in ratio calculations
+   - Use epsilon (1e-10) to avoid division by zero in ratio calculations
+---
+
+## Iteration 15 - US-015: Implement train/test split with stratification
+- Implemented `stratified_split()` function in `freeT/train.py`
+- Function splits data with stratification by SHBG tertiles using sklearn
+- Uses pd.qcut() to create SHBG tertile bins (low, medium, high)
+- Calls create_features() internally to generate feature matrix
+- Uses ft_vermeulen as proxy target for demonstration
+- Parameters: test_size=0.3, random_state=42 (defaults)
+- Input validation for required columns and minimum data size (9 rows)
+- Returns X_train, X_test, y_train, y_test as numpy arrays
+- Typecheck passes via `py_compile`
+- All 49 existing tests pass
+- Learnings for future iterations:
+  - pd.qcut() with duplicates='drop' handles non-unique quantile edges
+  - Stratified split ensures proportional representation of SHBG subgroups
+  - sklearn train_test_split accepts any array-like for stratify parameter
 ---

@@ -205,10 +205,10 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want stratified splitting so that subgroups are balanced.
 
 **Acceptance Criteria:**
-- [ ] Add `stratified_split(df, test_size=0.3, random_state=42)` in `freeT/train.py`
-- [ ] Stratifies by SHBG tertiles
-- [ ] Returns X_train, X_test, y_train, y_test
-- [ ] Typecheck passes
+- [x] Add `stratified_split(df, test_size=0.3, random_state=42)` in `freeT/train.py`
+- [x] Stratifies by SHBG tertiles
+- [x] Returns X_train, X_test, y_train, y_test
+- [x] Typecheck passes
 
 ---
 
