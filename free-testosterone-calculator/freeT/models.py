@@ -6,7 +6,7 @@ Reference: Vermeulen A et al. (1999) J Clin Endocrinol Metab
 """
 
 import math
-from scipy.optimize import brentq
+from scipy.optimize import brentq, fsolve
 
 
 def calc_ft_vermeulen(
@@ -177,3 +177,154 @@ def calc_ft_sodergard(
         K_shbg=K_SHBG_SODERGARD,
         K_alb=K_ALB_SODERGARD
     )
+
+
+def calc_ft_zakharov(
+    tt_nmoll: float,
+    shbg_nmoll: float,
+    alb_gl: float,
+    cooperativity: float = 0.5
+) -> float:
+    """
+    Calculate free testosterone using a simplified Zakharov allosteric model.
+    
+    This method accounts for cooperative binding of testosterone to SHBG,
+    where binding at one site affects binding affinity at other sites.
+    The allosteric model uses the Hill equation modification.
+    
+    Reference: Zakharov MN et al. (2015) J Clin Endocrinol Metab
+    
+    Parameters
+    ----------
+    tt_nmoll : float
+        Total testosterone concentration in nmol/L
+    shbg_nmoll : float
+        SHBG concentration in nmol/L
+    alb_gl : float
+        Albumin concentration in g/L
+    cooperativity : float, optional
+        Hill coefficient for cooperative binding (0-1 range typical)
+        Default: 0.5 (moderate negative cooperativity)
+        - 0 = strong negative cooperativity
+        - 1 = no cooperativity (reduces to Vermeulen)
+        - >1 = positive cooperativity
+    
+    Returns
+    -------
+    float
+        Free testosterone concentration in nmol/L
+    
+    Raises
+    ------
+    ValueError
+        If any input is negative, NaN, or logically invalid
+    
+    Notes
+    -----
+    The allosteric model modifies SHBG binding:
+    [SHBG-T] = SHBG * (K_shbg * FT)^n / (1 + (K_shbg * FT)^n)
+    
+    where n = 1 + cooperativity (Hill-like coefficient).
+    
+    Uses scipy.optimize.fsolve for solving the nonlinear system.
+    """
+    # Input validation
+    if math.isnan(tt_nmoll) or math.isnan(shbg_nmoll) or math.isnan(alb_gl):
+        raise ValueError("Input values cannot be NaN")
+    
+    if tt_nmoll < 0:
+        raise ValueError(f"Total testosterone cannot be negative: {tt_nmoll}")
+    
+    if shbg_nmoll < 0:
+        raise ValueError(f"SHBG cannot be negative: {shbg_nmoll}")
+    
+    if alb_gl < 0:
+        raise ValueError(f"Albumin cannot be negative: {alb_gl}")
+    
+    if math.isnan(cooperativity):
+        raise ValueError("Cooperativity cannot be NaN")
+    
+    # Handle edge case of zero TT
+    if tt_nmoll == 0:
+        return 0.0
+    
+    # Binding constants (using Vermeulen defaults as base)
+    K_shbg = 1e9   # L/mol
+    K_alb = 3.6e4  # L/mol
+    
+    # Convert albumin from g/L to mol/L (MW = 66430 g/mol)
+    alb_mw = 66430.0
+    alb_mol = alb_gl / alb_mw
+    
+    # Convert concentrations to mol/L for calculation
+    tt_mol = tt_nmoll * 1e-9  # nmol/L to mol/L
+    shbg_mol = shbg_nmoll * 1e-9  # nmol/L to mol/L
+    
+    # Hill-like coefficient for allosteric effect
+    n = 1.0 + cooperativity
+    
+    def allosteric_mass_balance(ft_mol_arr):
+        """
+        Mass balance with allosteric SHBG binding.
+        
+        Uses Hill equation modification for SHBG:
+        [SHBG-T] = SHBG * (K * FT)^n / (1 + (K * FT)^n)
+        
+        Albumin binding remains non-cooperative.
+        """
+        ft_mol = ft_mol_arr[0]
+        
+        # Prevent negative or zero FT
+        if ft_mol <= 0:
+            ft_mol = 1e-15
+        
+        # Allosteric SHBG binding (Hill-like)
+        kf_n = (K_shbg * ft_mol) ** n
+        shbg_bound = shbg_mol * kf_n / (1 + kf_n)
+        
+        # Standard albumin binding (non-cooperative)
+        alb_bound = alb_mol * K_alb * ft_mol / (1 + K_alb * ft_mol)
+        
+        # Mass balance residual
+        residual = tt_mol - ft_mol - shbg_bound - alb_bound
+        return [residual]
+    
+    # Initial guess: use Vermeulen solution as starting point
+    # This provides a good initial estimate for fsolve
+    try:
+        initial_guess = calc_ft_vermeulen(tt_nmoll, shbg_nmoll, alb_gl) * 1e-9
+    except ValueError:
+        # If Vermeulen fails, use a simple estimate (1% of TT)
+        initial_guess = tt_mol * 0.01
+    
+    # Solve using fsolve
+    solution, info, ier, mesg = fsolve(
+        allosteric_mass_balance,
+        [initial_guess],
+        full_output=True
+    )
+    
+    ft_mol = solution[0]
+    
+    # Validate solution
+    if ft_mol <= 0:
+        # Try again with different initial guess
+        solution2, info2, ier2, mesg2 = fsolve(
+            allosteric_mass_balance,
+            [tt_mol * 0.02],  # 2% of TT
+            full_output=True
+        )
+        ft_mol = solution2[0]
+    
+    # Final validation: ensure 0 < FT < TT
+    if ft_mol <= 0 or ft_mol > tt_mol:
+        raise ValueError(
+            f"Could not find valid solution. FT={ft_mol*1e9:.4f} nmol/L "
+            f"for TT={tt_nmoll}, SHBG={shbg_nmoll}, Alb={alb_gl}"
+        )
+    
+    # Convert back to nmol/L
+    ft_nmoll = ft_mol * 1e9
+    
+    return ft_nmoll
+

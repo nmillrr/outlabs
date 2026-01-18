@@ -8,7 +8,7 @@ the ISSAM Free Testosterone Calculator (https://www.issam.ch/freetesto.htm).
 import math
 import pytest
 
-from freeT.models import calc_ft_vermeulen, calc_ft_sodergard
+from freeT.models import calc_ft_vermeulen, calc_ft_sodergard, calc_ft_zakharov
 
 
 class TestVermeulenSolver:
@@ -209,3 +209,103 @@ class TestSodergardSolver:
         # Net effect depends on relative magnitudes
         # Just verify they're different
         assert ft_vermeulen != ft_sodergard
+
+
+class TestZakharovSolver:
+    """Tests for the Zakharov allosteric free testosterone calculation."""
+    
+    def test_ft_positive(self):
+        """Free testosterone must be positive for valid inputs."""
+        result = calc_ft_zakharov(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=45.0)
+        assert result > 0, "Free testosterone must be positive"
+    
+    def test_ft_less_than_tt(self):
+        """Free testosterone must always be less than total testosterone."""
+        test_cases = [
+            (15.0, 40.0, 45.0),
+            (10.0, 20.0, 42.0),
+            (25.0, 60.0, 43.0),
+            (5.0, 30.0, 40.0),
+        ]
+        for tt, shbg, alb in test_cases:
+            result = calc_ft_zakharov(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+            assert 0 < result < tt, f"FT {result} should be between 0 and TT {tt}"
+    
+    def test_valid_range_multiple_inputs(self):
+        """Verify output is in valid range (0 < FT < TT) for different inputs."""
+        test_cases = [
+            (10.0, 30.0, 40.0),
+            (20.0, 45.0, 42.0),
+            (30.0, 70.0, 44.0),
+            (8.0, 15.0, 43.0),
+        ]
+        for tt, shbg, alb in test_cases:
+            result = calc_ft_zakharov(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+            assert 0 < result < tt, f"FT={result} should be between 0 and TT={tt}"
+    
+    def test_physiological_range(self):
+        """FT should be in physiologically reasonable range (1-4% of TT)."""
+        tt = 20.0
+        result = calc_ft_zakharov(tt_nmoll=tt, shbg_nmoll=35.0, alb_gl=43.0)
+        ft_percent = (result / tt) * 100
+        # Allosteric effects may slightly widen the range
+        assert 0.5 < ft_percent < 6.0, f"FT% {ft_percent} outside normal range"
+    
+    def test_differs_from_vermeulen(self):
+        """Zakharov with cooperativity should differ from standard Vermeulen."""
+        tt, shbg, alb = 15.0, 40.0, 45.0
+        
+        ft_vermeulen = calc_ft_vermeulen(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        ft_zakharov = calc_ft_zakharov(tt_nmoll=tt, shbg_nmoll=shbg, alb_gl=alb)
+        
+        # With cooperativity=0.5, results should differ
+        assert ft_vermeulen != ft_zakharov, "Zakharov should differ from Vermeulen"
+    
+    def test_cooperativity_effect(self):
+        """Different cooperativity values should produce different results."""
+        tt, shbg, alb = 15.0, 40.0, 45.0
+        
+        ft_low_coop = calc_ft_zakharov(tt, shbg, alb, cooperativity=0.0)
+        ft_mid_coop = calc_ft_zakharov(tt, shbg, alb, cooperativity=0.5)
+        ft_high_coop = calc_ft_zakharov(tt, shbg, alb, cooperativity=1.0)
+        
+        # Different cooperativity should give different results
+        assert ft_low_coop != ft_mid_coop, "Low vs mid cooperativity should differ"
+        assert ft_mid_coop != ft_high_coop, "Mid vs high cooperativity should differ"
+    
+    def test_zero_tt_returns_zero(self):
+        """Zero total testosterone should return zero free testosterone."""
+        result = calc_ft_zakharov(tt_nmoll=0.0, shbg_nmoll=40.0, alb_gl=43.0)
+        assert result == 0.0, "Zero TT should yield zero FT"
+    
+    def test_negative_tt_raises_error(self):
+        """Negative total testosterone should raise ValueError."""
+        with pytest.raises(ValueError, match="cannot be negative"):
+            calc_ft_zakharov(tt_nmoll=-5.0, shbg_nmoll=40.0, alb_gl=43.0)
+    
+    def test_negative_shbg_raises_error(self):
+        """Negative SHBG should raise ValueError."""
+        with pytest.raises(ValueError, match="cannot be negative"):
+            calc_ft_zakharov(tt_nmoll=15.0, shbg_nmoll=-10.0, alb_gl=43.0)
+    
+    def test_negative_albumin_raises_error(self):
+        """Negative albumin should raise ValueError."""
+        with pytest.raises(ValueError, match="cannot be negative"):
+            calc_ft_zakharov(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=-5.0)
+    
+    def test_nan_input_raises_error(self):
+        """NaN inputs should raise ValueError."""
+        with pytest.raises(ValueError, match="NaN"):
+            calc_ft_zakharov(tt_nmoll=float('nan'), shbg_nmoll=40.0, alb_gl=43.0)
+        
+        with pytest.raises(ValueError, match="NaN"):
+            calc_ft_zakharov(tt_nmoll=15.0, shbg_nmoll=float('nan'), alb_gl=43.0)
+        
+        with pytest.raises(ValueError, match="NaN"):
+            calc_ft_zakharov(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=float('nan'))
+    
+    def test_nan_cooperativity_raises_error(self):
+        """NaN cooperativity should raise ValueError."""
+        with pytest.raises(ValueError, match="NaN"):
+            calc_ft_zakharov(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=43.0, cooperativity=float('nan'))
+

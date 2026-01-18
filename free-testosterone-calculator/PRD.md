@@ -154,10 +154,10 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want the Zakharov solver so that I have all three reference methods.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_ft_zakharov(tt_nmoll, shbg_nmoll, alb_gl, cooperativity=0.5)` in `freeT/models.py`
-- [ ] Uses scipy.optimize.fsolve for nonlinear system
-- [ ] Add unit test verifying output in valid range (0 < FT < TT)
-- [ ] Tests pass
+- [x] Add `calc_ft_zakharov(tt_nmoll, shbg_nmoll, alb_gl, cooperativity=0.5)` in `freeT/models.py`
+- [x] Uses scipy.optimize.fsolve for nonlinear system
+- [x] Add unit test verifying output in valid range (0 < FT < TT)
+- [x] Tests pass
 
 ---
 
