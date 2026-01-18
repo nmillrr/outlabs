@@ -209,6 +209,46 @@ def train_ridge(
     return model
 
 
+def train_random_forest(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    n_estimators: int = 200
+):
+    """
+    Train a Random Forest regression model for free testosterone estimation.
+    
+    Parameters
+    ----------
+    X_train : np.ndarray
+        Training feature matrix of shape (n_samples, n_features)
+    y_train : np.ndarray
+        Training target values of shape (n_samples,)
+    n_estimators : int, optional
+        Number of trees in the forest (default: 200)
+        
+    Returns
+    -------
+    sklearn.ensemble.RandomForestRegressor
+        Fitted Random Forest regression model
+        
+    Notes
+    -----
+    Random Forest captures nonlinear patterns and feature interactions
+    that linear models like Ridge cannot. It is robust to outliers and
+    does not require feature scaling.
+    """
+    from sklearn.ensemble import RandomForestRegressor
+    
+    model = RandomForestRegressor(
+        n_estimators=n_estimators,
+        random_state=42,  # For reproducibility
+        n_jobs=-1  # Use all available cores
+    )
+    model.fit(X_train, y_train)
+    
+    return model
+
+
 def save_model(model, filepath: str) -> None:
     """
     Save a trained model to disk using joblib.

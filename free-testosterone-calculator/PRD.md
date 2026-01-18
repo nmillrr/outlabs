@@ -227,9 +227,9 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a researcher, I want a Random Forest model for nonlinear patterns.
 
 **Acceptance Criteria:**
-- [ ] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `freeT/train.py`
-- [ ] Returns fitted RandomForestRegressor
-- [ ] Typecheck passes
+- [x] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `freeT/train.py`
+- [x] Returns fitted RandomForestRegressor
+- [x] Typecheck passes
 
 ---
 
