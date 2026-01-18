@@ -88,3 +88,36 @@
   - Inner join on SEQN ensures only complete cases are kept
 ---
 
+## Iteration 6 - US-006: Generate data quality report
+- Implemented `generate_quality_report(df, output_path)` function in `freeT/data.py`
+- Function generates comprehensive quality report including:
+  - Total record count
+  - Descriptive statistics (mean, SD, min, max) for TT, SHBG, Albumin
+  - Missing value counts for each column
+- Report saved as formatted text file to specified path
+- Returns dict with report data for programmatic access
+- Creates parent directories if they don't exist
+- Typecheck passes via `py_compile`
+- All existing tests pass
+- Learnings for future iterations:
+  - Use Path.parent.mkdir(parents=True, exist_ok=True) for safe directory creation
+  - Return both dict (for programmatic use) and write text file (for human review)
+---
+
+## Iteration 7 - US-007: Create data sourcing notebook
+- Created `notebooks/01_data_sourcing.ipynb` documenting the full NHANES data pipeline
+- Notebook includes 4 main sections:
+  1. Download - demonstrates `download_nhanes()` for fetching XPT files
+  2. Parse - demonstrates `read_xpt()` for reading SAS transport format
+  3. Clean - demonstrates `clean_nhanes_data()` for merging and processing
+  4. Report - demonstrates `generate_quality_report()` for verification
+- Includes combining multiple cycles (2011-2016) into single dataset
+- Saves processed data to `data/processed/nhanes_combined.csv`
+- Notebook syntax validated (valid JSON)
+- All existing tests pass
+- Learnings for future iterations:
+  - Jupyter notebooks are JSON format, can validate with `json.load()`
+  - Use `project_root = Path.cwd().parent` pattern for imports in notebooks
+  - Add cycle identifier when combining multi-cycle data
+---
+
