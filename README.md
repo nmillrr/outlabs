@@ -14,7 +14,7 @@
 
 Healthcare shouldn't depend on expensive lab equipment. **Outlabs** develops open-source, clinically-validated models that estimate biomarkers from routine blood tests—making advanced diagnostics accessible to rural clinics, low-resource hospitals, and global health organizations worldwide.
 
-We combine:
+Outlabs combins:
 - **Mechanistic solvers** derived from peer-reviewed biochemistry literature
 - **Machine learning models** trained on large population datasets (NHANES, UK Biobank)
 - **Rigorous validation** against gold-standard measurements (equilibrium dialysis, LC-MS/MS)
@@ -192,7 +192,7 @@ Outlabs aims to expand beyond free testosterone to other **inaccessible-but-calc
 
 ## 🤝 Contributing
 
-We welcome contributions! Areas where help is needed:
+All contributions welcome! Areas where help is needed:
 
 - **Validation data**: Access to ED-measured datasets
 - **Clinical feedback**: Real-world usability testing
