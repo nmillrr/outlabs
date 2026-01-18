@@ -4,7 +4,7 @@ Unit tests for freeT.evaluate module.
 
 import numpy as np
 import pytest
-from freeT.evaluate import bland_altman_stats
+from freeT.evaluate import bland_altman_stats, lins_ccc
 
 
 class TestBlandAltmanStats:
@@ -151,3 +151,122 @@ class TestBlandAltmanStats:
         assert isinstance(stats['std_diff'], float)
         assert isinstance(stats['loa_lower'], float)
         assert isinstance(stats['loa_upper'], float)
+
+
+class TestLinsCCC:
+    """Tests for lins_ccc function."""
+
+    def test_identical_arrays_return_one(self):
+        """Test that identical arrays give CCC = 1.0 (perfect agreement)."""
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        y_pred = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        assert ccc == pytest.approx(1.0, abs=1e-10)
+
+    def test_ccc_between_minus_one_and_one(self):
+        """Test that CCC is always in range [-1, 1]."""
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        y_pred = np.array([1.5, 2.3, 2.8, 4.5, 4.9])
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        assert -1.0 <= ccc <= 1.0
+
+    def test_negative_agreement(self):
+        """Test that perfectly negatively correlated arrays give negative CCC."""
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        y_pred = np.array([5.0, 4.0, 3.0, 2.0, 1.0])  # Reverse order
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        assert ccc < 0
+
+    def test_constant_bias_reduces_ccc(self):
+        """Test that constant bias reduces CCC below 1.0."""
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        y_pred = np.array([2.0, 3.0, 4.0, 5.0, 6.0])  # All +1.0 bias
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        # Perfect correlation but shifted means, so CCC < 1
+        assert ccc < 1.0
+        assert ccc > 0.5  # But still positive and reasonable
+
+    def test_different_lengths_raises_error(self):
+        """Test that mismatched array lengths raise ValueError."""
+        y_true = np.array([1.0, 2.0, 3.0])
+        y_pred = np.array([1.0, 2.0])
+        
+        with pytest.raises(ValueError, match="same shape"):
+            lins_ccc(y_true, y_pred)
+
+    def test_single_observation_raises_error(self):
+        """Test that single observation raises ValueError."""
+        y_true = np.array([1.0])
+        y_pred = np.array([1.0])
+        
+        with pytest.raises(ValueError, match="At least 2 observations"):
+            lins_ccc(y_true, y_pred)
+
+    def test_empty_arrays_raises_error(self):
+        """Test that empty arrays raise ValueError."""
+        y_true = np.array([])
+        y_pred = np.array([])
+        
+        with pytest.raises(ValueError, match="At least 2 observations"):
+            lins_ccc(y_true, y_pred)
+
+    def test_nan_in_y_true_raises_error(self):
+        """Test that NaN in y_true raises ValueError."""
+        y_true = np.array([1.0, np.nan, 3.0])
+        y_pred = np.array([1.0, 2.0, 3.0])
+        
+        with pytest.raises(ValueError, match="NaN"):
+            lins_ccc(y_true, y_pred)
+
+    def test_nan_in_y_pred_raises_error(self):
+        """Test that NaN in y_pred raises ValueError."""
+        y_true = np.array([1.0, 2.0, 3.0])
+        y_pred = np.array([1.0, np.nan, 3.0])
+        
+        with pytest.raises(ValueError, match="NaN"):
+            lins_ccc(y_true, y_pred)
+
+    def test_accepts_lists(self):
+        """Test that function accepts Python lists."""
+        y_true = [1.0, 2.0, 3.0, 4.0]
+        y_pred = [1.0, 2.0, 3.0, 4.0]
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        assert ccc == pytest.approx(1.0, abs=1e-10)
+
+    def test_returns_float(self):
+        """Test that function returns a native Python float."""
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        y_pred = np.array([1.2, 2.1, 2.8, 4.3, 4.9])
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        assert isinstance(ccc, float)
+
+    def test_constant_arrays_same_value(self):
+        """Test that constant arrays with same value return 1.0."""
+        y_true = np.array([3.0, 3.0, 3.0, 3.0])
+        y_pred = np.array([3.0, 3.0, 3.0, 3.0])
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        assert ccc == pytest.approx(1.0, abs=1e-10)
+
+    def test_high_agreement_gives_high_ccc(self):
+        """Test that high agreement gives CCC close to 1."""
+        y_true = np.array([10.0, 20.0, 30.0, 40.0, 50.0])
+        y_pred = np.array([10.1, 19.9, 30.2, 39.8, 50.1])  # Small deviations
+        
+        ccc = lins_ccc(y_true, y_pred)
+        
+        assert ccc > 0.99
+
