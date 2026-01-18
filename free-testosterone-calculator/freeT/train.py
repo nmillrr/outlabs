@@ -171,3 +171,70 @@ def stratified_split(
     )
     
     return X_train, X_test, y_train, y_test
+
+
+def train_ridge(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    alpha: float = 1.0
+):
+    """
+    Train a Ridge regression model for free testosterone estimation.
+    
+    Parameters
+    ----------
+    X_train : np.ndarray
+        Training feature matrix of shape (n_samples, n_features)
+    y_train : np.ndarray
+        Training target values of shape (n_samples,)
+    alpha : float, optional
+        Regularization strength (default: 1.0)
+        Higher values = stronger regularization
+        
+    Returns
+    -------
+    sklearn.linear_model.Ridge
+        Fitted Ridge regression model
+        
+    Notes
+    -----
+    Ridge regression adds L2 penalty to prevent overfitting and handles
+    multicollinearity in features (e.g., TT and ft_vermeulen are correlated).
+    """
+    from sklearn.linear_model import Ridge
+    
+    model = Ridge(alpha=alpha)
+    model.fit(X_train, y_train)
+    
+    return model
+
+
+def save_model(model, filepath: str) -> None:
+    """
+    Save a trained model to disk using joblib.
+    
+    Parameters
+    ----------
+    model : object
+        Trained scikit-learn model or compatible object
+    filepath : str
+        Path where model will be saved (typically .joblib or .pkl extension)
+        
+    Returns
+    -------
+    None
+        
+    Notes
+    -----
+    Uses joblib for efficient serialization of numpy arrays in sklearn models.
+    Creates parent directories if they don't exist.
+    """
+    import joblib
+    from pathlib import Path
+    
+    # Create parent directories if needed
+    output_path = Path(filepath)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Save model
+    joblib.dump(model, filepath)

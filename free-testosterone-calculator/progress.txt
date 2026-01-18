@@ -283,3 +283,18 @@
   - Stratified split ensures proportional representation of SHBG subgroups
   - sklearn train_test_split accepts any array-like for stratify parameter
 ---
+
+## Iteration 16 - US-016: Train Ridge regression baseline
+- Implemented `train_ridge()` function in `freeT/train.py`
+- Function trains sklearn Ridge regression with configurable alpha parameter
+- Returns fitted Ridge model ready for predictions
+- Implemented `save_model()` function using joblib
+- Creates parent directories automatically
+- Uses joblib.dump() for efficient sklearn model serialization
+- Typecheck passes via `py_compile`
+- All 49 existing tests pass
+- Learnings for future iterations:
+  - Ridge regression good for handling multicollinearity in correlated features
+  - joblib is preferred over pickle for sklearn models (efficient numpy array handling)
+  - Use inline imports for sklearn/joblib to avoid circular imports
+---
