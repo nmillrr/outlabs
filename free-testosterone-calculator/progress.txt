@@ -445,3 +445,21 @@
   - np.random.default_rng() is preferred over np.random.seed() for reproducibility
   - Accept any callable metric_func for maximum flexibility
 ---
+
+## Iteration 25 - US-025: Create evaluation notebook
+- Created `notebooks/04_evaluation.ipynb` with comprehensive model evaluation
+- Notebook includes:
+  1. Load trained models and test data (with synthetic fallback)
+  2. Evaluate all models on internal test set using evaluate_model()
+  3. Bland-Altman plots for agreement analysis
+  4. Predicted vs Actual scatter plots with Lin's CCC
+  5. Subgroup analysis by SHBG tertile (Low/Medium/High)
+  6. Bootstrap confidence intervals for key metrics
+  7. Summary with target metric validation
+- Notebook JSON validated successfully
+- All 81 existing tests pass
+- Learnings for future iterations:
+  - pd.qcut() with duplicates='drop' handles uneven tertile bins
+  - Use feature_names.index() to extract specific features from X matrix
+  - Bootstrap CIs take ~2000 resamples for stable estimates
+---

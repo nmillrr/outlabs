@@ -316,11 +316,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a researcher, I want a notebook with full model evaluation and plots.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/04_evaluation.ipynb`
-- [ ] Evaluates all models on internal test set
-- [ ] Generates Bland-Altman plots
-- [ ] Shows subgroup analysis by SHBG tertile
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/04_evaluation.ipynb`
+- [x] Evaluates all models on internal test set
+- [x] Generates Bland-Altman plots
+- [x] Shows subgroup analysis by SHBG tertile
+- [x] Notebook executes without errors
 
 ---
 
