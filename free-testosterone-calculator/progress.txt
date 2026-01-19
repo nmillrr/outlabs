@@ -406,3 +406,42 @@
   - Covariance = mean((x - mean_x)(y - mean_y)) for population covariance
 ---
 
+## Iteration 23 - US-023: Create comprehensive evaluation function
+- Implemented `evaluate_model(y_true, y_pred, model_name)` function in `freeT/evaluate.py`
+- Function returns dict with all evaluation metrics:
+  - model_name: Name identifier for the model
+  - rmse: Root Mean Squared Error
+  - mae: Mean Absolute Error
+  - bias: Mean difference (y_pred - y_true)
+  - r_pearson: Pearson correlation coefficient
+  - lin_ccc: Lin's Concordance Correlation Coefficient
+  - ba_stats: Bland-Altman statistics dict
+- Reuses existing `lins_ccc()` and `bland_altman_stats()` functions
+- Includes input validation for mismatched shapes, single observations, and NaN values
+- Handles edge case of constant arrays for Pearson correlation
+- Typecheck passes via `py_compile`
+- All 81 existing tests pass
+- Learnings for future iterations:
+  - Reusing existing metric functions reduces code duplication
+  - np.corrcoef returns NaN for constant arrays, need explicit check
+  - Design pattern: have individual metric functions + one comprehensive wrapper
+---
+
+## Iteration 24 - US-024: Implement bootstrap confidence intervals
+- Implemented `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` function in `freeT/evaluate.py`
+- Function uses percentile bootstrap method for confidence interval estimation
+- Parameters:
+  - metric_func: Any callable taking (y_true, y_pred) and returning scalar
+  - n_bootstrap: Number of resamples (default 2000)
+  - confidence_level: Confidence level (default 0.95)
+  - random_state: Seed for reproducibility
+- Returns tuple (lower, upper, mean) as specified in requirements
+- Input validation for mismatched shapes, single observations, NaN values, invalid n_bootstrap
+- Uses np.random.default_rng() for modern random number generation
+- Typecheck passes via `py_compile`
+- All 81 existing tests pass
+- Learnings for future iterations:
+  - Percentile bootstrap is simplest CI method: use np.percentile on resampled metrics
+  - np.random.default_rng() is preferred over np.random.seed() for reproducibility
+  - Accept any callable metric_func for maximum flexibility
+---

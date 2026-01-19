@@ -281,3 +281,112 @@ def evaluate_model(
         'lin_ccc': lin_ccc_val,
         'ba_stats': ba_stats,
     }
+
+
+def bootstrap_ci(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    metric_func,
+    n_bootstrap: int = 2000,
+    confidence_level: float = 0.95,
+    random_state: int | None = None,
+) -> tuple[float, float, float]:
+    """
+    Compute bootstrap confidence intervals for a metric.
+    
+    Uses the percentile bootstrap method to estimate confidence intervals
+    for any metric function that takes (y_true, y_pred) as arguments.
+    
+    Parameters
+    ----------
+    y_true : array-like
+        True/reference values
+    y_pred : array-like
+        Predicted values
+    metric_func : callable
+        Function that takes (y_true, y_pred) and returns a scalar metric.
+        Examples: lambda yt, yp: np.sqrt(np.mean((yp - yt)**2)) for RMSE
+    n_bootstrap : int, optional
+        Number of bootstrap resamples (default: 2000)
+    confidence_level : float, optional
+        Confidence level for the interval (default: 0.95 for 95% CI)
+    random_state : int or None, optional
+        Random seed for reproducibility (default: None)
+    
+    Returns
+    -------
+    tuple[float, float, float]
+        (lower, upper, mean) where:
+        - lower: Lower bound of the confidence interval
+        - upper: Upper bound of the confidence interval
+        - mean: Mean of the bootstrap distribution
+    
+    Raises
+    ------
+    ValueError
+        If inputs have different lengths, contain fewer than 2 observations,
+        contain NaN values, or if n_bootstrap < 1
+    
+    Examples
+    --------
+    >>> y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    >>> y_pred = np.array([1.1, 2.0, 2.9, 4.1, 5.0])
+    >>> rmse_func = lambda yt, yp: np.sqrt(np.mean((yp - yt)**2))
+    >>> lower, upper, mean = bootstrap_ci(y_true, y_pred, rmse_func, n_bootstrap=1000)
+    >>> print(f"RMSE: {mean:.4f} (95% CI: {lower:.4f}-{upper:.4f})")
+    """
+    # Convert to numpy arrays
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    
+    # Input validation
+    if y_true.shape != y_pred.shape:
+        raise ValueError(
+            f"y_true and y_pred must have the same shape. "
+            f"Got {y_true.shape} and {y_pred.shape}"
+        )
+    
+    if len(y_true) < 2:
+        raise ValueError(
+            f"At least 2 observations required for bootstrap. "
+            f"Got {len(y_true)}"
+        )
+    
+    # Check for NaN values
+    if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
+        raise ValueError("Input arrays must not contain NaN values")
+    
+    if n_bootstrap < 1:
+        raise ValueError(f"n_bootstrap must be >= 1. Got {n_bootstrap}")
+    
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            f"confidence_level must be between 0 and 1. Got {confidence_level}"
+        )
+    
+    # Set random state for reproducibility
+    rng = np.random.default_rng(random_state)
+    
+    n = len(y_true)
+    bootstrap_metrics = np.zeros(n_bootstrap)
+    
+    # Perform bootstrap resampling
+    for i in range(n_bootstrap):
+        # Sample indices with replacement
+        indices = rng.integers(0, n, size=n)
+        y_true_boot = y_true[indices]
+        y_pred_boot = y_pred[indices]
+        
+        # Calculate metric on bootstrap sample
+        bootstrap_metrics[i] = metric_func(y_true_boot, y_pred_boot)
+    
+    # Calculate percentile confidence interval
+    alpha = 1 - confidence_level
+    lower_percentile = (alpha / 2) * 100
+    upper_percentile = (1 - alpha / 2) * 100
+    
+    lower = float(np.percentile(bootstrap_metrics, lower_percentile))
+    upper = float(np.percentile(bootstrap_metrics, upper_percentile))
+    mean = float(np.mean(bootstrap_metrics))
+    
+    return (lower, upper, mean)
