@@ -332,11 +332,11 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want a simple API for making predictions.
 
 **Acceptance Criteria:**
-- [ ] Add `predict_ft(tt, shbg, alb, method='hybrid')` in `freeT/predict.py`
-- [ ] method='vermeulen' uses mechanistic solver
-- [ ] method='hybrid' uses best ML model
-- [ ] Returns dict: ft_pred, ci_lower, ci_upper, method
-- [ ] Typecheck passes
+- [x] Add `predict_ft(tt, shbg, alb, method='hybrid')` in `freeT/predict.py`
+- [x] method='vermeulen' uses mechanistic solver
+- [x] method='hybrid' uses best ML model
+- [x] Returns dict: ft_pred, ci_lower, ci_upper, method
+- [x] Typecheck passes
 
 ---
 
