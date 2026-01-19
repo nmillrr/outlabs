@@ -500,3 +500,40 @@
   - Put test dependencies in extras_require['dev'] for optional install
   - setuptools is preferred over distutils for modern Python packaging
 ---
+
+## Iteration 28 - US-028: Write README with usage examples
+- Updated README.md with comprehensive documentation
+- Sections added:
+  - Installation: git clone + pip install -e .
+  - Quick Start: Basic calc_ft_vermeulen example
+  - API Reference for all solvers (Vermeulen, Sodergard, Zakharov, bioavailable_t)
+  - Prediction API (predict_ft) documentation
+  - Data Pipeline (download_nhanes, read_xpt, clean_nhanes_data)
+  - Unit conversions and Background section
+- Code examples provided for each solver
+- Verified import works: from freeT import models
+- All existing tests pass
+- Learnings for future iterations:
+  - README structure: Installation -> Quick Start -> API Reference -> Background
+  - Use code blocks with language hints for syntax highlighting
+---
+
+## Iteration 29 - US-029: Run full test suite
+- Created 	ests/test_train.py with 24 unit tests for training module:
+  - Tests for create_features(), stratified_split()
+  - Tests for train_ridge(), train_random_forest(), train_lightgbm()
+  - Tests for cross_validate_model(), save_model()
+- Created 	ests/test_predict.py with 27 unit tests for prediction API:
+  - Tests for predict_ft() with vermeulen and hybrid methods
+  - Input validation tests (negative, NaN, invalid method)
+  - Edge case tests (zero TT, high SHBG, model loading)
+- Added 12 tests to 	ests/test_data.py:
+  - Tests for clean_nhanes_data() (merging, unit conversion, outlier removal)
+  - Tests for generate_quality_report() (file creation, statistics)
+- Final test suite: 139 tests, all passing
+- Coverage: 73% on freeT modules (exceeds 70% target)
+- Learnings for future iterations:
+  - Coverage pytest plugin: --cov=freeT --cov-fail-under=70
+  - Use tempfile.TemporaryDirectory for model file tests
+  - Mock pandas.read_sas for XPT file tests without real data
+---

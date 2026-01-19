@@ -1,0 +1,26 @@
+# Progress Log
+
+## Learnings
+(Patterns discovered during implementation)
+
+---
+
+## Iteration 1 - US-001: Create Project Structure and Dependencies
+- What was implemented:
+  - Created `ldlC/` package directory with `__init__.py`, `models.py`, `utils.py`, `data.py`
+  - Created `tests/` directory with `__init__.py` and `test_models.py`
+  - Created `notebooks/` directory with `.gitkeep`
+  - Created `requirements.txt` with all required dependencies
+- Files changed:
+  - `ldlC/__init__.py` (new)
+  - `ldlC/models.py` (new)
+  - `ldlC/utils.py` (new)
+  - `ldlC/data.py` (new)
+  - `tests/__init__.py` (new)
+  - `tests/test_models.py` (new)
+  - `notebooks/.gitkeep` (new)
+  - `requirements.txt` (new)
+- Learnings for future iterations:
+  - All modules have docstrings for future implementations
+  - pytest import already in test_models.py for future tests
+---

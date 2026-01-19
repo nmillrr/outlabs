@@ -1,0 +1,9 @@
+numpy
+scipy
+pandas
+scikit-learn
+lightgbm
+matplotlib
+
+[dev]
+pytest
