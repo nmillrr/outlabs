@@ -40,7 +40,7 @@ Rather than switching between equations based on TG thresholds, we will train a 
 
 ## Goals
 
-- Build NHANES data pipeline to acquire lipid panels with direct LDL measurements (~5,000+ samples)
+- Build NHANES data pipeline to acquire lipid panels with direct LDL measurements from ultracentrifugation (~5,000+ samples)
 - Implement three mechanistic LDL-C equations with unit tests
 - Train unified ML model using equation outputs as features (hybrid approach)
 - Validate against beta-quantification reference standard
@@ -73,11 +73,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want reliable unit conversion functions so that data from different sources can be harmonized.
 
 **Acceptance Criteria:**
-- [ ] Add `mg_dl_to_mmol_l(value, molecule='cholesterol')` function in `ldlC/utils.py`
-- [ ] Add `mmol_l_to_mg_dl(value, molecule='cholesterol')` function
-- [ ] Support conversions for cholesterol (÷38.67) and triglycerides (÷88.57)
-- [ ] Add unit tests in `tests/test_utils.py` verifying conversions
-- [ ] Tests pass: `pytest tests/test_utils.py`
+- [x] Add `mg_dl_to_mmol_l(value, molecule='cholesterol')` function in `ldlC/utils.py`
+- [x] Add `mmol_l_to_mg_dl(value, molecule='cholesterol')` function
+- [x] Support conversions for cholesterol (÷38.67) and triglycerides (÷88.57)
+- [x] Add unit tests in `tests/test_utils.py` verifying conversions
+- [x] Tests pass: `pytest tests/test_utils.py`
 
 ---
 

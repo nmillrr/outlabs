@@ -24,3 +24,18 @@
   - All modules have docstrings for future implementations
   - pytest import already in test_models.py for future tests
 ---
+
+## Iteration 2 - US-002: Implement Unit Conversion Utilities
+- What was implemented:
+  - Added `mg_dl_to_mmol_l(value, molecule='cholesterol')` function in `ldlC/utils.py`
+  - Added `mmol_l_to_mg_dl(value, molecule='cholesterol')` function
+  - Supports conversions for cholesterol (÷38.67) and triglycerides (÷88.57)
+  - Created comprehensive unit tests in `tests/test_utils.py`
+- Files changed:
+  - `ldlC/utils.py` (modified - added conversion functions)
+  - `tests/test_utils.py` (new - 18 test cases)
+- Learnings for future iterations:
+  - Conversion factors: Cholesterol = 38.67, Triglycerides = 88.57
+  - Molecule type is case-insensitive and supports aliases (tg, triglyceride, triglycerides)
+  - Use `python -m pytest` instead of `pytest` on Windows if not in PATH
+---
