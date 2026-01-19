@@ -85,11 +85,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want to programmatically download NHANES lipid panel data so that I have a reproducible data pipeline.
 
 **Acceptance Criteria:**
-- [ ] Add `download_nhanes_lipids(output_dir, cycles)` function in `ldlC/data.py`
-- [ ] Function downloads TRIGLY, HDL, TCHOL, and LDL (direct) XPT files for cycles 2005-2018
-- [ ] Creates `data/raw/` directory if not exists
-- [ ] Handles download errors gracefully with informative messages
-- [ ] Typecheck passes
+- [x] Add `download_nhanes_lipids(output_dir, cycles)` function in `ldlC/data.py`
+- [x] Function downloads TRIGLY, HDL, TCHOL, and LDL (direct) XPT files for cycles 2005-2018
+- [x] Creates `data/raw/` directory if not exists
+- [x] Handles download errors gracefully with informative messages
+- [x] Typecheck passes
 
 ---
 
