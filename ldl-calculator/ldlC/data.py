@@ -14,6 +14,8 @@ import urllib.error
 from pathlib import Path
 from typing import List, Optional, Dict
 
+import pandas as pd
+
 # NHANES cycle suffixes for file naming
 # Each cycle uses a letter suffix in file names
 CYCLE_SUFFIXES: Dict[str, str] = {
@@ -161,3 +163,54 @@ def _download_file(url: str, output_path: str, file_type: str, cycle: str) -> bo
     except Exception as e:
         print(f"  Unexpected error downloading {file_type} for {cycle}: {str(e)}")
         return False
+
+
+def read_xpt(filepath: str) -> pd.DataFrame:
+    """
+    Read a SAS transport format (XPT) file into a pandas DataFrame.
+
+    NHANES distributes data in SAS XPORT format (.XPT files). This function
+    parses these files into pandas DataFrames for analysis.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the XPT file.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the data from the XPT file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    ValueError
+        If the file cannot be parsed as a valid XPT file.
+
+    Examples
+    --------
+    >>> df = read_xpt("data/raw/TRIGLY_I.XPT")
+    >>> df.head()
+       SEQN  LBXSTR
+    0  83732   145.0
+    1  83733    89.0
+    """
+    # Check if file exists
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(
+            f"XPT file not found: '{filepath}'. "
+            "Please ensure the file path is correct or download the file first "
+            "using download_nhanes_lipids()."
+        )
+
+    try:
+        # pandas can read SAS transport format directly
+        df = pd.read_sas(filepath, format='xport')
+        return df
+    except Exception as e:
+        raise ValueError(
+            f"Unable to parse XPT file '{filepath}': {str(e)}. "
+            "The file may be corrupted or not in valid SAS transport format."
+        )

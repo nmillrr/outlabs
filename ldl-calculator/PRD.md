@@ -97,11 +97,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want to parse NHANES XPT files into pandas DataFrames so that data is usable.
 
 **Acceptance Criteria:**
-- [ ] Add `read_xpt(filepath)` function in `ldlC/data.py`
-- [ ] Function reads SAS transport format and returns DataFrame
-- [ ] Handles missing file with informative error
-- [ ] Add unit test with mock data
-- [ ] Tests pass
+- [x] Add `read_xpt(filepath)` function in `ldlC/data.py`
+- [x] Function reads SAS transport format and returns DataFrame
+- [x] Handles missing file with informative error
+- [x] Add unit test with mock data
+- [x] Tests pass
 
 ---
 
