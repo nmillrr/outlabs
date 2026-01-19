@@ -355,10 +355,10 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a user, I want clear documentation to use the package.
 
 **Acceptance Criteria:**
-- [ ] Update README.md with: Installation, Quick Start, API Reference
-- [ ] Include code examples for each solver
-- [ ] Document data pipeline usage
-- [ ] README renders correctly on GitHub
+- [x] Update README.md with: Installation, Quick Start, API Reference
+- [x] Include code examples for each solver
+- [x] Document data pipeline usage
+- [x] README renders correctly on GitHub
 
 ---
 

@@ -1,79 +1,265 @@
 ﻿# Free Testosterone Model
-This model estimates the free testosterone from total testosterone, SHBG, and albumin in a blood sample. I built it using raw data from public datasets, compared it to the established [Vermeulen formula](https://doi.org/10.1210/jcem.84.10.6079), and validated it for clinical diagnostic usability against equilibrium dialysis and ultrafiltration (gold-standard) references.
-### What does testosterone in the blood look like?
 
-When we look at testosterone data, we often see a lot of noise. In our blood, testosterone exists in three different forms:
-- Free testosterone is unbound and biologically active, meaning it is able to enter cells
-- SHBG-bound testosterone is tightly bound, and thus unavailable to tissue cells
-- Albumin-bound testosterone is weakly bound and only somewhat biologically active
+A Python package for estimating free testosterone (FT) from total testosterone (TT), SHBG, and albumin. Implements clinically-validated mechanistic solvers (Vermeulen, Södergård, Zakharov) with optional hybrid ML enhancement.
 
-Altogether, these forms sum up to **total testosterone**.
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-### Bioavailable vs. free testosterone
-The bioavailable testosterone, as you may have noticed, is composed of both the free and albumin-bound forms. In clinical settings, we typically only focus on the free testosterone, which correlates best with symptom explanation. Albumin-bound testosterone *is* technically biologically active, but only once it becomes free (and can thus interact with tissue cells).
+## Installation
 
-The big problem in clinical diagnostics is that free testosterone is **hard/expensive to directly measure**. Labs can use equilibrium dialysis (ED) or ultrafiltration, but both methods are inaccessible to low-resource clinics and hospitals.
+```bash
+# Clone the repository
+git clone https://github.com/nmillrr/outlabs.git
+cd free-testosterone-calculator
 
-### How do we measure and calculate free testosterone?
+# Install the package (editable mode)
+pip install -e .
 
-In order to find free testosterone (to calculate our total bioavailable testosterone), we first measure the **total testosterone**. This can be done using the common method of using an immunoassay, or through a more expensive (but accurate) process called “liquid chromatography–mass spectrometry”, or LC-MS/MS. SHBG and albumin are large proteins that appear in large concentrations in the blood, making it easy to measure in simple immunoassay. Once we have those three factors, we can solve for free testosterone using a mathematical model.
+# Or install dependencies only
+pip install -r requirements.txt
+```
 
-Currently, the Vermeulen model offers the [most robust](https://doi.org/10.1210/jc.2017-02360) method of estimating free testosterone, with the best correlation to measured values.
+## Quick Start
 
-### What can testosterone measurements tell us?
-Blood free testosterone values help us understand androgen signaling capacity, or the strength of the hormone’s signal. Free testosterone crosses cell membranes and binds to androgen receptors, driving androgen-dependent processes. So when free testosterone is **low**, we might see:
+```python
+from freeT.models import calc_ft_vermeulen
 
-- Reduced muscle protein synthesis
-- Reduced libido
-- Lower red blood cell count
-- Slower bone accrual
+# Calculate free testosterone
+# Inputs: TT (nmol/L), SHBG (nmol/L), Albumin (g/L)
+ft = calc_ft_vermeulen(tt_nmoll=15.0, shbg_nmoll=40.0, alb_gl=45.0)
+print(f"Free testosterone: {ft:.3f} nmol/L")
+# Output: Free testosterone: 0.269 nmol/L
+```
 
-When it’s **high**, we might see excessive androgen signaling, resulting in:
+### Using the Prediction API
 
-- Increased sebum production, or acne
-- Increased red blood cell production
-- Increased drive and restlessness
-- Impulsive behaviors under stress
+```python
+from freeT.predict import predict_ft
 
+# Simple prediction (uses hybrid ML model if available)
+result = predict_ft(tt=15.0, shbg=40.0, alb=45.0)
+print(f"FT: {result['ft_pred']:.3f} nmol/L (method: {result['method']})")
 
-## Building the model
-I started by deriving a quadratic equation for free testosterone (FT) from the mass action equation, which is: 
+# Force mechanistic solver only
+result = predict_ft(tt=15.0, shbg=40.0, alb=45.0, method='vermeulen')
+```
+
+---
+
+## API Reference
+
+### Mechanistic Solvers (`freeT.models`)
+
+#### `calc_ft_vermeulen(tt_nmoll, shbg_nmoll, alb_gl, K_shbg=1e9, K_alb=3.6e4)`
+
+Calculate free testosterone using the Vermeulen (1999) equation.
+
+```python
+from freeT.models import calc_ft_vermeulen
+
+# Standard usage
+ft = calc_ft_vermeulen(15.0, 40.0, 45.0)
+
+# Custom binding constants
+ft = calc_ft_vermeulen(15.0, 40.0, 45.0, K_shbg=1.2e9, K_alb=2.4e4)
+```
+
+**Parameters:**
+- `tt_nmoll`: Total testosterone (nmol/L)
+- `shbg_nmoll`: SHBG (nmol/L)
+- `alb_gl`: Albumin (g/L)
+- `K_shbg`: SHBG binding constant (default: 1e9 L/mol)
+- `K_alb`: Albumin binding constant (default: 3.6e4 L/mol)
+
+**Returns:** Free testosterone in nmol/L
+
+---
+
+#### `calc_ft_sodergard(tt_nmoll, shbg_nmoll, alb_gl)`
+
+Södergård variant with different binding constants (K_shbg=1.2e9, K_alb=2.4e4).
+
+```python
+from freeT.models import calc_ft_sodergard
+
+ft = calc_ft_sodergard(15.0, 40.0, 45.0)
+```
+
+---
+
+#### `calc_ft_zakharov(tt_nmoll, shbg_nmoll, alb_gl, cooperativity=0.5)`
+
+Zakharov allosteric model accounting for cooperative SHBG binding.
+
+```python
+from freeT.models import calc_ft_zakharov
+
+# Standard usage
+ft = calc_ft_zakharov(15.0, 40.0, 45.0)
+
+# Adjust cooperativity parameter
+ft = calc_ft_zakharov(15.0, 40.0, 45.0, cooperativity=0.3)
+```
+
+---
+
+#### `calc_bioavailable_t(tt_nmoll, shbg_nmoll, alb_gl)`
+
+Calculate bioavailable testosterone (free + albumin-bound).
+
+```python
+from freeT.models import calc_bioavailable_t
+
+bio_t = calc_bioavailable_t(15.0, 40.0, 45.0)
+```
+
+---
+
+### Prediction API (`freeT.predict`)
+
+#### `predict_ft(tt, shbg, alb, method='hybrid', model_path=None)`
+
+Unified prediction API supporting mechanistic and hybrid ML methods.
+
+```python
+from freeT.predict import predict_ft
+
+# Hybrid method (ML with Vermeulen fallback)
+result = predict_ft(15.0, 40.0, 45.0, method='hybrid')
+
+# Returns dict with:
+# - ft_pred: Predicted FT (nmol/L)
+# - ci_lower: Lower 95% CI (if available)
+# - ci_upper: Upper 95% CI (if available)
+# - method: Method actually used
+```
+
+---
+
+### Data Pipeline (`freeT.data`)
+
+#### Download NHANES Data
+
+```python
+from freeT.data import download_nhanes
+
+# Download testosterone, SHBG, and albumin data (2011-2016)
+result = download_nhanes(output_dir="data/raw", cycles=["2015-2016"])
+print(f"Downloaded {len(result['downloaded'])} files")
+```
+
+#### Parse XPT Files
+
+```python
+from freeT.data import read_xpt
+
+df = read_xpt("data/raw/2015_2016/TST_I.XPT")
+```
+
+#### Clean and Merge Data
+
+```python
+from freeT.data import read_xpt, clean_nhanes_data
+
+tst = read_xpt("data/raw/2015_2016/TST_I.XPT")
+shbg = read_xpt("data/raw/2015_2016/SHBG_I.XPT")
+alb = read_xpt("data/raw/2015_2016/BIOPRO_I.XPT")
+
+# Clean and merge datasets
+clean_df = clean_nhanes_data(tst, shbg, alb)
+# Returns: seqn, tt_nmoll, shbg_nmoll, alb_gl columns
+```
+
+#### Generate Quality Report
+
+```python
+from freeT.data import generate_quality_report
+
+report = generate_quality_report(clean_df, "reports/quality.txt")
+print(f"Total records: {report['record_count']}")
+```
+
+---
+
+### Unit Conversions (`freeT.utils`)
+
+```python
+from freeT.utils import ng_dl_to_nmol_l, nmol_l_to_ng_dl
+from freeT.utils import mg_dl_to_g_l, g_l_to_mg_dl
+
+# Testosterone: ng/dL ↔ nmol/L
+tt_nmol = ng_dl_to_nmol_l(400)  # 400 ng/dL → ~13.9 nmol/L
+
+# Albumin: mg/dL ↔ g/L
+alb_gl = mg_dl_to_g_l(4500)  # 4500 mg/dL → 45 g/L
+```
+
+---
+
+## Background
+
+### Testosterone in Blood
+
+Testosterone exists in three forms:
+- **Free testosterone**: Unbound and biologically active
+- **SHBG-bound**: Tightly bound, unavailable to tissues
+- **Albumin-bound**: Weakly bound, partially bioavailable
+
+Together these equal **total testosterone**.
+
+### Why Calculate Free Testosterone?
+
+Direct measurement of free testosterone (via equilibrium dialysis or ultrafiltration) is expensive and inaccessible to many clinics. This package provides validated mathematical models to estimate FT from routine lab measurements.
+
+The Vermeulen model offers the [most robust](https://doi.org/10.1210/jc.2017-02360) method with best correlation to measured values.
+
+### Mathematical Model
+
+The mass balance equation:
 
 $$TT = FT + \text{SHBG-bound} + \text{Albumin-bound}$$
 
-We can also write our binding equilibria with Langmuir/Michaelis-Menten kinetics built-in. This accounts for the selectivity of biochemical reactions that involve a single substrate:
+With binding equilibria:
 
-$$\text{SHBG-bound}=\frac{[\text{SHBG}]_{\text{total}}\cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}$$
+$$\text{SHBG-bound}=\frac{[\text{SHBG}] \cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}$$
 
 $$\text{Albumin-bound}=K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$$
 
-Now if we substitute our variables in the mass action, we get:
+### Binding Constants
 
-$$TT=FT+\frac{[\text{SHBG}] \cdot K_{\text{SHBG}} \cdot FT}{1 + K_{\text{SHBG}} \cdot FT}+K_{\text{ALB}} \cdot [\text{ALB}] \cdot FT$$
+From Vermeulen et al. (1999):
+- $K_{\text{SHBG}} = 1.0 \times 10^9$ L/mol
+- $K_{\text{ALB}} = 3.6 \times 10^4$ L/mol
 
->Some notes here: the Vermeulen model simplifies the SHBG binding process by assuming a single binding constant, $K_{\text{SHBG}}$, even though SHBG has two binding sites. This simplification was addressed by the [Zakharov model](https://doi.org/10.1016/j.mce.2014.09.001) in 2015, but the Vermeulen still remains the clinical favorite.
+### Units
 
-Our model does *not* factor in competitors, like DHT or E2, so our resulting equation is quadratic (rather than cubic).
-### Physical Bounds
-Free testosterone must be positive, but also less than total testosterone. Thus, we can express FT constraints as:
-$$0<FT<TT$$
-The binding function is also increasing in free testosterone, meaning that the equation is **monotonic** (one, unique solution). This can be expressed through the differential proof:
+| Measurement | Common Units | SI Units (Internal) |
+|------------|--------------|---------------------|
+| Testosterone | ng/dL | nmol/L (÷ 28.84) |
+| SHBG | nmol/L | nmol/L |
+| Albumin | g/dL | g/L (× 10) |
 
-$$\frac{dFT}{dTT}=\frac{1}{(FT+\frac{b}{2a})+\sqrt{(FT+\frac{b}{2a})^2+FT^2}}>0$$
+---
 
-### Association Constants & Units
-I collected the following parameters from Vermeulen et al. (1999):
-- $K_{\text{SHBG}} = 1.0×10^9$
-- $K_{\text{ALB}} = 3.4×10^4$
+## Notebooks
 
-**Units**
--   SHBG: nmol/L (direct)
--   Albumin: g/L → mol/L via MW ≈ 66,500 g/mol
--   Testosterone: nmol/L (or ng/dL ÷ 28.84)
+Interactive Jupyter notebooks in `notebooks/`:
 
+1. **01_data_sourcing.ipynb** - NHANES data pipeline
+2. **02_solver_comparison.ipynb** - Compare Vermeulen/Södergård/Zakharov
+3. **03_model_training.ipynb** - ML model training workflow
+4. **04_evaluation.ipynb** - Model evaluation and validation
 
+---
 
+## References
 
+- Vermeulen A, et al. (1999). A Critical Evaluation of Simple Methods for the Estimation of Free Testosterone in Serum. *J Clin Endocrinol Metab*. [DOI:10.1210/jcem.84.10.6079](https://doi.org/10.1210/jcem.84.10.6079)
+- Södergård R, et al. (1982). Sex hormone-binding globulin. *Ann Clin Res*.
+- Zakharov MN, et al. (2015). Allosteric effects on androgen binding. *Mol Cell Endocrinol*. [DOI:10.1016/j.mce.2014.09.001](https://doi.org/10.1016/j.mce.2014.09.001)
+- ISSAM Free Testosterone Calculator: https://www.issam.ch/freetesto.htm
 
+---
 
+## License
 
+Research and educational use only.
