@@ -463,3 +463,40 @@
   - Use feature_names.index() to extract specific features from X matrix
   - Bootstrap CIs take ~2000 resamples for stable estimates
 ---
+
+## Iteration 26 - US-026: Create prediction API
+- Created `freeT/predict.py` with `predict_ft()` function
+- Function provides unified API for FT prediction with two methods:
+  - 'vermeulen': Uses mechanistic Vermeulen solver directly
+  - 'hybrid': Uses ML model with fallback to Vermeulen if no model found
+- Returns dict with: ft_pred, ci_lower, ci_upper, method
+- Features:
+  - Input validation for negative values and NaN
+  - Custom model_path option for specifying model location
+  - Default model search in models/ directory (best_model.joblib, etc.)
+  - Confidence intervals from RF tree predictions when available
+  - Graceful fallback to Vermeulen when ML model unavailable
+- Typecheck passes via `py_compile`
+- All 81 existing tests pass
+- Learnings for future iterations:
+  - Use inline imports to avoid circular dependencies in package
+  - RandomForest estimators_ can provide prediction intervals
+  - Pattern: fallback cascade for robust prediction (ML → mechanistic)
+---
+
+## Iteration 27 - US-027: Create package setup.py
+- Created setup.py with setuptools configuration
+- Package configuration:
+  - name='freeT', version='0.1.0'
+  - Dependencies: numpy, scipy, pandas, scikit-learn, lightgbm, matplotlib
+  - Dev dependencies: pytest (in extras_require)
+  - Python requires >=3.8
+  - Appropriate classifiers for research/healthcare
+- Verified pip install -e . works successfully
+- Verified import works: rom freeT import models
+- All 81+ existing tests pass
+- Learnings for future iterations:
+  - Use find_packages() to auto-discover package directories
+  - Put test dependencies in extras_require['dev'] for optional install
+  - setuptools is preferred over distutils for modern Python packaging
+---
