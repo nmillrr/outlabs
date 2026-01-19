@@ -366,9 +366,9 @@ Develop a clinically-validated free testosterone (FT) estimation algorithm from 
 **Description:** As a developer, I want all tests passing before release.
 
 **Acceptance Criteria:**
-- [ ] All tests pass: `pytest tests/ -v`
-- [ ] No test failures or errors
-- [ ] Coverage > 70% on core modules
+- [x] All tests pass: `pytest tests/ -v`
+- [x] No test failures or errors
+- [x] Coverage > 70% on core modules
 
 ---
 
