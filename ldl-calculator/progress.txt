@@ -39,3 +39,55 @@
   - Molecule type is case-insensitive and supports aliases (tg, triglyceride, triglycerides)
   - Use `python -m pytest` instead of `pytest` on Windows if not in PATH
 ---
+
+## Iteration 3 - US-003: Create NHANES Lipid Download Module
+- What was implemented:
+  - Added `download_nhanes_lipids(output_dir, cycles)` function in `ldlC/data.py`
+  - Downloads TRIGLY, HDL, TCHOL XPT files for cycles 2005-2018
+  - Downloads BIOPRO files (contains direct LDL measurements)
+  - Creates `data/raw/` directory if not exists
+  - Handles HTTP errors, URL errors gracefully with informative messages
+  - Helper function `_download_file` for reusable download logic
+- Files changed:
+  - `ldlC/data.py` (modified - added download functions)
+- Learnings for future iterations:
+  - NHANES cycle suffixes: D=2005-06, E=2007-08, F=2009-10, G=2011-12, H=2013-14, I=2015-16, J=2017-18
+  - Standard lipid files: TRIGLY, HDL, TCHOL (+ cycle suffix)
+  - Direct LDL is in BIOPRO biochemistry profile files
+  - PowerShell doesn't support `&&` for command chaining - use separate commands
+---
+
+## Iteration 4 - US-004: Implement XPT File Parser
+- What was implemented:
+  - Added `read_xpt(filepath)` function in `ldlC/data.py`
+  - Uses pandas `read_sas()` with format='xport' to parse SAS transport files
+  - Returns pandas DataFrame with all data from the XPT file
+  - Raises FileNotFoundError with informative message if file doesn't exist
+  - Raises ValueError with helpful message if file can't be parsed
+  - Added pandas import to data.py
+  - Created comprehensive unit tests in `tests/test_data.py`
+- Files changed:
+  - `ldlC/data.py` (modified - added read_xpt function and pandas import)
+  - `tests/test_data.py` (new - 4 test cases)
+- Learnings for future iterations:
+  - pandas can read XPT files directly with `pd.read_sas(filepath, format='xport')`
+  - pyreadstat module can be used to create test XPT files if needed
+  - Test file for data module is separate from models tests
+---
+
+## Iteration 5 - US-005: Create NHANES Lipid Data Cleaning Pipeline
+- What was implemented:
+  - Added `clean_lipid_data(tc_df, hdl_df, tg_df, ldl_direct_df)` function in `ldlC/data.py`
+  - Function merges TC, HDL, TG, and direct LDL DataFrames on SEQN (sample ID)
+  - Renames columns to standardized names: tc_mgdl, hdl_mgdl, tg_mgdl, ldl_direct_mgdl
+  - Removes physiologic outliers: TC < 50, TG > 2000, HDL < 10 mg/dL
+  - Calculates non_hdl_mgdl (TC - HDL)
+  - Supports custom column names via optional parameters
+  - Drops rows with missing values before cleaning
+- Files changed:
+  - `ldlC/data.py` (modified - added clean_lipid_data function)
+- Learnings for future iterations:
+  - NHANES column names: LBXTC (TC), LBDHDD (HDL), LBXSTR (TG), LBDLDL (direct LDL)
+  - Inner join ensures only complete records with all lipid measurements are kept
+  - Outlier thresholds based on physiologically implausible values
+---

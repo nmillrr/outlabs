@@ -109,13 +109,13 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want automated data cleaning so that outliers and missing values are handled consistently.
 
 **Acceptance Criteria:**
-- [ ] Add `clean_lipid_data(tc_df, hdl_df, tg_df, ldl_direct_df)` function in `ldlC/data.py`
-- [ ] Merges datasets on SEQN (sample ID)
-- [ ] Renames columns to standardized names: tc_mgdl, hdl_mgdl, tg_mgdl, ldl_direct_mgdl
-- [ ] Removes physiologic outliers (TC < 50, TG > 2000, HDL < 10)
-- [ ] Calculates non_hdl_mgdl (TC - HDL)
-- [ ] Returns cleaned DataFrame
-- [ ] Typecheck passes
+- [x] Add `clean_lipid_data(tc_df, hdl_df, tg_df, ldl_direct_df)` function in `ldlC/data.py`
+- [x] Merges datasets on SEQN (sample ID)
+- [x] Renames columns to standardized names: tc_mgdl, hdl_mgdl, tg_mgdl, ldl_direct_mgdl
+- [x] Removes physiologic outliers (TC < 50, TG > 2000, HDL < 10)
+- [x] Calculates non_hdl_mgdl (TC - HDL)
+- [x] Returns cleaned DataFrame
+- [x] Typecheck passes
 
 ---
 

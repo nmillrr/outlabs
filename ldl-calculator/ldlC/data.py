@@ -214,3 +214,106 @@ def read_xpt(filepath: str) -> pd.DataFrame:
             f"Unable to parse XPT file '{filepath}': {str(e)}. "
             "The file may be corrupted or not in valid SAS transport format."
         )
+
+
+def clean_lipid_data(
+    tc_df: pd.DataFrame,
+    hdl_df: pd.DataFrame,
+    tg_df: pd.DataFrame,
+    ldl_direct_df: pd.DataFrame,
+    tc_column: str = "LBXTC",
+    hdl_column: str = "LBDHDD",
+    tg_column: str = "LBXSTR",
+    ldl_column: str = "LBDLDL",
+) -> pd.DataFrame:
+    """
+    Clean and merge NHANES lipid panel DataFrames.
+
+    Merges individual lipid measurement DataFrames on SEQN (sample ID),
+    renames columns to standardized names, removes physiologic outliers,
+    and calculates derived values.
+
+    Parameters
+    ----------
+    tc_df : pd.DataFrame
+        DataFrame containing total cholesterol data with SEQN and TC measurement.
+    hdl_df : pd.DataFrame
+        DataFrame containing HDL cholesterol data with SEQN and HDL measurement.
+    tg_df : pd.DataFrame
+        DataFrame containing triglyceride data with SEQN and TG measurement.
+    ldl_direct_df : pd.DataFrame
+        DataFrame containing direct LDL measurement data with SEQN and LDL.
+    tc_column : str, optional
+        Column name for total cholesterol in tc_df. Default "LBXTC".
+    hdl_column : str, optional
+        Column name for HDL cholesterol in hdl_df. Default "LBDHDD".
+    tg_column : str, optional
+        Column name for triglycerides in tg_df. Default "LBXSTR".
+    ldl_column : str, optional
+        Column name for direct LDL in ldl_direct_df. Default "LBDLDL".
+
+    Returns
+    -------
+    pd.DataFrame
+        Cleaned DataFrame with columns:
+        - SEQN: Sample identifier
+        - tc_mgdl: Total cholesterol (mg/dL)
+        - hdl_mgdl: HDL cholesterol (mg/dL)
+        - tg_mgdl: Triglycerides (mg/dL)
+        - ldl_direct_mgdl: Direct LDL measurement (mg/dL)
+        - non_hdl_mgdl: Non-HDL cholesterol (TC - HDL, mg/dL)
+
+    Notes
+    -----
+    Outlier removal criteria (physiologically implausible values):
+    - TC < 50 mg/dL (removed)
+    - TG > 2000 mg/dL (removed)
+    - HDL < 10 mg/dL (removed)
+
+    Examples
+    --------
+    >>> tc_df = read_xpt("data/raw/TCHOL_I.XPT")
+    >>> hdl_df = read_xpt("data/raw/HDL_I.XPT")
+    >>> tg_df = read_xpt("data/raw/TRIGLY_I.XPT")
+    >>> ldl_df = read_xpt("data/raw/BIOPRO_I.XPT")
+    >>> cleaned = clean_lipid_data(tc_df, hdl_df, tg_df, ldl_df)
+    >>> cleaned.columns.tolist()
+    ['SEQN', 'tc_mgdl', 'hdl_mgdl', 'tg_mgdl', 'ldl_direct_mgdl', 'non_hdl_mgdl']
+    """
+    # Extract relevant columns from each DataFrame
+    tc_subset = tc_df[["SEQN", tc_column]].copy()
+    tc_subset = tc_subset.rename(columns={tc_column: "tc_mgdl"})
+
+    hdl_subset = hdl_df[["SEQN", hdl_column]].copy()
+    hdl_subset = hdl_subset.rename(columns={hdl_column: "hdl_mgdl"})
+
+    tg_subset = tg_df[["SEQN", tg_column]].copy()
+    tg_subset = tg_subset.rename(columns={tg_column: "tg_mgdl"})
+
+    ldl_subset = ldl_direct_df[["SEQN", ldl_column]].copy()
+    ldl_subset = ldl_subset.rename(columns={ldl_column: "ldl_direct_mgdl"})
+
+    # Merge all datasets on SEQN (inner join to keep only complete records)
+    merged = tc_subset.merge(hdl_subset, on="SEQN", how="inner")
+    merged = merged.merge(tg_subset, on="SEQN", how="inner")
+    merged = merged.merge(ldl_subset, on="SEQN", how="inner")
+
+    # Remove rows with any missing values in lipid columns
+    lipid_columns = ["tc_mgdl", "hdl_mgdl", "tg_mgdl", "ldl_direct_mgdl"]
+    merged = merged.dropna(subset=lipid_columns)
+
+    # Remove physiologic outliers
+    # TC < 50 mg/dL is physiologically implausible
+    merged = merged[merged["tc_mgdl"] >= 50]
+    # TG > 2000 mg/dL is extreme hypertriglyceridemia (requires direct LDL)
+    merged = merged[merged["tg_mgdl"] <= 2000]
+    # HDL < 10 mg/dL is physiologically implausible
+    merged = merged[merged["hdl_mgdl"] >= 10]
+
+    # Calculate non-HDL cholesterol (TC - HDL)
+    merged["non_hdl_mgdl"] = merged["tc_mgdl"] - merged["hdl_mgdl"]
+
+    # Reset index for clean output
+    merged = merged.reset_index(drop=True)
+
+    return merged
