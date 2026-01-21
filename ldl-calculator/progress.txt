@@ -177,3 +177,35 @@
   - All 34 model tests now pass
 ---
 
+## Iteration 11 - US-012: Implement Extended Martin-Hopkins for Very High TG
+- What was implemented:
+  - Verified existing `calc_ldl_martin_hopkins_extended(tc_mgdl, hdl_mgdl, tg_mgdl)` function in `ldlC/models.py`
+  - Uses extended coefficient table with 10 TG ranges for finer granularity at high TG (400-800 mg/dL)
+  - Extended table has same 30 non-HDL-C rows but 10 TG columns instead of 6
+  - Factors decrease as TG increases (e.g., for high non-HDL: 11.9 → 6.0 from TG <100 to TG ≥800)
+  - 11 comprehensive unit tests for high-TG cases already exist
+- Files changed:
+  - `PRD.md` (modified - marked US-012 complete)
+- Learnings for future iterations:
+  - Extended M-H differs from standard M-H primarily at TG > 400 where it has finer granularity
+  - All 45 model tests now pass
+---
+
+## Iteration 12 - US-013: Create Equation Comparison Notebook
+- What was implemented:
+  - Created `notebooks/02_equation_comparison.ipynb` with comprehensive equation comparison
+  - Generates synthetic grid of TC (150-300), HDL (40-70), TG (50-800) combinations
+  - Creates heatmaps showing differences between equations across TG and TC ranges
+  - Compares all four equations: Friedewald, Martin-Hopkins, Extended M-H, Sampson
+  - Includes line plots showing LDL estimates as TG increases for fixed TC/HDL
+  - Includes detailed markdown interpretation of when each equation excels
+  - Generates visual recommendation matrix by TG stratum
+- Files changed:
+  - `notebooks/02_equation_comparison.ipynb` (new)
+  - `PRD.md` (modified - marked US-013 complete)
+- Learnings for future iterations:
+  - Friedewald is unreliable for TG > 400, returns NaN
+  - Martin-Hopkins and Sampson differ most at high TG (400-800 mg/dL)
+  - Extended M-H provides finer granularity than standard M-H at high TG
+  - All 66 tests pass
+---
