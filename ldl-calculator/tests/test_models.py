@@ -13,7 +13,7 @@ import warnings
 
 import pytest
 
-from ldlC.models import calc_ldl_friedewald, calc_ldl_martin_hopkins
+from ldlC.models import calc_ldl_friedewald, calc_ldl_martin_hopkins, calc_ldl_sampson
 
 
 class TestFriedewald:
@@ -176,3 +176,78 @@ class TestMartinHopkins:
         # With TG=0, LDL = TC - HDL = 150 (regardless of factor)
         assert result == 150.0
 
+
+class TestSampson:
+    """Tests for the Sampson (NIH Equation 2) implementation."""
+
+    def test_output_in_valid_range_standard_case(self):
+        """Test that output is in valid range (0 < LDL < TC) for standard values."""
+        tc, hdl, tg = 200, 50, 150
+        result = calc_ldl_sampson(tc_mgdl=tc, hdl_mgdl=hdl, tg_mgdl=tg)
+        assert result > 0, f"LDL should be positive, got {result}"
+        assert result < tc, f"LDL should be less than TC, got {result}"
+
+    def test_output_in_valid_range_low_tg(self):
+        """Test that output is in valid range for low TG values."""
+        tc, hdl, tg = 200, 50, 50
+        result = calc_ldl_sampson(tc_mgdl=tc, hdl_mgdl=hdl, tg_mgdl=tg)
+        assert result > 0, f"LDL should be positive, got {result}"
+        assert result < tc, f"LDL should be less than TC, got {result}"
+
+    def test_output_in_valid_range_high_tg(self):
+        """Test that output is in valid range for high TG values (up to 800)."""
+        tc, hdl, tg = 250, 40, 600
+        result = calc_ldl_sampson(tc_mgdl=tc, hdl_mgdl=hdl, tg_mgdl=tg)
+        assert result > 0, f"LDL should be positive, got {result}"
+        assert result < tc, f"LDL should be less than TC, got {result}"
+
+    def test_works_for_tg_up_to_800(self):
+        """Test that Sampson works for TG up to 800 mg/dL."""
+        result = calc_ldl_sampson(tc_mgdl=250, hdl_mgdl=40, tg_mgdl=800)
+        assert not math.isnan(result), "Sampson should not return NaN for TG <= 800"
+        assert result > 0, "Sampson should return positive LDL"
+
+    def test_formula_correctness(self):
+        """Test that formula calculation is correct against manual calculation."""
+        tc, hdl, tg = 200, 50, 150
+        non_hdl = tc - hdl
+        # LDL = TC/0.948 - HDL/0.971 - (TG/8.56 + TG*non-HDL/2140 - TG²/16100) - 9.44
+        expected = (
+            tc / 0.948
+            - hdl / 0.971
+            - (tg / 8.56 + (tg * non_hdl) / 2140 - (tg ** 2) / 16100)
+            - 9.44
+        )
+        result = calc_ldl_sampson(tc_mgdl=tc, hdl_mgdl=hdl, tg_mgdl=tg)
+        assert abs(result - expected) < 0.001, f"Expected {expected}, got {result}"
+
+    def test_negative_tc_raises_value_error(self):
+        """Test that negative TC raises ValueError."""
+        with pytest.raises(ValueError, match="tc_mgdl cannot be negative"):
+            calc_ldl_sampson(tc_mgdl=-10, hdl_mgdl=50, tg_mgdl=150)
+
+    def test_negative_hdl_raises_value_error(self):
+        """Test that negative HDL raises ValueError."""
+        with pytest.raises(ValueError, match="hdl_mgdl cannot be negative"):
+            calc_ldl_sampson(tc_mgdl=200, hdl_mgdl=-5, tg_mgdl=150)
+
+    def test_negative_tg_raises_value_error(self):
+        """Test that negative TG raises ValueError."""
+        with pytest.raises(ValueError, match="tg_mgdl cannot be negative"):
+            calc_ldl_sampson(tc_mgdl=200, hdl_mgdl=50, tg_mgdl=-20)
+
+    def test_nan_input_raises_value_error(self):
+        """Test that NaN inputs raise ValueError."""
+        with pytest.raises(ValueError, match="cannot be NaN"):
+            calc_ldl_sampson(tc_mgdl=float("nan"), hdl_mgdl=50, tg_mgdl=150)
+
+    def test_returns_float(self):
+        """Test that the function always returns a float."""
+        result = calc_ldl_sampson(tc_mgdl=200, hdl_mgdl=50, tg_mgdl=150)
+        assert isinstance(result, float)
+
+    def test_zero_tg_valid(self):
+        """Test that TG=0 is a valid input."""
+        result = calc_ldl_sampson(tc_mgdl=200, hdl_mgdl=50, tg_mgdl=0)
+        assert result > 0
+        assert not math.isnan(result)

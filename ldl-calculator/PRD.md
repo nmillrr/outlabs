@@ -189,11 +189,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want the Sampson equation for high-TG accuracy.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_ldl_sampson(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
-- [ ] Full formula with quadratic TG term
-- [ ] Works for TG up to 800 mg/dL
-- [ ] Add unit test verifying output in valid range (0 < LDL < TC)
-- [ ] Tests pass
+- [x] Add `calc_ldl_sampson(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
+- [x] Full formula with quadratic TG term
+- [x] Works for TG up to 800 mg/dL
+- [x] Add unit test verifying output in valid range (0 < LDL < TC)
+- [x] Tests pass
 
 ---
 

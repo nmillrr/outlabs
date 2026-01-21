@@ -162,3 +162,18 @@
   - All 23 model tests now pass
 ---
 
+## Iteration 10 - US-011: Implement Sampson (NIH Equation 2)
+- What was implemented:
+  - Verified existing `calc_ldl_sampson(tc_mgdl, hdl_mgdl, tg_mgdl)` function in `ldlC/models.py`
+  - Full Sampson formula: LDL = TC/0.948 - HDL/0.971 - (TG/8.56 + TG*non-HDL/2140 - TG²/16100) - 9.44
+  - Works for TG up to 800 mg/dL (vs Friedewald which fails above 400)
+  - Added 12 comprehensive unit tests including validation of output in valid range (0 < LDL < TC)
+- Files changed:
+  - `tests/test_models.py` (modified - added 12 Sampson tests)
+  - `PRD.md` (modified - marked US-011 complete)
+- Learnings for future iterations:
+  - Sampson equation includes quadratic TG term (TG²/16100) which helps for high TG
+  - Unlike Friedewald/Martin-Hopkins, Sampson doesn't use a divisor factor but direct coefficients
+  - All 34 model tests now pass
+---
+

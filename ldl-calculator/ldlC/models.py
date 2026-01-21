@@ -181,3 +181,56 @@ def calc_ldl_martin_hopkins(
     ldl_c = tc_mgdl - hdl_mgdl - (tg_mgdl / factor)
 
     return float(ldl_c)
+
+
+def calc_ldl_sampson(
+    tc_mgdl: Union[float, int],
+    hdl_mgdl: Union[float, int],
+    tg_mgdl: Union[float, int],
+) -> float:
+    """
+    Calculate LDL-C using the Sampson (NIH Equation 2).
+
+    This equation was developed using beta-quantification in a population
+    including high-TG individuals, providing better accuracy than Friedewald
+    for triglyceride levels up to 800 mg/dL.
+
+    Formula:
+        LDL-C = TC/0.948 - HDL-C/0.971 - (TG/8.56 + TG*non-HDL-C/2140 - TG²/16100) - 9.44
+
+    Reference:
+        Sampson M, et al. A New Equation for Calculation of Low-Density
+        Lipoprotein Cholesterol in Patients With Normolipidemia and/or
+        Hypertriglyceridemia. JAMA Cardiology. 2020.
+
+    Args:
+        tc_mgdl: Total cholesterol in mg/dL
+        hdl_mgdl: HDL cholesterol in mg/dL
+        tg_mgdl: Triglycerides in mg/dL
+
+    Returns:
+        Estimated LDL-C in mg/dL. Works for TG up to 800 mg/dL.
+
+    Raises:
+        ValueError: If any input is negative or NaN.
+    """
+    # Validate inputs
+    for name, value in [("tc_mgdl", tc_mgdl), ("hdl_mgdl", hdl_mgdl), ("tg_mgdl", tg_mgdl)]:
+        if value is None or (isinstance(value, float) and math.isnan(value)):
+            raise ValueError(f"Invalid input: {name} cannot be NaN or None")
+        if value < 0:
+            raise ValueError(f"Invalid input: {name} cannot be negative (got {value})")
+
+    # Calculate non-HDL-C
+    non_hdl_mgdl = tc_mgdl - hdl_mgdl
+
+    # Calculate LDL-C using the Sampson formula
+    # LDL-C = TC/0.948 - HDL-C/0.971 - (TG/8.56 + TG*non-HDL-C/2140 - TG²/16100) - 9.44
+    ldl_c = (
+        tc_mgdl / 0.948
+        - hdl_mgdl / 0.971
+        - (tg_mgdl / 8.56 + (tg_mgdl * non_hdl_mgdl) / 2140 - (tg_mgdl ** 2) / 16100)
+        - 9.44
+    )
+
+    return float(ldl_c)
