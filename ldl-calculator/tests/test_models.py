@@ -251,3 +251,86 @@ class TestSampson:
         result = calc_ldl_sampson(tc_mgdl=200, hdl_mgdl=50, tg_mgdl=0)
         assert result > 0
         assert not math.isnan(result)
+
+
+class TestMartinHopkinsExtended:
+    """Tests for the extended Martin-Hopkins equation implementation."""
+
+    def test_works_for_tg_400_to_500(self):
+        """Test that extended M-H works for TG 400-500 mg/dL."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        result = calc_ldl_martin_hopkins_extended(tc_mgdl=250, hdl_mgdl=40, tg_mgdl=450)
+        assert not math.isnan(result), "Extended M-H should not return NaN for TG 400-500"
+        assert result > 0, "Extended M-H should return positive LDL"
+        assert result < 250, "LDL should be less than TC"
+
+    def test_works_for_tg_500_to_600(self):
+        """Test that extended M-H works for TG 500-600 mg/dL."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        result = calc_ldl_martin_hopkins_extended(tc_mgdl=250, hdl_mgdl=40, tg_mgdl=550)
+        assert not math.isnan(result), "Extended M-H should not return NaN for TG 500-600"
+        assert result > 0, "Extended M-H should return positive LDL"
+
+    def test_works_for_tg_600_to_700(self):
+        """Test that extended M-H works for TG 600-700 mg/dL."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        result = calc_ldl_martin_hopkins_extended(tc_mgdl=250, hdl_mgdl=40, tg_mgdl=650)
+        assert not math.isnan(result), "Extended M-H should not return NaN for TG 600-700"
+        assert result > 0, "Extended M-H should return positive LDL"
+
+    def test_works_for_tg_700_to_800(self):
+        """Test that extended M-H works for TG 700-800 mg/dL."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        result = calc_ldl_martin_hopkins_extended(tc_mgdl=250, hdl_mgdl=40, tg_mgdl=750)
+        assert not math.isnan(result), "Extended M-H should not return NaN for TG 700-800"
+        assert result > 0, "Extended M-H should return positive LDL"
+
+    def test_works_for_tg_exactly_800(self):
+        """Test that extended M-H works for TG exactly 800 mg/dL."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        result = calc_ldl_martin_hopkins_extended(tc_mgdl=250, hdl_mgdl=40, tg_mgdl=800)
+        assert not math.isnan(result), "Extended M-H should not return NaN for TG=800"
+        assert result > 0, "Extended M-H should return positive LDL"
+
+    def test_differs_from_standard_mh_at_high_tg(self):
+        """Test that extended M-H gives different result than standard M-H at high TG."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        tc, hdl, tg = 250, 40, 600
+        extended_result = calc_ldl_martin_hopkins_extended(tc_mgdl=tc, hdl_mgdl=hdl, tg_mgdl=tg)
+        standard_result = calc_ldl_martin_hopkins(tc_mgdl=tc, hdl_mgdl=hdl, tg_mgdl=tg)
+        # Results should be different due to different factor tables
+        # Both should be valid though
+        assert not math.isnan(extended_result)
+        assert not math.isnan(standard_result)
+        assert extended_result != standard_result, "Extended and standard M-H should differ at high TG"
+
+    def test_negative_tc_raises_value_error(self):
+        """Test that negative TC raises ValueError."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        with pytest.raises(ValueError, match="tc_mgdl cannot be negative"):
+            calc_ldl_martin_hopkins_extended(tc_mgdl=-10, hdl_mgdl=50, tg_mgdl=500)
+
+    def test_negative_hdl_raises_value_error(self):
+        """Test that negative HDL raises ValueError."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        with pytest.raises(ValueError, match="hdl_mgdl cannot be negative"):
+            calc_ldl_martin_hopkins_extended(tc_mgdl=200, hdl_mgdl=-5, tg_mgdl=500)
+
+    def test_negative_tg_raises_value_error(self):
+        """Test that negative TG raises ValueError."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        with pytest.raises(ValueError, match="tg_mgdl cannot be negative"):
+            calc_ldl_martin_hopkins_extended(tc_mgdl=200, hdl_mgdl=50, tg_mgdl=-20)
+
+    def test_nan_input_raises_value_error(self):
+        """Test that NaN inputs raise ValueError."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        with pytest.raises(ValueError, match="cannot be NaN"):
+            calc_ldl_martin_hopkins_extended(tc_mgdl=float("nan"), hdl_mgdl=50, tg_mgdl=500)
+
+    def test_returns_float(self):
+        """Test that the function always returns a float."""
+        from ldlC.models import calc_ldl_martin_hopkins_extended
+        result = calc_ldl_martin_hopkins_extended(tc_mgdl=200, hdl_mgdl=50, tg_mgdl=500)
+        assert isinstance(result, float)
+

@@ -201,10 +201,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want the extended Martin-Hopkins variant for TG 400-800 mg/dL.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_ldl_martin_hopkins_extended(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
-- [ ] Uses extended coefficient table for TG > 400 mg/dL
-- [ ] Add unit test for high-TG cases
-- [ ] Tests pass
+- [x] Add `calc_ldl_martin_hopkins_extended(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
+- [x] Uses extended coefficient table for TG > 400 mg/dL
+- [x] Add unit test for high-TG cases
+- [x] Tests pass
 
 ---
 
