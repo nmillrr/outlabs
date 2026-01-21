@@ -151,12 +151,12 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want the Friedewald (1972) LDL-C calculation as the traditional baseline.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_ldl_friedewald(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
-- [ ] Formula: LDL = TC - HDL - (TG / 5)
-- [ ] Returns LDL-C in mg/dL
-- [ ] Returns NaN for TG > 400 mg/dL (with warning)
-- [ ] Raises ValueError for invalid inputs (negative, NaN)
-- [ ] Typecheck passes
+- [x] Add `calc_ldl_friedewald(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
+- [x] Formula: LDL = TC - HDL - (TG / 5)
+- [x] Returns LDL-C in mg/dL
+- [x] Returns NaN for TG > 400 mg/dL (with warning)
+- [x] Raises ValueError for invalid inputs (negative, NaN)
+- [x] Typecheck passes
 
 ---
 
@@ -164,11 +164,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want unit tests validating Friedewald against known examples.
 
 **Acceptance Criteria:**
-- [ ] Add test in `tests/test_models.py` for Friedewald
-- [ ] Test case: TC=200, HDL=50, TG=150 → LDL = 120 mg/dL
-- [ ] Test case: TC=180, HDL=45, TG=100 → LDL = 115 mg/dL
-- [ ] Test high TG warning/NaN behavior
-- [ ] Tests pass: `pytest tests/test_models.py`
+- [x] Add test in `tests/test_models.py` for Friedewald
+- [x] Test case: TC=200, HDL=50, TG=150 → LDL = 120 mg/dL
+- [x] Test case: TC=180, HDL=45, TG=100 → LDL = 115 mg/dL
+- [x] Test high TG warning/NaN behavior
+- [x] Tests pass: `pytest tests/test_models.py`
 
 ---
 

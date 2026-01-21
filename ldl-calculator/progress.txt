@@ -108,3 +108,37 @@
   - Function returns both a text file and dict for flexibility
   - All 22 existing tests continue to pass
 ---
+
+## Iteration 7 - US-007: Create Data Sourcing Notebook
+- What was implemented:
+  - Created `notebooks/01_data_sourcing.ipynb` with full data pipeline documentation
+  - Notebook demonstrates: downloading, parsing, cleaning, and quality report generation
+  - Includes markdown documentation for each step with NHANES column name reference table
+  - Visualizes TG distribution histogram with clinical thresholds
+  - Visualizes TG distribution bar chart by clinical category
+  - Visualizes LDL distribution with ATP III guideline thresholds
+  - Uses synthetic demo data so notebook executes without requiring actual NHANES downloads
+- Files changed:
+  - `notebooks/01_data_sourcing.ipynb` (new)
+  - `PRD.md` (modified - marked US-007 complete)
+- Learnings for future iterations:
+  - Jupyter may not be installed - verify notebook code via Python script execution
+  - Use `matplotlib.use('Agg')` for non-interactive testing
+  - Synthetic demo data allows notebook to execute without external data dependencies
+---
+
+## Iteration 8 - US-009: Test Friedewald against published values
+- What was implemented:
+  - Added comprehensive test suite for `calc_ldl_friedewald()` in `tests/test_models.py`
+  - Test case: TC=200, HDL=50, TG=150 → LDL = 120 mg/dL (verified)
+  - Test case: TC=180, HDL=45, TG=100 → LDL = 115 mg/dL (verified)
+  - Tests for high TG warning/NaN behavior (TG > 400 returns NaN with warning)
+  - Tests for invalid inputs: negative values, NaN, None all raise ValueError
+  - Additional edge case tests: TG exactly 400, TG=0, integer inputs
+- Files changed:
+  - `tests/test_models.py` (modified - added 12 Friedewald tests)
+- Learnings for future iterations:
+  - Use python3 instead of python on macOS
+  - Friedewald formula: LDL = TC - HDL - (TG / 5)
+  - All 12 Friedewald tests pass
+---
