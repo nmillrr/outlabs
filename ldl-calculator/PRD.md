@@ -212,11 +212,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a notebook comparing all four equations visually.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/02_equation_comparison.ipynb`
-- [ ] Compare Friedewald, Martin-Hopkins, Extended M-H, Sampson on synthetic grid
-- [ ] Generate heatmaps showing differences across TG and TC ranges
-- [ ] Include markdown interpretation of when each equation excels
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/02_equation_comparison.ipynb`
+- [x] Compare Friedewald, Martin-Hopkins, Extended M-H, Sampson on synthetic grid
+- [x] Generate heatmaps showing differences across TG and TC ranges
+- [x] Include markdown interpretation of when each equation excels
+- [x] Notebook executes without errors
 
 ---
 
