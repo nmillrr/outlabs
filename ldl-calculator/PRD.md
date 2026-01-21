@@ -176,12 +176,12 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want the Martin-Hopkins equation with adjustable TG:VLDL factor.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_ldl_martin_hopkins(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
-- [ ] Implement 180-cell lookup table for TG:VLDL adjustment factor
-- [ ] Formula: LDL = TC - HDL - (TG / adjustable_factor)
-- [ ] Works for TG up to 800 mg/dL
-- [ ] Add unit test comparing to Friedewald (should differ at extreme values)
-- [ ] Tests pass
+- [x] Add `calc_ldl_martin_hopkins(tc_mgdl, hdl_mgdl, tg_mgdl)` in `ldlC/models.py`
+- [x] Implement 180-cell lookup table for TG:VLDL adjustment factor
+- [x] Formula: LDL = TC - HDL - (TG / adjustable_factor)
+- [x] Works for TG up to 800 mg/dL
+- [x] Add unit test comparing to Friedewald (should differ at extreme values)
+- [x] Tests pass
 
 ---
 

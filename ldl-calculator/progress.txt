@@ -142,3 +142,23 @@
   - Friedewald formula: LDL = TC - HDL - (TG / 5)
   - All 12 Friedewald tests pass
 ---
+
+## Iteration 9 - US-010: Implement Martin-Hopkins Equation
+- What was implemented:
+  - Added `calc_ldl_martin_hopkins(tc_mgdl, hdl_mgdl, tg_mgdl)` function in `ldlC/models.py`
+  - Implemented 180-cell lookup table for TG:VLDL adjustment factor
+  - Table has 30 rows (Non-HDL-C ranges from 7-13975 mg/dL) and 6 columns (TG ranges)
+  - Factors range from 3.1 to 11.9 depending on non-HDL and TG levels
+  - Works for TG up to 800 mg/dL (vs Friedewald which fails above 400)
+  - Added 11 unit tests including comparison tests with Friedewald
+- Files changed:
+  - `ldlC/models.py` (modified - added Martin-Hopkins function and lookup table)
+  - `tests/test_models.py` (modified - added 11 Martin-Hopkins tests)
+  - `PRD.md` (modified - marked US-010 complete)
+- Learnings for future iterations:
+  - Martin-Hopkins factors: range from 3.1 (low non-HDL, high TG) to 11.9 (high non-HDL, low TG)
+  - When TG=0, both Friedewald and Martin-Hopkins give same result (TC - HDL)
+  - Martin-Hopkins continues to work beyond TG 400 where Friedewald fails
+  - All 23 model tests now pass
+---
+
