@@ -91,3 +91,20 @@
   - Inner join ensures only complete records with all lipid measurements are kept
   - Outlier thresholds based on physiologically implausible values
 ---
+
+## Iteration 6 - US-006: Generate Data Quality Report
+- What was implemented:
+  - Added `generate_quality_report(df, output_path)` function in `ldlC/data.py`
+  - Report includes: record count, mean/SD/min/max for TC/HDL/TG/LDL-direct
+  - Includes missing value counts for each lipid column
+  - Includes TG distribution breakdown (<150, 150-400, 400-800, >800 mg/dL) with percentages
+  - Saves formatted report to specified path as text file
+  - Returns dict with all metrics for programmatic access
+  - Creates parent directories if they don't exist
+- Files changed:
+  - `ldlC/data.py` (modified - added generate_quality_report function)
+- Learnings for future iterations:
+  - TG distribution thresholds based on clinical guidelines for hypertriglyceridemia
+  - Function returns both a text file and dict for flexibility
+  - All 22 existing tests continue to pass
+---

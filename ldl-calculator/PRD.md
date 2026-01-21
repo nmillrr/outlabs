@@ -123,11 +123,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a quality report so that I can verify data before training.
 
 **Acceptance Criteria:**
-- [ ] Add `generate_quality_report(df, output_path)` function in `ldlC/data.py`
-- [ ] Report includes: record count, mean/SD for TC/HDL/TG/LDL-direct, missing value counts
-- [ ] Includes TG distribution breakdown (< 150, 150-400, 400-800, > 800 mg/dL)
-- [ ] Saves report to specified path as text file
-- [ ] Typecheck passes
+- [x] Add `generate_quality_report(df, output_path)` function in `ldlC/data.py`
+- [x] Report includes: record count, mean/SD for TC/HDL/TG/LDL-direct, missing value counts
+- [x] Includes TG distribution breakdown (<150, 150-400, 400-800, >800 mg/dL)
+- [x] Saves report to specified path as text file
+- [x] Typecheck passes
 
 ---
 

@@ -317,3 +317,149 @@ def clean_lipid_data(
     merged = merged.reset_index(drop=True)
 
     return merged
+
+
+def generate_quality_report(df: pd.DataFrame, output_path: str) -> Dict[str, any]:
+    """
+    Generate a data quality report for a cleaned lipid panel DataFrame.
+
+    Produces a comprehensive report including record counts, descriptive statistics
+    for lipid values (mean, SD), missing value counts, and triglyceride distribution
+    breakdown across clinically relevant ranges.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Cleaned lipid panel DataFrame with columns: tc_mgdl, hdl_mgdl, tg_mgdl,
+        ldl_direct_mgdl. Typically output from clean_lipid_data().
+    output_path : str
+        Path to save the quality report text file.
+
+    Returns
+    -------
+    dict
+        Dictionary containing all computed quality metrics for programmatic access.
+        Keys include:
+        - record_count: Total number of records
+        - stats: Dict with mean/sd for each lipid component
+        - missing_counts: Dict with missing value counts per column
+        - tg_distribution: Dict with counts in each TG range
+
+    Examples
+    --------
+    >>> report = generate_quality_report(cleaned_df, "data/quality_report.txt")
+    >>> print(report['record_count'])
+    5234
+    """
+    # Expected lipid columns
+    lipid_columns = ["tc_mgdl", "hdl_mgdl", "tg_mgdl", "ldl_direct_mgdl"]
+
+    # Initialize report dictionary
+    report = {
+        "record_count": len(df),
+        "stats": {},
+        "missing_counts": {},
+        "tg_distribution": {},
+    }
+
+    # Calculate mean and SD for each lipid column
+    for col in lipid_columns:
+        if col in df.columns:
+            report["stats"][col] = {
+                "mean": df[col].mean(),
+                "sd": df[col].std(),
+                "min": df[col].min(),
+                "max": df[col].max(),
+            }
+            report["missing_counts"][col] = df[col].isna().sum()
+        else:
+            report["missing_counts"][col] = len(df)  # All missing if column not present
+
+    # Calculate TG distribution breakdown
+    # Clinically relevant ranges: <150, 150-400, 400-800, >800 mg/dL
+    if "tg_mgdl" in df.columns:
+        tg = df["tg_mgdl"]
+        report["tg_distribution"] = {
+            "<150": int((tg < 150).sum()),
+            "150-400": int(((tg >= 150) & (tg < 400)).sum()),
+            "400-800": int(((tg >= 400) & (tg <= 800)).sum()),
+            ">800": int((tg > 800).sum()),
+        }
+
+    # Generate text report
+    lines = [
+        "=" * 60,
+        "LIPID PANEL DATA QUALITY REPORT",
+        "=" * 60,
+        "",
+        f"Total Records: {report['record_count']:,}",
+        "",
+        "-" * 60,
+        "DESCRIPTIVE STATISTICS (mg/dL)",
+        "-" * 60,
+    ]
+
+    # Add stats for each lipid
+    stat_labels = {
+        "tc_mgdl": "Total Cholesterol (TC)",
+        "hdl_mgdl": "HDL Cholesterol (HDL)",
+        "tg_mgdl": "Triglycerides (TG)",
+        "ldl_direct_mgdl": "LDL Direct (LDL-D)",
+    }
+
+    for col, label in stat_labels.items():
+        if col in report["stats"]:
+            s = report["stats"][col]
+            lines.append(f"{label}:")
+            lines.append(f"  Mean: {s['mean']:.2f}  SD: {s['sd']:.2f}")
+            lines.append(f"  Range: {s['min']:.2f} - {s['max']:.2f}")
+        else:
+            lines.append(f"{label}: Not available")
+        lines.append("")
+
+    # Missing value counts
+    lines.extend([
+        "-" * 60,
+        "MISSING VALUE COUNTS",
+        "-" * 60,
+    ])
+    for col, label in stat_labels.items():
+        count = report["missing_counts"].get(col, "N/A")
+        lines.append(f"{label}: {count}")
+    lines.append("")
+
+    # TG distribution
+    lines.extend([
+        "-" * 60,
+        "TRIGLYCERIDE DISTRIBUTION",
+        "-" * 60,
+    ])
+    if report["tg_distribution"]:
+        total = report["record_count"]
+        for range_label, count in report["tg_distribution"].items():
+            pct = (count / total * 100) if total > 0 else 0
+            lines.append(f"TG {range_label} mg/dL: {count:,} ({pct:.1f}%)")
+    else:
+        lines.append("Triglyceride data not available")
+
+    lines.extend([
+        "",
+        "=" * 60,
+        "END OF REPORT",
+        "=" * 60,
+    ])
+
+    # Write report to file
+    report_text = "\n".join(lines)
+    
+    # Create parent directories if they don't exist
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    
+    with open(output_path, "w") as f:
+        f.write(report_text)
+
+    print(f"Quality report saved to: {output_path}")
+
+    return report
