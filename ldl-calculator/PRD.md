@@ -212,11 +212,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a notebook comparing all four equations visually.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/02_equation_comparison.ipynb`
-- [ ] Compare Friedewald, Martin-Hopkins, Extended M-H, Sampson on synthetic grid
-- [ ] Generate heatmaps showing differences across TG and TC ranges
-- [ ] Include markdown interpretation of when each equation excels
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/02_equation_comparison.ipynb`
+- [x] Compare Friedewald, Martin-Hopkins, Extended M-H, Sampson on synthetic grid
+- [x] Generate heatmaps showing differences across TG and TC ranges
+- [x] Include markdown interpretation of when each equation excels
+- [x] Notebook executes without errors
 
 ---
 
@@ -228,12 +228,12 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want feature engineering functions for ML training.
 
 **Acceptance Criteria:**
-- [ ] Add `create_features(df)` function in `ldlC/train.py`
-- [ ] Creates features: tc_mgdl, hdl_mgdl, tg_mgdl, non_hdl_mgdl
-- [ ] Adds ratio features: tg_hdl_ratio, tc_hdl_ratio
-- [ ] Adds all equation baseline predictions as features
-- [ ] Returns feature matrix X and column names
-- [ ] Typecheck passes
+- [x] Add `create_features(df)` function in `ldlC/train.py`
+- [x] Creates features: tc_mgdl, hdl_mgdl, tg_mgdl, non_hdl_mgdl
+- [x] Adds ratio features: tg_hdl_ratio, tc_hdl_ratio
+- [x] Adds all equation baseline predictions as features
+- [x] Returns feature matrix X and column names
+- [x] Typecheck passes
 
 ---
 

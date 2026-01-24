@@ -209,3 +209,21 @@
   - Extended M-H provides finer granularity than standard M-H at high TG
   - All 66 tests pass
 ---
+
+## Iteration 13 - US-014: Create Feature Engineering Module
+- What was implemented:
+  - Created `ldlC/train.py` module for ML training functions
+  - Added `create_features(df)` function that generates feature matrix for ML training
+  - Features include raw lipid values: tc_mgdl, hdl_mgdl, tg_mgdl, non_hdl_mgdl
+  - Ratio features: tg_hdl_ratio, tc_hdl_ratio
+  - Baseline equation predictions: ldl_friedewald, ldl_martin_hopkins, ldl_martin_hopkins_extended, ldl_sampson
+  - Function returns (X, feature_names) tuple for use in training
+  - Handles invalid inputs gracefully with NaN values
+- Files changed:
+  - `ldlC/train.py` (new)
+  - `PRD.md` (modified - marked US-013 and US-014 complete)
+- Learnings for future iterations:
+  - Equation predictions are wrapped in try/except for robustness
+  - Feature matrix uses pandas apply() for row-wise equation calculations
+  - All 66 tests continue to pass
+---
