@@ -113,3 +113,91 @@ def create_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
     feature_names = list(X.columns)
     
     return X, feature_names
+
+
+def stratified_split(
+    df: pd.DataFrame,
+    test_size: float = 0.3,
+    random_state: int = 42
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    """
+    Split data into train and test sets, stratified by TG quartiles.
+    
+    This ensures that each TG subgroup is represented proportionally in both
+    train and test sets, which is critical for evaluating model performance
+    across the full TG range.
+    
+    TG strata:
+    - < 100 mg/dL (normal)
+    - 100-150 mg/dL (borderline)
+    - 150-200 mg/dL (borderline high)
+    - 200-400 mg/dL (high)
+    - > 400 mg/dL (very high)
+    
+    Args:
+        df: DataFrame containing lipid panel data with at minimum:
+            - tc_mgdl, hdl_mgdl, tg_mgdl columns (for features)
+            - ldl_direct_mgdl column (target variable)
+        test_size: Fraction of data to use for testing (default 0.3).
+        random_state: Random seed for reproducibility (default 42).
+    
+    Returns:
+        Tuple of (X_train, X_test, y_train, y_test) where:
+            - X_train: Training feature DataFrame
+            - X_test: Test feature DataFrame  
+            - y_train: Training target Series
+            - y_test: Test target Series
+    
+    Raises:
+        ValueError: If required columns are missing or data is insufficient.
+    """
+    from sklearn.model_selection import StratifiedShuffleSplit
+    
+    # Validate required columns
+    required_cols = ['tc_mgdl', 'hdl_mgdl', 'tg_mgdl', 'ldl_direct_mgdl']
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns: {missing_cols}")
+    
+    # Create TG strata bins for stratification
+    # Bins: < 100, 100-150, 150-200, 200-400, > 400 mg/dL
+    tg_bins = [0, 100, 150, 200, 400, float('inf')]
+    tg_labels = ['<100', '100-150', '150-200', '200-400', '>400']
+    
+    df_clean = df.dropna(subset=required_cols).copy()
+    
+    if len(df_clean) < 10:
+        raise ValueError("Insufficient data for stratified split (need at least 10 samples)")
+    
+    # Create TG stratum labels
+    tg_strata = pd.cut(
+        df_clean['tg_mgdl'],
+        bins=tg_bins,
+        labels=tg_labels,
+        include_lowest=True
+    )
+    
+    # Create features using create_features function
+    X, feature_names = create_features(df_clean)
+    y = df_clean['ldl_direct_mgdl'].reset_index(drop=True)
+    
+    # Reset index for alignment
+    X = X.reset_index(drop=True)
+    tg_strata = tg_strata.reset_index(drop=True)
+    
+    # Use StratifiedShuffleSplit for stratified splitting
+    splitter = StratifiedShuffleSplit(
+        n_splits=1,
+        test_size=test_size,
+        random_state=random_state
+    )
+    
+    # Get train/test indices
+    train_idx, test_idx = next(splitter.split(X, tg_strata))
+    
+    X_train = X.iloc[train_idx].reset_index(drop=True)
+    X_test = X.iloc[test_idx].reset_index(drop=True)
+    y_train = y.iloc[train_idx].reset_index(drop=True)
+    y_test = y.iloc[test_idx].reset_index(drop=True)
+    
+    return X_train, X_test, y_train, y_test

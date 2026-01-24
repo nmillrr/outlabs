@@ -241,10 +241,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want stratified splitting so that TG subgroups are balanced.
 
 **Acceptance Criteria:**
-- [ ] Add `stratified_split(df, test_size=0.3, random_state=42)` in `ldlC/train.py`
-- [ ] Stratifies by TG quartiles (< 100, 100-150, 150-200, 200-400, > 400 mg/dL)
-- [ ] Returns X_train, X_test, y_train, y_test
-- [ ] Typecheck passes
+- [x] Add `stratified_split(df, test_size=0.3, random_state=42)` in `ldlC/train.py`
+- [x] Stratifies by TG quartiles (< 100, 100-150, 150-200, 200-400, > 400 mg/dL)
+- [x] Returns X_train, X_test, y_train, y_test
+- [x] Typecheck passes
 
 ---
 
