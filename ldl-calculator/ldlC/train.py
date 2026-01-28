@@ -7,7 +7,11 @@ for the hybrid LDL-C estimation model.
 
 import numpy as np
 import pandas as pd
-from typing import Tuple, List
+import joblib
+from pathlib import Path
+from typing import Tuple, List, Any
+
+from sklearn.linear_model import Ridge
 
 from ldlC.models import (
     calc_ldl_friedewald,
@@ -201,3 +205,59 @@ def stratified_split(
     y_test = y.iloc[test_idx].reset_index(drop=True)
     
     return X_train, X_test, y_train, y_test
+
+
+def train_ridge(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    alpha: float = 1.0
+) -> Ridge:
+    """
+    Train a Ridge regression model for LDL-C prediction.
+    
+    Ridge regression is a simple linear model with L2 regularization,
+    serving as a baseline for comparison with more complex models.
+    
+    Args:
+        X_train: Training feature DataFrame.
+        y_train: Training target Series (LDL-direct values).
+        alpha: Regularization strength (default 1.0). Higher values 
+               increase regularization.
+    
+    Returns:
+        Fitted Ridge regression model.
+    
+    Raises:
+        ValueError: If input data shapes are incompatible.
+    """
+    if len(X_train) != len(y_train):
+        raise ValueError(
+            f"X_train and y_train must have same length. "
+            f"Got {len(X_train)} and {len(y_train)}"
+        )
+    
+    model = Ridge(alpha=alpha)
+    model.fit(X_train, y_train)
+    
+    return model
+
+
+def save_model(model: Any, filepath: str) -> None:
+    """
+    Save a trained model to disk using joblib.
+    
+    Creates parent directories if they don't exist.
+    
+    Args:
+        model: Trained model object to save (any scikit-learn compatible model).
+        filepath: Path to save the model (typically with .joblib extension).
+    
+    Returns:
+        None
+    
+    Raises:
+        IOError: If the file cannot be written.
+    """
+    path = Path(filepath)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, filepath)

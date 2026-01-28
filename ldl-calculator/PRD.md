@@ -252,10 +252,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a Ridge regression model as simple baseline.
 
 **Acceptance Criteria:**
-- [ ] Add `train_ridge(X_train, y_train, alpha=1.0)` in `ldlC/train.py`
-- [ ] Returns fitted Ridge model
-- [ ] Add function `save_model(model, filepath)` using joblib
-- [ ] Typecheck passes
+- [x] Add `train_ridge(X_train, y_train, alpha=1.0)` in `ldlC/train.py`
+- [x] Returns fitted Ridge model
+- [x] Add function `save_model(model, filepath)` using joblib
+- [x] Typecheck passes
 
 ---
 
