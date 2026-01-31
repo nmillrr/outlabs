@@ -294,11 +294,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a notebook documenting model training workflow.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/03_model_training.ipynb`
-- [ ] Trains Ridge, RF, LightGBM on NHANES data
-- [ ] Shows CV results comparison table
-- [ ] Saves best model to `models/` directory
-- [ ] Notebook executes without errors (may need data)
+- [x] Create `notebooks/03_model_training.ipynb`
+- [x] Trains Ridge, RF, LightGBM on NHANES data
+- [x] Shows CV results comparison table
+- [x] Saves best model to `models/` directory
+- [x] Notebook executes without errors (may need data)
 
 ---
 

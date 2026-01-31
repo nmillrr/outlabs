@@ -294,3 +294,25 @@
   - KFold with shuffle=True and random_state=42 ensures reproducibility
   - All 66 tests continue to pass
 ---
+
+## Iteration 18 - US-020: Create Model Training Notebook
+- What was implemented:
+  - Created `notebooks/03_model_training.ipynb` with complete ML training workflow
+  - Generates synthetic data (TG capped at 400 to avoid Friedewald NaN)
+  - Creates features using `create_features()` with NaN filtering
+  - Performs stratified split via `stratified_split()`
+  - Trains Ridge, Random Forest (200 trees), and LightGBM with early stopping
+  - Shows 10-fold CV comparison table for Ridge and RF
+  - Evaluates all 3 models on held-out test set with RMSE/MAE/Bias/R metrics
+  - Analyzes feature importance for RF and LightGBM
+  - Saves all models to `models/` directory
+  - Uses synthetic demo data so notebook executes without NHANES download
+- Files changed:
+  - `notebooks/03_model_training.ipynb` (new)
+  - `PRD.md` (modified - marked US-020 complete)
+- Learnings for future iterations:
+  - Friedewald returns NaN for TG > 400, must filter or cap TG in synthetic data
+  - Always filter NaN after stratified_split when using equation features
+  - Cannot edit .ipynb files directly, must rewrite entire notebook
+  - All 66 tests continue to pass
+---
