@@ -342,10 +342,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want to evaluate models by TG subgroups.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_by_tg_strata(y_true, y_pred, tg_values)` in `ldlC/evaluate.py`
-- [ ] Stratifies by: < 150, 150-400, 400-800 mg/dL
-- [ ] Returns metrics dict for each stratum
-- [ ] Typecheck passes
+- [x] Add `evaluate_by_tg_strata(y_true, y_pred, tg_values)` in `ldlC/evaluate.py`
+- [x] Stratifies by: < 150, 150-400, 400-800 mg/dL
+- [x] Returns metrics dict for each stratum
+- [x] Typecheck passes
 
 ---
 

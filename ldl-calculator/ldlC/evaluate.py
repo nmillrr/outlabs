@@ -278,3 +278,124 @@ def evaluate_model(
         'lin_ccc': lin_ccc_value,
         'ba_stats': ba_stats
     }
+
+
+def evaluate_by_tg_strata(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    tg_values: np.ndarray
+) -> Dict[str, Dict[str, Union[float, str, Dict[str, float]]]]:
+    """
+    Evaluate model performance stratified by triglyceride (TG) levels.
+    
+    Stratifies evaluation by clinically relevant TG thresholds to assess
+    model performance across different patient populations. This is critical
+    for validating LDL-C estimation methods since many equations perform
+    differently at high TG levels.
+    
+    TG Strata:
+        - low_tg: TG < 150 mg/dL (normal)
+        - medium_tg: 150 ≤ TG < 400 mg/dL (borderline to high)
+        - high_tg: 400 ≤ TG ≤ 800 mg/dL (very high)
+    
+    Parameters
+    ----------
+    y_true : np.ndarray
+        True/reference values (e.g., direct LDL measurements from beta-quantification)
+    y_pred : np.ndarray
+        Predicted/estimated values (e.g., LDL from equation or ML model)
+    tg_values : np.ndarray
+        Triglyceride values in mg/dL for each sample
+        
+    Returns
+    -------
+    dict
+        Dictionary with keys 'low_tg', 'medium_tg', 'high_tg', 'overall'.
+        Each contains evaluation metrics from evaluate_model(), or None if
+        insufficient samples in that stratum.
+        
+    Raises
+    ------
+    ValueError
+        If arrays are empty or have different lengths
+        
+    Examples
+    --------
+    >>> y_true = np.array([100, 120, 110, 130, 105])
+    >>> y_pred = np.array([102, 118, 112, 128, 107])
+    >>> tg = np.array([100, 200, 350, 500, 80])
+    >>> results = evaluate_by_tg_strata(y_true, y_pred, tg)
+    >>> print(f"Low TG RMSE: {results['low_tg']['rmse']:.2f}")
+    """
+    # Convert to numpy arrays if needed
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    tg_values = np.asarray(tg_values, dtype=float)
+    
+    # Validate inputs
+    if len(y_true) == 0 or len(y_pred) == 0 or len(tg_values) == 0:
+        raise ValueError("Input arrays cannot be empty")
+    
+    if len(y_true) != len(y_pred) or len(y_true) != len(tg_values):
+        raise ValueError(
+            f"All arrays must have same length. Got y_true: {len(y_true)}, "
+            f"y_pred: {len(y_pred)}, tg_values: {len(tg_values)}"
+        )
+    
+    # Remove rows with any NaN values
+    valid_mask = ~(np.isnan(y_true) | np.isnan(y_pred) | np.isnan(tg_values))
+    y_true_clean = y_true[valid_mask]
+    y_pred_clean = y_pred[valid_mask]
+    tg_clean = tg_values[valid_mask]
+    
+    if len(y_true_clean) == 0:
+        raise ValueError("No valid (non-NaN) data points found in input arrays")
+    
+    # Define TG strata thresholds (mg/dL)
+    strata = {
+        'low_tg': (0, 150),       # Normal TG
+        'medium_tg': (150, 400),  # Borderline to high TG
+        'high_tg': (400, 800)     # Very high TG
+    }
+    
+    results = {}
+    
+    # Evaluate each stratum
+    for stratum_name, (lower, upper) in strata.items():
+        # Create mask for this stratum
+        if stratum_name == 'low_tg':
+            mask = tg_clean < upper
+        elif stratum_name == 'high_tg':
+            mask = (tg_clean >= lower) & (tg_clean <= upper)
+        else:
+            mask = (tg_clean >= lower) & (tg_clean < upper)
+        
+        y_true_stratum = y_true_clean[mask]
+        y_pred_stratum = y_pred_clean[mask]
+        
+        # Need at least 2 samples for meaningful evaluation
+        if len(y_true_stratum) >= 2:
+            try:
+                metrics = evaluate_model(
+                    y_true_stratum, 
+                    y_pred_stratum, 
+                    model_name=stratum_name
+                )
+                metrics['n_samples'] = len(y_true_stratum)
+                metrics['tg_range'] = f"{lower}-{upper} mg/dL"
+                results[stratum_name] = metrics
+            except ValueError:
+                # Not enough valid data in this stratum
+                results[stratum_name] = None
+        else:
+            results[stratum_name] = None
+    
+    # Also include overall metrics
+    if len(y_true_clean) >= 2:
+        overall_metrics = evaluate_model(y_true_clean, y_pred_clean, model_name="overall")
+        overall_metrics['tg_range'] = "all"
+        results['overall'] = overall_metrics
+    else:
+        results['overall'] = None
+    
+    return results

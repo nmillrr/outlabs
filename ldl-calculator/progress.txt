@@ -356,3 +356,35 @@
   - All 88 tests now pass (11 new tests added)
 ---
 
+## Iteration 21 - US-023: Create Comprehensive Evaluation Function
+- What was implemented:
+  - Added `evaluate_model(y_true, y_pred, model_name)` function in `ldlC/evaluate.py`
+  - Returns comprehensive dict with: model_name, n_samples, rmse, mae, bias, r_pearson, lin_ccc, ba_stats
+  - Reuses existing `lins_ccc()` and `bland_altman_stats()` functions for efficiency
+  - Handles NaN values by excluding invalid pairs before calculation
+  - Validates inputs (requires at least 2 data points)
+- Files changed:
+  - `ldlC/evaluate.py` (modified - added evaluate_model function, ~100 lines)
+  - `PRD.md` (modified - marked US-023 complete)
+- Learnings for future iterations:
+  - Pearson r is computed via `np.corrcoef()[0, 1]`
+  - Existing evaluation functions can be reused inside evaluate_model
+  - All 88 tests continue to pass
+---
+
+## Iteration 22 - US-024: Implement TG-Stratified Evaluation
+- What was implemented:
+  - Added `evaluate_by_tg_strata(y_true, y_pred, tg_values)` function in `ldlC/evaluate.py`
+  - Stratifies evaluation by clinical TG thresholds: <150 (low), 150-400 (medium), 400-800 (high) mg/dL
+  - Returns dict with 'low_tg', 'medium_tg', 'high_tg', 'overall' keys
+  - Each stratum contains full metrics from evaluate_model() or None if insufficient samples
+  - Handles NaN values and validates input array lengths
+  - Reuses existing evaluate_model() function for consistent metrics
+- Files changed:
+  - `ldlC/evaluate.py` (modified - added evaluate_by_tg_strata function, ~120 lines)
+  - `PRD.md` (modified - marked US-024 complete)
+- Learnings for future iterations:
+  - TG strata thresholds based on clinical hypertriglyceridemia guidelines
+  - Need at least 2 samples per stratum for meaningful evaluation
+  - All 88 tests continue to pass
+---
