@@ -406,3 +406,22 @@
   - Try/except in bootstrap loop handles edge cases like constant arrays
   - All 88 tests continue to pass
 ---
+
+## Iteration 24 - US-026: Create Evaluation Notebook
+- What was implemented:
+  - Created `notebooks/04_evaluation.ipynb` with comprehensive model evaluation workflow
+  - Evaluates all equations (Friedewald, Martin-Hopkins, Extended M-H, Sampson) and hybrid ML model
+  - Generates Bland-Altman plots for all methods with LOA statistics
+  - Shows TG-stratified evaluation (< 150, 150-400, 400-800 mg/dL)
+  - Computes bootstrap confidence intervals for key metrics (RMSE, CCC)
+  - Creates publication-ready comparison visualizations
+  - Uses synthetic data so notebook executes without NHANES download
+- Files changed:
+  - `notebooks/04_evaluation.ipynb` (new)
+  - `PRD.md` (modified - marked US-026 complete)
+- Learnings for future iterations:
+  - Bland-Altman plots require mean of true/pred on x-axis, difference on y-axis
+  - Use wrapper functions for safe equation application (returns NaN on error)
+  - TG-stratified analysis confirms Friedewald limitations at TG > 400
+  - All 88 tests continue to pass
+---
