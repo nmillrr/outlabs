@@ -388,3 +388,21 @@
   - Need at least 2 samples per stratum for meaningful evaluation
   - All 88 tests continue to pass
 ---
+
+## Iteration 23 - US-025: Implement Bootstrap Confidence Intervals
+- What was implemented:
+  - Added `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` function in `ldlC/evaluate.py`
+  - Uses resampling with replacement to estimate sampling distribution of any metric
+  - Returns (lower, upper, mean) tuple for reporting uncertainty
+  - Uses percentile method for CI calculation (2.5th and 97.5th percentiles for 95% CI)
+  - Configurable confidence_level and random_state for reproducibility
+  - Handles NaN values and failed bootstrap samples gracefully
+- Files changed:
+  - `ldlC/evaluate.py` (modified - added bootstrap_ci function, ~115 lines)
+  - `PRD.md` (modified - marked US-025 complete)
+- Learnings for future iterations:
+  - Use numpy's default_rng for modern random number generation
+  - Percentile method is simple and robust for bootstrap CIs
+  - Try/except in bootstrap loop handles edge cases like constant arrays
+  - All 88 tests continue to pass
+---

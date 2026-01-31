@@ -353,9 +353,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want bootstrap CIs for reporting uncertainty.
 
 **Acceptance Criteria:**
-- [ ] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `ldlC/evaluate.py`
-- [ ] Returns (lower, upper, mean) tuple
-- [ ] Typecheck passes
+- [x] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `ldlC/evaluate.py`
+- [x] Returns (lower, upper, mean) tuple
+- [x] Typecheck passes
+
 
 ---
 
