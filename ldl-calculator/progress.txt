@@ -425,3 +425,15 @@
   - TG-stratified analysis confirms Friedewald limitations at TG > 400
   - All 88 tests continue to pass
 ---
+
+## Iteration 25 - Reconciliation: Mark US-025 Complete in PRD
+- What was implemented:
+  - Verified `bootstrap_ci` function already exists in `ldlC/evaluate.py` (from Iteration 23)
+  - Confirmed all 88 tests pass and typecheck passes
+  - Marked US-025 acceptance criteria as complete in PRD.md (was missed in previous iteration)
+- Files changed:
+  - `PRD.md` (modified - marked US-025 complete)
+- Learnings for future iterations:
+  - Always verify PRD.md is updated when completing a task
+  - PRD and progress.txt should remain in sync
+---
