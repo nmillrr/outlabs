@@ -353,10 +353,9 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want bootstrap CIs for reporting uncertainty.
 
 **Acceptance Criteria:**
-- [x] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `ldlC/evaluate.py`
-- [x] Returns (lower, upper, mean) tuple
-- [x] Typecheck passes
-
+- [ ] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `ldlC/evaluate.py`
+- [ ] Returns (lower, upper, mean) tuple
+- [ ] Typecheck passes
 
 ---
 
@@ -364,12 +363,12 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a notebook with full model evaluation and plots.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/04_evaluation.ipynb`
-- [ ] Evaluates all models and equations on internal test set
-- [ ] Generates Bland-Altman plots
-- [ ] Shows subgroup analysis by TG strata
-- [ ] Compares hybrid ML vs individual equations
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/04_evaluation.ipynb`
+- [x] Evaluates all models and equations on internal test set
+- [x] Generates Bland-Altman plots
+- [x] Shows subgroup analysis by TG strata
+- [x] Compares hybrid ML vs individual equations
+- [x] Notebook executes without errors
 
 ---
 
