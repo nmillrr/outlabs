@@ -177,3 +177,104 @@ def lins_ccc(
     ccc = numerator / denominator
     
     return float(ccc)
+
+
+def evaluate_model(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    model_name: str = "model"
+) -> Dict[str, Union[float, str, Dict[str, float]]]:
+    """
+    Compute comprehensive evaluation metrics for an LDL-C estimation model.
+    
+    This function calculates all standard metrics for model validation in a single call,
+    including error metrics (RMSE, MAE), agreement metrics (Lin's CCC, Bland-Altman),
+    and correlation (Pearson's r).
+    
+    Parameters
+    ----------
+    y_true : np.ndarray
+        True/reference values (e.g., direct LDL measurements from beta-quantification)
+    y_pred : np.ndarray
+        Predicted/estimated values (e.g., LDL from equation or ML model)
+    model_name : str, optional
+        Name of the model being evaluated (default: "model")
+        
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - model_name: Name of the evaluated model
+        - n_samples: Number of valid samples used in evaluation
+        - rmse: Root Mean Square Error
+        - mae: Mean Absolute Error
+        - bias: Mean difference (y_pred - y_true)
+        - r_pearson: Pearson correlation coefficient
+        - lin_ccc: Lin's Concordance Correlation Coefficient
+        - ba_stats: Dict with Bland-Altman statistics (mean_bias, std_diff, loa_lower, loa_upper)
+        
+    Raises
+    ------
+    ValueError
+        If arrays are empty, have different lengths, or contain only NaN values
+        
+    Examples
+    --------
+    >>> y_true = np.array([100, 120, 110, 130, 105])
+    >>> y_pred = np.array([102, 118, 112, 128, 107])
+    >>> metrics = evaluate_model(y_true, y_pred, model_name="Friedewald")
+    >>> print(f"RMSE: {metrics['rmse']:.2f}, CCC: {metrics['lin_ccc']:.4f}")
+    """
+    # Convert to numpy arrays if needed
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    
+    # Validate inputs
+    if len(y_true) == 0 or len(y_pred) == 0:
+        raise ValueError("Input arrays cannot be empty")
+    
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"Arrays must have same length. Got y_true: {len(y_true)}, y_pred: {len(y_pred)}"
+        )
+    
+    # Remove NaN pairs
+    valid_mask = ~(np.isnan(y_true) | np.isnan(y_pred))
+    y_true_clean = y_true[valid_mask]
+    y_pred_clean = y_pred[valid_mask]
+    
+    n_samples = len(y_true_clean)
+    
+    if n_samples == 0:
+        raise ValueError("No valid (non-NaN) pairs found in input arrays")
+    
+    if n_samples < 2:
+        raise ValueError("At least 2 valid data points are required for evaluation")
+    
+    # Calculate error metrics
+    errors = y_pred_clean - y_true_clean
+    squared_errors = errors ** 2
+    
+    rmse = float(np.sqrt(np.mean(squared_errors)))
+    mae = float(np.mean(np.abs(errors)))
+    bias = float(np.mean(errors))
+    
+    # Calculate Pearson correlation coefficient
+    r_pearson = float(np.corrcoef(y_true_clean, y_pred_clean)[0, 1])
+    
+    # Calculate Lin's CCC (reuse existing function)
+    lin_ccc_value = lins_ccc(y_true_clean, y_pred_clean)
+    
+    # Calculate Bland-Altman statistics (reuse existing function)
+    ba_stats = bland_altman_stats(y_true_clean, y_pred_clean)
+    
+    return {
+        'model_name': model_name,
+        'n_samples': n_samples,
+        'rmse': rmse,
+        'mae': mae,
+        'bias': bias,
+        'r_pearson': r_pearson,
+        'lin_ccc': lin_ccc_value,
+        'ba_stats': ba_stats
+    }

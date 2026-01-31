@@ -332,9 +332,9 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a single function returning all metrics.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_model(y_true, y_pred, model_name)` in `ldlC/evaluate.py`
-- [ ] Returns dict: rmse, mae, bias, r_pearson, lin_ccc, ba_stats
-- [ ] Typecheck passes
+- [x] Add `evaluate_model(y_true, y_pred, model_name)` in `ldlC/evaluate.py`
+- [x] Returns dict: rmse, mae, bias, r_pearson, lin_ccc, ba_stats
+- [x] Typecheck passes
 
 ---
 
