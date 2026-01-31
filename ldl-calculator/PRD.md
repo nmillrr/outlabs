@@ -380,11 +380,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want a simple API for making predictions.
 
 **Acceptance Criteria:**
-- [ ] Add `predict_ldl(tc, hdl, tg, method='hybrid')` in `ldlC/predict.py`
-- [ ] method='friedewald', 'martin_hopkins', 'sampson' uses specific equation
-- [ ] method='hybrid' uses best ML model
-- [ ] Returns dict: ldl_pred, ci_lower, ci_upper, method, warning (if TG high)
-- [ ] Typecheck passes
+- [x] Add `predict_ldl(tc, hdl, tg, method='hybrid')` in `ldlC/predict.py`
+- [x] method='friedewald', 'martin_hopkins', 'sampson' uses specific equation
+- [x] method='hybrid' uses best ML model
+- [x] Returns dict: ldl_pred, ci_lower, ci_upper, method, warning (if TG high)
+- [x] Typecheck passes
 
 ---
 

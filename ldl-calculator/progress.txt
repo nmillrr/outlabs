@@ -437,3 +437,20 @@
   - Always verify PRD.md is updated when completing a task
   - PRD and progress.txt should remain in sync
 ---
+
+## Iteration 26 - US-027: Create Prediction API
+- What was implemented:
+  - Created `ldlC/predict.py` module with `predict_ldl()` function
+  - Supports multiple methods: 'friedewald', 'martin_hopkins', 'martin_hopkins_extended', 'sampson', 'hybrid'
+  - Returns dict with: ldl_pred, ci_lower, ci_upper, method, warning
+  - Includes approximate 95% confidence intervals based on method error estimates
+  - Falls back to Sampson equation if hybrid model not found
+  - Provides warnings for high TG (>400 mg/dL) cases
+- Files changed:
+  - `ldlC/predict.py` (new)
+  - `PRD.md` (modified - marked US-027 complete)
+- Learnings for future iterations:
+  - Feature order in predict must match training feature order
+  - Model caching improves repeated prediction performance
+  - All 88 tests continue to pass
+---
