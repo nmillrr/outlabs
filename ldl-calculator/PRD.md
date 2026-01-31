@@ -310,10 +310,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want Bland-Altman statistics for agreement analysis.
 
 **Acceptance Criteria:**
-- [ ] Add `bland_altman_stats(y_true, y_pred)` in `ldlC/evaluate.py`
-- [ ] Returns dict: mean_bias, std_diff, loa_lower, loa_upper
-- [ ] Add unit test with known values
-- [ ] Tests pass
+- [x] Add `bland_altman_stats(y_true, y_pred)` in `ldlC/evaluate.py`
+- [x] Returns dict: mean_bias, std_diff, loa_lower, loa_upper
+- [x] Add unit test with known values
+- [x] Tests pass
 
 ---
 
