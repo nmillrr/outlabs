@@ -316,3 +316,43 @@
   - Cannot edit .ipynb files directly, must rewrite entire notebook
   - All 66 tests continue to pass
 ---
+
+## Iteration 19 - US-021: Implement Bland-Altman Analysis
+- What was implemented:
+  - Created `ldlC/evaluate.py` module for evaluation metrics
+  - Added `bland_altman_stats(y_true, y_pred)` function for agreement analysis
+  - Returns dict with: mean_bias, std_diff, loa_lower, loa_upper
+  - Properly handles NaN values by excluding invalid pairs
+  - Uses sample standard deviation (ddof=1) per Bland-Altman convention
+  - LOA calculated as mean ± 1.96 * std (95% CI)
+  - Created 12 comprehensive unit tests in `tests/test_evaluate.py`
+- Files changed:
+  - `ldlC/evaluate.py` (new)
+  - `tests/test_evaluate.py` (new)
+  - `PRD.md` (modified - marked US-021 complete)
+- Learnings for future iterations:
+  - Bland-Altman bias = predicted - true (sign convention)
+  - Use ddof=1 for sample std in Bland-Altman analysis
+  - All 77 tests now pass (11 new tests added)
+---
+
+## Iteration 20 - US-022: Implement Lin's CCC
+- What was implemented:
+  - Added `lins_ccc(y_true, y_pred)` function in `ldlC/evaluate.py`
+  - Lin's CCC measures agreement considering both precision and accuracy
+  - Formula: CCC = 2 * cov(x,y) / (var_x + var_y + (mean_x - mean_y)^2)
+  - Returns CCC value between -1 (inverse agreement) and 1 (perfect agreement)
+  - Properly handles NaN values by excluding invalid pairs
+  - Requires at least 2 data points (unlike Bland-Altman which works with 1)
+  - Added 12 comprehensive unit tests in `tests/test_evaluate.py`
+- Files changed:
+  - `ldlC/evaluate.py` (modified - added lins_ccc function)
+  - `tests/test_evaluate.py` (modified - added 12 CCC tests)
+  - `PRD.md` (modified - marked US-022 complete)
+- Learnings for future iterations:
+  - Lin's CCC = 2*cov / (var1 + var2 + (mean1 - mean2)^2)
+  - CCC penalizes both variance differences AND mean shifts (bias)
+  - Use ddof=1 for sample statistics in CCC calculation (matches Bland-Altman)
+  - All 88 tests now pass (11 new tests added)
+---
+

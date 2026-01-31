@@ -321,10 +321,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want Lin's Concordance Correlation Coefficient for validation.
 
 **Acceptance Criteria:**
-- [ ] Add `lins_ccc(y_true, y_pred)` in `ldlC/evaluate.py`
-- [ ] Returns CCC value between -1 and 1
-- [ ] Add unit test: identical arrays → CCC = 1.0
-- [ ] Tests pass
+- [x] Add `lins_ccc(y_true, y_pred)` in `ldlC/evaluate.py`
+- [x] Returns CCC value between -1 and 1
+- [x] Add unit test: identical arrays → CCC = 1.0
+- [x] Tests pass
 
 ---
 
