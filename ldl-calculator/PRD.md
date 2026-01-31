@@ -273,10 +273,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a researcher, I want a LightGBM model for best performance.
 
 **Acceptance Criteria:**
-- [ ] Add `train_lightgbm(X_train, y_train, X_val, y_val)` in `ldlC/train.py`
-- [ ] Uses early stopping with 20 rounds
-- [ ] Returns fitted LGBMRegressor
-- [ ] Typecheck passes
+- [x] Add `train_lightgbm(X_train, y_train, X_val, y_val)` in `ldlC/train.py`
+- [x] Uses early stopping with 20 rounds
+- [x] Returns fitted LGBMRegressor
+- [x] Typecheck passes
 
 ---
 

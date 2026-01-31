@@ -13,6 +13,7 @@ from typing import Tuple, List, Any
 
 from sklearn.linear_model import Ridge
 from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
 
 from ldlC.models import (
     calc_ldl_friedewald,
@@ -280,6 +281,76 @@ def train_random_forest(
         n_jobs=-1  # Use all available cores
     )
     model.fit(X_train, y_train)
+    
+    return model
+
+
+def train_lightgbm(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    X_val: pd.DataFrame,
+    y_val: pd.Series,
+    n_estimators: int = 1000,
+    early_stopping_rounds: int = 20
+) -> LGBMRegressor:
+    """
+    Train a LightGBM regression model for LDL-C prediction.
+    
+    LightGBM is a gradient boosting framework that uses tree-based learning
+    algorithms. It is designed to be distributed and efficient with faster
+    training speed and higher efficiency compared to other boosting methods.
+    
+    Uses early stopping to prevent overfitting by monitoring validation loss
+    and stopping training when no improvement is seen for a specified number
+    of rounds.
+    
+    Args:
+        X_train: Training feature DataFrame.
+        y_train: Training target Series (LDL-direct values).
+        X_val: Validation feature DataFrame for early stopping.
+        y_val: Validation target Series for early stopping.
+        n_estimators: Maximum number of boosting iterations (default 1000).
+                      Early stopping typically terminates before this.
+        early_stopping_rounds: Number of rounds without improvement before
+                               stopping (default 20).
+    
+    Returns:
+        Fitted LGBMRegressor model.
+    
+    Raises:
+        ValueError: If input data shapes are incompatible.
+    """
+    if len(X_train) != len(y_train):
+        raise ValueError(
+            f"X_train and y_train must have same length. "
+            f"Got {len(X_train)} and {len(y_train)}"
+        )
+    
+    if len(X_val) != len(y_val):
+        raise ValueError(
+            f"X_val and y_val must have same length. "
+            f"Got {len(X_val)} and {len(y_val)}"
+        )
+    
+    model = LGBMRegressor(
+        n_estimators=n_estimators,
+        random_state=42,  # For reproducibility
+        n_jobs=-1,  # Use all available cores
+        verbosity=-1  # Suppress warnings during training
+    )
+    
+    model.fit(
+        X_train, 
+        y_train,
+        eval_set=[(X_val, y_val)],
+        callbacks=[
+            # Early stopping callback
+            __import__('lightgbm').early_stopping(
+                stopping_rounds=early_stopping_rounds,
+                verbose=False
+            )
+        ]
+    )
     
     return model
 
