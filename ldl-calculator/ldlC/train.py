@@ -374,3 +374,86 @@ def save_model(model: Any, filepath: str) -> None:
     path = Path(filepath)
     path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, filepath)
+
+
+def cross_validate_model(
+    model: Any,
+    X: pd.DataFrame,
+    y: pd.Series,
+    n_splits: int = 10
+) -> dict:
+    """
+    Perform k-fold cross-validation and return evaluation metrics.
+    
+    Uses K-Fold cross-validation to evaluate model performance consistently.
+    Clones the model for each fold to ensure independent training.
+    
+    Args:
+        model: Scikit-learn compatible model (unfitted) to evaluate.
+        X: Feature DataFrame.
+        y: Target Series (LDL-direct values).
+        n_splits: Number of cross-validation folds (default 10).
+    
+    Returns:
+        Dictionary containing:
+            - RMSE_mean: Mean root mean squared error across folds
+            - RMSE_std: Standard deviation of RMSE across folds
+            - MAE_mean: Mean absolute error across folds
+            - MAE_std: Standard deviation of MAE across folds
+    
+    Raises:
+        ValueError: If input data shapes are incompatible or insufficient samples.
+    """
+    from sklearn.model_selection import KFold
+    from sklearn.base import clone
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+    
+    if len(X) != len(y):
+        raise ValueError(
+            f"X and y must have same length. "
+            f"Got {len(X)} and {len(y)}"
+        )
+    
+    if len(X) < n_splits:
+        raise ValueError(
+            f"Insufficient samples for {n_splits}-fold CV. "
+            f"Got {len(X)} samples, need at least {n_splits}."
+        )
+    
+    # Initialize K-Fold cross-validator
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
+    # Store metrics for each fold
+    rmse_scores = []
+    mae_scores = []
+    
+    for train_idx, val_idx in kf.split(X):
+        # Split data for this fold
+        X_train_fold = X.iloc[train_idx]
+        X_val_fold = X.iloc[val_idx]
+        y_train_fold = y.iloc[train_idx]
+        y_val_fold = y.iloc[val_idx]
+        
+        # Clone the model to get fresh instance
+        model_clone = clone(model)
+        
+        # Train the model
+        model_clone.fit(X_train_fold, y_train_fold)
+        
+        # Get predictions
+        y_pred = model_clone.predict(X_val_fold)
+        
+        # Calculate metrics
+        rmse = np.sqrt(mean_squared_error(y_val_fold, y_pred))
+        mae = mean_absolute_error(y_val_fold, y_pred)
+        
+        rmse_scores.append(rmse)
+        mae_scores.append(mae)
+    
+    # Calculate summary statistics
+    return {
+        'RMSE_mean': np.mean(rmse_scores),
+        'RMSE_std': np.std(rmse_scores),
+        'MAE_mean': np.mean(mae_scores),
+        'MAE_std': np.std(mae_scores)
+    }

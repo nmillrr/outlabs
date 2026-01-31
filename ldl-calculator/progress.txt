@@ -260,3 +260,37 @@
   - Pattern follows same structure as train_ridge() for consistency
   - All 66 tests continue to pass
 ---
+
+## Iteration 16 - US-018: Train LightGBM Model
+- What was implemented:
+  - Added `train_lightgbm(X_train, y_train, X_val, y_val)` function in `ldlC/train.py`
+  - Uses LGBMRegressor from lightgbm package
+  - Implements early stopping with 20 rounds (configurable)
+  - Uses validation set for early stopping to prevent overfitting
+  - Default n_estimators=1000 (early stopping typically terminates before this)
+  - Uses random_state=42 for reproducibility and n_jobs=-1 for parallel processing
+- Files changed:
+  - `ldlC/train.py` (modified - added LGBMRegressor import and train_lightgbm function)
+  - `PRD.md` (modified - marked US-018 complete)
+- Learnings for future iterations:
+  - LightGBM uses callbacks for early stopping (lightgbm.early_stopping())
+  - verbosity=-1 suppresses training warnings in LightGBM
+  - PowerShell doesn't support && for command chaining - use separate commands
+  - All 66 tests continue to pass
+---
+
+## Iteration 17 - US-019: Implement Cross-Validation Wrapper
+- What was implemented:
+  - Added `cross_validate_model(model, X, y, n_splits=10)` function in `ldlC/train.py`
+  - Uses sklearn's KFold for k-fold cross-validation with shuffling and random_state=42
+  - Clones the model for each fold using sklearn.base.clone for independent training
+  - Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
+  - Validates input data shapes and checks for minimum sample count
+- Files changed:
+  - `ldlC/train.py` (modified - added cross_validate_model function)
+  - `PRD.md` (modified - marked US-019 complete)
+- Learnings for future iterations:
+  - Use sklearn.base.clone to get fresh model instance for each CV fold
+  - KFold with shuffle=True and random_state=42 ensures reproducibility
+  - All 66 tests continue to pass
+---
