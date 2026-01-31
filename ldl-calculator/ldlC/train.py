@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Tuple, List, Any
 
 from sklearn.linear_model import Ridge
+from sklearn.ensemble import RandomForestRegressor
 
 from ldlC.models import (
     calc_ldl_friedewald,
@@ -237,6 +238,47 @@ def train_ridge(
         )
     
     model = Ridge(alpha=alpha)
+    model.fit(X_train, y_train)
+    
+    return model
+
+
+def train_random_forest(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    n_estimators: int = 200
+) -> RandomForestRegressor:
+    """
+    Train a Random Forest regression model for LDL-C prediction.
+    
+    Random Forest is an ensemble learning method that builds multiple
+    decision trees and averages their predictions. It captures nonlinear
+    relationships and interactions between features.
+    
+    Args:
+        X_train: Training feature DataFrame.
+        y_train: Training target Series (LDL-direct values).
+        n_estimators: Number of trees in the forest (default 200).
+                      Higher values improve performance but increase
+                      training time.
+    
+    Returns:
+        Fitted RandomForestRegressor model.
+    
+    Raises:
+        ValueError: If input data shapes are incompatible.
+    """
+    if len(X_train) != len(y_train):
+        raise ValueError(
+            f"X_train and y_train must have same length. "
+            f"Got {len(X_train)} and {len(y_train)}"
+        )
+    
+    model = RandomForestRegressor(
+        n_estimators=n_estimators,
+        random_state=42,  # For reproducibility
+        n_jobs=-1  # Use all available cores
+    )
     model.fit(X_train, y_train)
     
     return model

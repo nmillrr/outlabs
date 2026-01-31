@@ -227,3 +227,36 @@
   - Feature matrix uses pandas apply() for row-wise equation calculations
   - All 66 tests continue to pass
 ---
+
+## Iteration 14 - US-015: Implement Train/Test Split with Stratification
+- What was implemented:
+  - Added `stratified_split(df, test_size=0.3, random_state=42)` function in `ldlC/train.py`
+  - Stratifies by TG strata: < 100, 100-150, 150-200, 200-400, > 400 mg/dL
+  - Uses sklearn's StratifiedShuffleSplit to ensure proportional representation
+  - Returns (X_train, X_test, y_train, y_test) tuple
+  - Validates required columns and minimum data size
+  - Integrates with create_features() for feature generation
+- Files changed:
+  - `ldlC/train.py` (modified - added stratified_split function)
+  - `PRD.md` (modified - marked US-015 complete)
+- Learnings for future iterations:
+  - TG strata based on clinical guidelines for hypertriglyceridemia
+  - StratifiedShuffleSplit preserves class proportions in train/test splits
+  - All 66 tests continue to pass
+---
+
+## Iteration 15 - US-017: Train Random Forest Model
+- What was implemented:
+  - Added `train_random_forest(X_train, y_train, n_estimators=200)` function in `ldlC/train.py`
+  - Function trains a RandomForestRegressor with configurable n_estimators parameter
+  - Uses random_state=42 for reproducibility and n_jobs=-1 for parallel processing
+  - Validates input data shapes (X_train and y_train must have same length)
+  - Returns fitted RandomForestRegressor model
+- Files changed:
+  - `ldlC/train.py` (modified - added RandomForestRegressor import and train_random_forest function)
+  - `PRD.md` (modified - marked US-017 complete)
+- Learnings for future iterations:
+  - RandomForestRegressor from sklearn.ensemble for ensemble learning
+  - Pattern follows same structure as train_ridge() for consistency
+  - All 66 tests continue to pass
+---
