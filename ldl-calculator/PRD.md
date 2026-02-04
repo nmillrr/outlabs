@@ -392,10 +392,10 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a developer, I want the package to be pip-installable.
 
 **Acceptance Criteria:**
-- [ ] Create `setup.py` with name='ldlC', version='0.1.0'
-- [ ] Includes dependencies from requirements.txt
-- [ ] Package installs with `pip install -e .`
-- [ ] Import works: `from ldlC import models`
+- [x] Create `setup.py` with name='ldlC', version='0.1.0'
+- [x] Includes dependencies from requirements.txt
+- [x] Package installs with `pip install -e .`
+- [x] Import works: `from ldlC import models`
 
 ---
 
