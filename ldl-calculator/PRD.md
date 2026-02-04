@@ -403,11 +403,11 @@ Rather than switching between equations based on TG thresholds, we will train a 
 **Description:** As a user, I want clear documentation to use the package.
 
 **Acceptance Criteria:**
-- [ ] Update README.md with: Installation, Quick Start, API Reference
-- [ ] Include code examples for each equation
-- [ ] Document when to use hybrid vs specific equations
-- [ ] Explain TG threshold considerations
-- [ ] README renders correctly on GitHub
+- [x] Update README.md with: Installation, Quick Start, API Reference
+- [x] Include code examples for each equation
+- [x] Document when to use hybrid vs specific equations
+- [x] Explain TG threshold considerations
+- [x] README renders correctly on GitHub
 
 ---
 
