@@ -454,3 +454,42 @@
   - Model caching improves repeated prediction performance
   - All 88 tests continue to pass
 ---
+
+## Iteration 27 - US-028: Create Package setup.py
+- What was implemented:
+  - Created `setup.py` with name='ldlC', version='0.1.0'
+  - Reads dependencies from requirements.txt automatically
+  - Includes proper package metadata (author, description, classifiers, keywords)
+  - Supports Python 3.8+
+  - Package installs successfully with `pip install -e .`
+  - Import verified: `from ldlC import models` works correctly
+- Files changed:
+  - `setup.py` (new)
+  - `PRD.md` (modified - marked US-028 complete)
+- Learnings for future iterations:
+  - Use setuptools.find_packages() to auto-discover package modules
+  - Read requirements.txt to avoid duplicating dependency list
+  - All 88 tests continue to pass
+---
+
+## Iteration 28 - US-029: Write README with Usage Examples
+- What was implemented:
+  - Created comprehensive `README.md` with all required documentation
+  - Installation section with pip install instructions for development mode
+  - Quick Start section with basic usage examples for all equations
+  - Full API Reference covering predict_ldl(), all 4 equations, and utility functions
+  - TG Threshold Considerations table explaining when to use each method
+  - When to Use Each Method section with detailed guidance
+  - Evaluation Metrics section covering Bland-Altman, Lin's CCC
+  - Data Pipeline section for NHANES data processing
+  - Project Structure overview
+  - Testing instructions
+  - References to original publications
+- Files changed:
+  - `README.md` (new)
+  - `PRD.md` (modified - marked US-029 complete)
+- Learnings for future iterations:
+  - README structure: Installation → Quick Start → API Reference → Guidelines
+  - TG thresholds: <150 (any), 150-400 (prefer M-H/Sampson), >400 (Extended M-H/Sampson), >800 (direct measurement)
+  - All 88 tests continue to pass
+---
