@@ -1,0 +1,17 @@
+setup.py
+ldlC/__init__.py
+ldlC/data.py
+ldlC/evaluate.py
+ldlC/models.py
+ldlC/predict.py
+ldlC/train.py
+ldlC/utils.py
+ldlC.egg-info/PKG-INFO
+ldlC.egg-info/SOURCES.txt
+ldlC.egg-info/dependency_links.txt
+ldlC.egg-info/requires.txt
+ldlC.egg-info/top_level.txt
+tests/test_data.py
+tests/test_evaluate.py
+tests/test_models.py
+tests/test_utils.py

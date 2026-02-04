@@ -1,0 +1,44 @@
+Metadata-Version: 2.4
+Name: ldlC
+Version: 0.1.0
+Summary: LDL Cholesterol Estimation Model implementing Friedewald, Martin-Hopkins, Sampson equations and hybrid ML
+Author: OutLabs
+Keywords: ldl,cholesterol,lipid,friedewald,martin-hopkins,sampson,machine-learning,clinical
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Healthcare Industry
+Classifier: Topic :: Scientific/Engineering :: Medical Science Apps.
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: pandas
+Requires-Dist: scikit-learn
+Requires-Dist: lightgbm
+Requires-Dist: matplotlib
+Requires-Dist: pytest
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Dynamic: author
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: keywords
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+Setup script for ldlC package.
+
+LDL Cholesterol Estimation Model - A clinically-validated LDL cholesterol
+estimation algorithm implementing multiple mechanistic equations (Friedewald,
+Martin-Hopkins, Sampson) enhanced by a unified machine learning model.
