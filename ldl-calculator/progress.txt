@@ -493,3 +493,17 @@
   - TG thresholds: <150 (any), 150-400 (prefer M-H/Sampson), >400 (Extended M-H/Sampson), >800 (direct measurement)
   - All 88 tests continue to pass
 ---
+
+## Iteration 29 - US-030: Run Full Test Suite
+- What was implemented:
+  - Ran full test suite with pytest: 88 passed, 1 skipped, 0 failures
+  - Added pytest-cov for coverage reporting
+  - Core module coverage achieved: models.py (88%), utils.py (100%)
+  - Overall coverage: 25% (lower due to data/ML modules requiring external resources)
+- Files changed:
+  - `PRD.md` (modified - marked US-030 complete)
+- Learnings for future iterations:
+  - Core clinical modules (models, utils) have high coverage
+  - Data pipeline (data.py) and ML training (train.py) would need integration tests with NHANES data
+  - predict.py could benefit from unit tests for the API layer
+---
