@@ -1,0 +1,225 @@
+# hba1cE: HbA1c Estimation from Routine Blood Markers
+
+A clinically-validated HbA1c estimation library that predicts glycated hemoglobin from fasting glucose, lipid panels, and demographic factors—reducing dependence on specialized HbA1c assays in resource-limited settings.
+
+## Scientific Background
+
+### What is HbA1c?
+
+**Hemoglobin A1c (HbA1c)** measures the percentage of hemoglobin proteins that have glucose attached. Because red blood cells live ~120 days, HbA1c reflects average blood glucose over 2-3 months—the gold standard for diabetes diagnosis and monitoring.
+
+### The Clinical Problem
+
+Direct HbA1c measurement requires:
+- **HPLC** (High-Performance Liquid Chromatography) — Gold standard, expensive equipment
+- **Immunoassay** — Common but requires specialized reagents
+- **Boronate affinity** — Alternative method, still needs dedicated analyzer
+
+Many rural clinics, low-resource hospitals, and global health settings lack access to HbA1c testing but **do have** routine glucose and basic chemistry panels.
+
+### The Estimation Approach
+
+Unlike Free Testosterone or LDL-C, there is **no established mechanistic equation** for HbA1c. Instead, this project uses:
+
+1. **Empirical Regression Models** — Linear and polynomial relationships between fasting glucose and HbA1c
+2. **Machine Learning** — Ensemble models trained on NHANES glycemic data
+3. **Multi-marker Integration** — Combining glucose with lipids, BMI, age for improved accuracy
+
+---
+
+## Technical Approach
+
+### Input Features (from routine bloodwork)
+
+| Marker | Source | Rationale |
+|--------|--------|-----------|
+| **Fasting Plasma Glucose (FPG)** | Basic metabolic panel | Primary predictor; direct glycemic measure |
+| **Random Glucose** | Basic metabolic panel | Alternative when fasting unavailable |
+| **Triglycerides** | Lipid panel | Correlates with insulin resistance |
+| **HDL Cholesterol** | Lipid panel | Inversely associated with metabolic syndrome |
+| **Age** | Demographics | HbA1c formation kinetics vary with age |
+| **Hemoglobin** | CBC | RBC turnover affects HbA1c levels |
+| **MCV** | CBC | Red cell age affects glycation time |
+
+### Mechanistic Estimators
+
+#### 1. ADAG Equation (Derived from Nathan et al., 2008)
+
+The A1C-Derived Average Glucose (ADAG) study established a linear relationship:
+
+```
+eAG (mg/dL) = 28.7 × HbA1c - 46.7
+```
+
+**Inverted for estimation:**
+```
+eHbA1c = (FPG + 46.7) / 28.7
+```
+
+*Limitations:* Assumes FPG represents average glucose; significant individual variability.
+
+#### 2. Hemoglobin Glycation Kinetics Model
+
+Based on first-order glycation kinetics:
+
+```
+HbA1c = k × [Glucose_avg] × RBC_lifespan / Hemoglobin_total
+```
+
+Where:
+- `k` = glycation rate constant (~4.5 × 10⁻⁵ per mg/dL per day)
+- `RBC_lifespan` ≈ 120 days (can adjust for anemia)
+
+#### 3. Multi-Linear Regression (NHANES-derived)
+
+```
+eHbA1c = β₀ + β₁×FPG + β₂×Age + β₃×TG + β₄×HDL + β₅×Hgb + ε
+```
+
+Coefficients trained on NHANES 2011-2018 with measured HbA1c as ground truth.
+
+### Machine Learning Models
+
+| Model | Description | Expected Performance |
+|-------|-------------|---------------------|
+| **Ridge Regression** | Regularized linear baseline | RMSE ~0.6% |
+| **Random Forest** | Captures non-linear FPG-HbA1c relationship | RMSE ~0.5% |
+| **LightGBM** | Gradient boosting with feature interactions | RMSE ~0.45% |
+| **Hybrid Ensemble** | Stacked model combining all approaches | RMSE ~0.4% |
+
+---
+
+## Validation Strategy
+
+### Gold Standard
+
+- **HPLC-measured HbA1c** from NHANES laboratory data
+- **NGSP-certified** assays ensuring standardization
+
+### Key Metrics
+
+| Metric | Target | Clinical Meaning |
+|--------|--------|------------------|
+| **RMSE** | < 0.5% | Average prediction error |
+| **Mean Bias** | < ±0.2% | Systematic over/under-estimation |
+| **Lin's CCC** | ≥ 0.85 | Agreement with measured values |
+| **% within ±0.5%** | > 80% | Clinical decision accuracy |
+
+### Subgroup Analysis
+
+Critical to validate across:
+- **Anemia patients** — Altered RBC lifespan affects HbA1c
+- **Pregnancy** — Physiological changes in glucose metabolism
+- **Hemoglobinopathies** — Sickle cell, thalassemia affect assays
+- **Chronic kidney disease** — Uremia affects RBC survival
+- **Age extremes** — Children and elderly have different kinetics
+
+---
+
+## NHANES Data Sources
+
+| File | Variables | Cycles |
+|------|-----------|--------|
+| `GHB_*.XPT` | HbA1c (LBXGH) | 2011-2018 |
+| `GLU_*.XPT` | Fasting glucose (LBXGLU) | 2011-2018 |
+| `TRIGLY_*.XPT` | Triglycerides (LBXTR) | 2011-2018 |
+| `HDL_*.XPT` | HDL cholesterol (LBDHDD) | 2011-2018 |
+| `CBC_*.XPT` | Hemoglobin (LBXHGB), MCV (LBXMCVSI) | 2011-2018 |
+| `DEMO_*.XPT` | Age (RIDAGEYR), Sex (RIAGENDR) | 2011-2018 |
+
+---
+
+## Known Challenges
+
+### 1. Glucose Variability
+FPG is a single time-point; HbA1c reflects 3-month average. High variability = poor FPG→HbA1c correlation.
+
+### 2. Non-Glycemic Factors
+HbA1c is affected by:
+- **RBC lifespan** (anemia, hemolysis, transfusions)
+- **Hemoglobin variants** (HbS, HbC, HbE)
+- **Assay interference** (uremia, hypertriglyceridemia)
+
+### 3. Racial/Ethnic Differences
+Studies show HbA1c may differ by ~0.4% between populations at the same average glucose—requires calibration.
+
+### 4. Clinical Decision Thresholds
+- HbA1c 5.7%: Prediabetes cutoff
+- HbA1c 6.5%: Diabetes diagnosis
+- Small errors near thresholds have large clinical impact
+
+---
+
+## Project Structure
+
+```
+hba1c-calculator/
+├── hba1cE/                   # Python package
+│   ├── __init__.py
+│   ├── models.py            # ADAG, kinetic, regression estimators
+│   ├── predict.py           # Unified prediction API
+│   ├── train.py             # ML model training
+│   ├── evaluate.py          # Validation metrics
+│   ├── data.py              # NHANES glycemic data pipeline
+│   └── utils.py             # Unit conversions (mg/dL ↔ mmol/L)
+├── tests/                    # Unit tests
+├── notebooks/                # Analysis notebooks
+│   ├── 01_data_sourcing.ipynb
+│   ├── 02_estimator_comparison.ipynb
+│   ├── 03_model_training.ipynb
+│   └── 04_evaluation.ipynb
+├── models/                   # Trained model artifacts
+├── requirements.txt
+└── setup.py
+```
+
+---
+
+## API Design (Planned)
+
+```python
+from hba1cE.models import calc_hba1c_adag, calc_hba1c_kinetic
+from hba1cE.predict import predict_hba1c
+
+# Simple ADAG estimation
+hba1c_adag = calc_hba1c_adag(fpg_mgdl=126)  # → ~6.0%
+
+# Kinetic model with hemoglobin adjustment
+hba1c_kinetic = calc_hba1c_kinetic(fpg_mgdl=126, hgb_gdl=12.0)
+
+# ML prediction with confidence intervals
+result = predict_hba1c(
+    fpg=126,      # Fasting glucose (mg/dL)
+    tg=150,       # Triglycerides (mg/dL)
+    hdl=45,       # HDL (mg/dL)
+    age=55,       # Age (years)
+    hgb=14.0,     # Hemoglobin (g/dL)
+    method='hybrid'
+)
+print(f"Estimated HbA1c: {result['hba1c_pred']:.1f}%")
+print(f"95% CI: [{result['ci_lower']:.1f}, {result['ci_upper']:.1f}]%")
+```
+
+---
+
+## References
+
+1. **Nathan DM, et al.** (2008). Translating the A1C Assay Into Estimated Average Glucose Values. *Diabetes Care*. [DOI: 10.2337/dc08-0545](https://doi.org/10.2337/dc08-0545)
+
+2. **Sacks DB, et al.** (2011). Guidelines and Recommendations for Laboratory Analysis in the Diagnosis and Management of Diabetes Mellitus. *Diabetes Care*. [DOI: 10.2337/dc11-9998](https://doi.org/10.2337/dc11-9998)
+
+3. **Bergenstal RM, et al.** (2018). Racial Differences in the Relationship of Glucose Concentrations and Hemoglobin A1c Levels. *Ann Intern Med*. [DOI: 10.7326/M17-2865](https://doi.org/10.7326/M17-2865)
+
+4. **NGSP** (National Glycohemoglobin Standardization Program): http://www.ngsp.org/
+
+---
+
+## License
+
+MIT License - See LICENSE file for details.
+
+---
+
+## Status
+
+📋 **Planned** — Project structure created, implementation pending.
