@@ -57,12 +57,12 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want a clean Python project structure so that code is organized and reproducible.
 
 **Acceptance Criteria:**
-- [ ] Create `hba1cE/` package directory with `__init__.py`
-- [ ] Create `hba1cE/models.py`, `hba1cE/utils.py`, `hba1cE/data.py` (empty modules)
-- [ ] Create `tests/` directory with `test_models.py` (empty)
-- [ ] Create `notebooks/` directory
-- [ ] Create `requirements.txt` with: numpy, scipy, pandas, scikit-learn, lightgbm, matplotlib, pytest
-- [ ] Typecheck passes (no syntax errors)
+- [x] Create `hba1cE/` package directory with `__init__.py`
+- [x] Create `hba1cE/models.py`, `hba1cE/utils.py`, `hba1cE/data.py` (empty modules)
+- [x] Create `tests/` directory with `test_models.py` (empty)
+- [x] Create `notebooks/` directory
+- [x] Create `requirements.txt` with: numpy, scipy, pandas, scikit-learn, lightgbm, matplotlib, pytest
+- [x] Typecheck passes (no syntax errors)
 
 ---
 
