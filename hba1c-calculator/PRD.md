@@ -121,12 +121,12 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want a quality report so that I can verify data before training.
 
 **Acceptance Criteria:**
-- [ ] Add `generate_quality_report(df, output_path)` function in `hba1cE/data.py`
-- [ ] Report includes: record count, mean/SD for FPG/HbA1c/TG/HDL/Hgb/MCV
-- [ ] Includes HbA1c distribution breakdown (<5.7%, 5.7-6.4%, ≥6.5%)
-- [ ] Includes FPG distribution breakdown (<100, 100-125, ≥126 mg/dL)
-- [ ] Saves report to specified path as text file
-- [ ] Typecheck passes
+- [x] Add `generate_quality_report(df, output_path)` function in `hba1cE/data.py`
+- [x] Report includes: record count, mean/SD for FPG/HbA1c/TG/HDL/Hgb/MCV
+- [x] Includes HbA1c distribution breakdown (<5.7%, 5.7-6.4%, ≥6.5%)
+- [x] Includes FPG distribution breakdown (<100, 100-125, ≥126 mg/dL)
+- [x] Saves report to specified path as text file
+- [x] Typecheck passes
 
 ---
 

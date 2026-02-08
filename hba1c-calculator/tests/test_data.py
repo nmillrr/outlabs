@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import numpy as np
 
-from hba1cE.data import read_xpt, clean_glycemic_data
+from hba1cE.data import read_xpt, clean_glycemic_data, generate_quality_report
 
 
 class TestReadXpt:
@@ -240,3 +240,98 @@ class TestCleanGlycemicData:
         # Should have 4 rows (SEQN 3 missing from ghb_df)
         assert len(result) == 4
 
+
+class TestGenerateQualityReport:
+    """Tests for the generate_quality_report function."""
+
+    @pytest.fixture
+    def sample_cleaned_df(self):
+        """Create a sample cleaned dataframe for testing."""
+        return pd.DataFrame({
+            "hba1c_percent": [5.0, 5.5, 5.8, 6.2, 6.5, 7.0, 8.0, 9.0, 10.0, 5.2],
+            "fpg_mgdl": [90.0, 95.0, 105.0, 115.0, 130.0, 150.0, 180.0, 200.0, 220.0, 92.0],
+            "tg_mgdl": [100.0, 120.0, 150.0, 180.0, 200.0, 220.0, 250.0, 280.0, 300.0, 110.0],
+            "hdl_mgdl": [55.0, 52.0, 48.0, 45.0, 42.0, 40.0, 38.0, 35.0, 32.0, 53.0],
+            "hgb_gdl": [14.0, 13.5, 14.2, 13.0, 15.0, 14.5, 13.8, 12.5, 11.5, 14.0],
+            "mcv_fl": [88.0, 90.0, 92.0, 85.0, 95.0, 91.0, 89.0, 87.0, 86.0, 90.0],
+            "age_years": [45, 50, 55, 60, 65, 70, 75, 80, 85, 40],
+            "sex": [1, 2, 1, 2, 1, 2, 1, 2, 1, 2],
+        })
+
+    def test_generate_quality_report_returns_dict(self, sample_cleaned_df, tmp_path):
+        """Test that generate_quality_report returns a dictionary."""
+        output_path = tmp_path / "report.txt"
+        result = generate_quality_report(sample_cleaned_df, str(output_path))
+
+        assert isinstance(result, dict)
+
+    def test_generate_quality_report_record_count(self, sample_cleaned_df, tmp_path):
+        """Test that record count is correct."""
+        output_path = tmp_path / "report.txt"
+        result = generate_quality_report(sample_cleaned_df, str(output_path))
+
+        assert result["record_count"] == 10
+
+    def test_generate_quality_report_stats(self, sample_cleaned_df, tmp_path):
+        """Test that mean/SD statistics are included."""
+        output_path = tmp_path / "report.txt"
+        result = generate_quality_report(sample_cleaned_df, str(output_path))
+
+        assert "stats" in result
+        stats = result["stats"]
+
+        # Check all variables are included
+        expected_vars = ["fpg_mgdl", "hba1c_percent", "tg_mgdl", "hdl_mgdl", "hgb_gdl", "mcv_fl"]
+        for var in expected_vars:
+            assert var in stats
+            assert "mean" in stats[var]
+            assert "std" in stats[var]
+
+    def test_generate_quality_report_hba1c_distribution(self, sample_cleaned_df, tmp_path):
+        """Test HbA1c clinical distribution breakdown."""
+        output_path = tmp_path / "report.txt"
+        result = generate_quality_report(sample_cleaned_df, str(output_path))
+
+        assert "hba1c_distribution" in result
+        hba1c_dist = result["hba1c_distribution"]
+
+        # Verify counts: <5.7% (normal), 5.7-6.4% (prediabetes), >=6.5% (diabetes)
+        # Values: 5.0, 5.5, 5.8, 6.2, 6.5, 7.0, 8.0, 9.0, 10.0, 5.2
+        # Normal (<5.7): 5.0, 5.5, 5.2 = 3
+        # Prediabetes (5.7-6.4): 5.8, 6.2 = 2
+        # Diabetes (>=6.5): 6.5, 7.0, 8.0, 9.0, 10.0 = 5
+        assert hba1c_dist["normal_lt_5.7"] == 3
+        assert hba1c_dist["prediabetes_5.7_to_6.4"] == 2
+        assert hba1c_dist["diabetes_gte_6.5"] == 5
+
+    def test_generate_quality_report_fpg_distribution(self, sample_cleaned_df, tmp_path):
+        """Test FPG clinical distribution breakdown."""
+        output_path = tmp_path / "report.txt"
+        result = generate_quality_report(sample_cleaned_df, str(output_path))
+
+        assert "fpg_distribution" in result
+        fpg_dist = result["fpg_distribution"]
+
+        # Verify counts: <100 (normal), 100-125 (prediabetes), >=126 (diabetes)
+        # Values: 90.0, 95.0, 105.0, 115.0, 130.0, 150.0, 180.0, 200.0, 220.0, 92.0
+        # Normal (<100): 90.0, 95.0, 92.0 = 3
+        # Prediabetes (100-125): 105.0, 115.0 = 2
+        # Diabetes (>=126): 130.0, 150.0, 180.0, 200.0, 220.0 = 5
+        assert fpg_dist["normal_lt_100"] == 3
+        assert fpg_dist["prediabetes_100_to_125"] == 2
+        assert fpg_dist["diabetes_gte_126"] == 5
+
+    def test_generate_quality_report_saves_file(self, sample_cleaned_df, tmp_path):
+        """Test that report is saved to specified path."""
+        output_path = tmp_path / "subdir" / "report.txt"
+        generate_quality_report(sample_cleaned_df, str(output_path))
+
+        assert output_path.exists()
+        content = output_path.read_text(encoding="utf-8")
+
+        # Check key sections are present
+        assert "NHANES GLYCEMIC DATA QUALITY REPORT" in content
+        assert "Total Records: 10" in content
+        assert "DESCRIPTIVE STATISTICS" in content
+        assert "HbA1c DISTRIBUTION" in content
+        assert "FPG DISTRIBUTION" in content

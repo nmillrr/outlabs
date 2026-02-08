@@ -67,3 +67,19 @@
   - Use `pd.DataFrame.merge()` with `how="inner"` for multi-dataset joins
   - Reset index after filtering to ensure sequential row indexing
 ---
+
+## Iteration 5 - US-006: Generate Data Quality Report
+- **What was implemented:**
+  - `generate_quality_report(df, output_path)` function in `hba1cE/data.py`
+  - Returns dict with record_count, stats (mean/SD), hba1c_distribution, fpg_distribution
+  - Saves formatted text report to specified path
+  - Calculates clinical distribution breakdowns for HbA1c (<5.7%, 5.7-6.4%, ≥6.5%)
+  - Calculates clinical distribution breakdowns for FPG (<100, 100-125, ≥126 mg/dL)
+- **Files changed:**
+  - `hba1cE/data.py` - Added `generate_quality_report()` function (~115 lines)
+  - `tests/test_data.py` - Added `TestGenerateQualityReport` class with 6 unit tests
+- **Learnings for future iterations:**
+  - Clinical thresholds: HbA1c 5.7% (prediabetes), 6.5% (diabetes); FPG 100 mg/dL, 126 mg/dL
+  - Use Path.parent.mkdir(parents=True, exist_ok=True) to ensure output directory exists
+  - Return both dict (for programmatic use) and save text file (for human review)
+---

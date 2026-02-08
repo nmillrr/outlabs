@@ -259,3 +259,119 @@ def clean_glycemic_data(
     cleaned = cleaned.reset_index(drop=True)
 
     return cleaned
+
+
+def generate_quality_report(df: pd.DataFrame, output_path: str) -> Dict[str, Any]:
+    """
+    Generate a data quality report for cleaned glycemic data.
+
+    Creates a comprehensive quality report including record counts,
+    descriptive statistics, and clinical distribution breakdowns for
+    HbA1c and fasting plasma glucose.
+
+    Args:
+        df: Cleaned DataFrame from clean_glycemic_data().
+        output_path: Path where the report will be saved as a text file.
+
+    Returns:
+        Dict containing all report metrics:
+        - record_count: Total number of records
+        - stats: Dict of mean/SD for each variable
+        - hba1c_distribution: Dict with counts for clinical categories
+        - fpg_distribution: Dict with counts for clinical categories
+
+    Example:
+        >>> report = generate_quality_report(cleaned_df, "data/quality_report.txt")
+        >>> print(report['record_count'])
+        8542
+    """
+    report: Dict[str, Any] = {}
+
+    # Record count
+    report["record_count"] = len(df)
+
+    # Descriptive statistics (mean/SD) for key variables
+    variables = ["fpg_mgdl", "hba1c_percent", "tg_mgdl", "hdl_mgdl", "hgb_gdl", "mcv_fl"]
+    stats: Dict[str, Dict[str, float]] = {}
+    for var in variables:
+        if var in df.columns:
+            stats[var] = {
+                "mean": float(df[var].mean()),
+                "std": float(df[var].std()),
+            }
+    report["stats"] = stats
+
+    # HbA1c distribution breakdown (clinical categories)
+    # <5.7% (normal), 5.7-6.4% (prediabetes), ≥6.5% (diabetes)
+    hba1c = df["hba1c_percent"]
+    hba1c_dist = {
+        "normal_lt_5.7": int((hba1c < 5.7).sum()),
+        "prediabetes_5.7_to_6.4": int(((hba1c >= 5.7) & (hba1c < 6.5)).sum()),
+        "diabetes_gte_6.5": int((hba1c >= 6.5).sum()),
+    }
+    report["hba1c_distribution"] = hba1c_dist
+
+    # FPG distribution breakdown (clinical categories)
+    # <100 mg/dL (normal), 100-125 mg/dL (prediabetes), ≥126 mg/dL (diabetes)
+    fpg = df["fpg_mgdl"]
+    fpg_dist = {
+        "normal_lt_100": int((fpg < 100).sum()),
+        "prediabetes_100_to_125": int(((fpg >= 100) & (fpg < 126)).sum()),
+        "diabetes_gte_126": int((fpg >= 126).sum()),
+    }
+    report["fpg_distribution"] = fpg_dist
+
+    # Generate text report
+    report_lines = [
+        "=" * 60,
+        "NHANES GLYCEMIC DATA QUALITY REPORT",
+        "=" * 60,
+        "",
+        f"Total Records: {report['record_count']}",
+        "",
+        "-" * 40,
+        "DESCRIPTIVE STATISTICS (Mean ± SD)",
+        "-" * 40,
+    ]
+
+    var_labels = {
+        "fpg_mgdl": "Fasting Plasma Glucose (mg/dL)",
+        "hba1c_percent": "HbA1c (%)",
+        "tg_mgdl": "Triglycerides (mg/dL)",
+        "hdl_mgdl": "HDL Cholesterol (mg/dL)",
+        "hgb_gdl": "Hemoglobin (g/dL)",
+        "mcv_fl": "Mean Corpuscular Volume (fL)",
+    }
+
+    for var, label in var_labels.items():
+        if var in stats:
+            mean = stats[var]["mean"]
+            std = stats[var]["std"]
+            report_lines.append(f"{label}: {mean:.2f} ± {std:.2f}")
+
+    report_lines.extend([
+        "",
+        "-" * 40,
+        "HbA1c DISTRIBUTION (Clinical Categories)",
+        "-" * 40,
+        f"Normal (<5.7%):      {hba1c_dist['normal_lt_5.7']:,} ({100*hba1c_dist['normal_lt_5.7']/len(df):.1f}%)",
+        f"Prediabetes (5.7-6.4%): {hba1c_dist['prediabetes_5.7_to_6.4']:,} ({100*hba1c_dist['prediabetes_5.7_to_6.4']/len(df):.1f}%)",
+        f"Diabetes (≥6.5%):    {hba1c_dist['diabetes_gte_6.5']:,} ({100*hba1c_dist['diabetes_gte_6.5']/len(df):.1f}%)",
+        "",
+        "-" * 40,
+        "FPG DISTRIBUTION (Clinical Categories)",
+        "-" * 40,
+        f"Normal (<100 mg/dL):     {fpg_dist['normal_lt_100']:,} ({100*fpg_dist['normal_lt_100']/len(df):.1f}%)",
+        f"Prediabetes (100-125):   {fpg_dist['prediabetes_100_to_125']:,} ({100*fpg_dist['prediabetes_100_to_125']/len(df):.1f}%)",
+        f"Diabetes (≥126 mg/dL):   {fpg_dist['diabetes_gte_126']:,} ({100*fpg_dist['diabetes_gte_126']/len(df):.1f}%)",
+        "",
+        "=" * 60,
+    ])
+
+    # Write report to file
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with open(output, "w", encoding="utf-8") as f:
+        f.write("\n".join(report_lines))
+
+    return report
