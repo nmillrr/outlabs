@@ -14,6 +14,8 @@ import urllib.error
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
+import pandas as pd
+
 
 # NHANES data file mappings by cycle
 # Format: cycle_code -> {data_type: filename}
@@ -133,3 +135,42 @@ def download_nhanes_glycemic(
                 downloaded_files[cycle][data_type] = ""
 
     return downloaded_files
+
+
+def read_xpt(filepath: str) -> pd.DataFrame:
+    """
+    Read a NHANES XPT (SAS transport) file into a pandas DataFrame.
+
+    Args:
+        filepath: Path to the XPT file to read.
+
+    Returns:
+        DataFrame containing the data from the XPT file.
+
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        ValueError: If the file cannot be parsed as a valid XPT file.
+
+    Example:
+        >>> df = read_xpt("data/raw/GHB_J.XPT")
+        >>> df.head()
+           SEQN    LBXGH
+        0  93703     5.4
+        ...
+    """
+    path = Path(filepath)
+
+    if not path.exists():
+        raise FileNotFoundError(
+            f"XPT file not found: {filepath}. "
+            f"Please run download_nhanes_glycemic() first to download the data."
+        )
+
+    try:
+        df = pd.read_sas(filepath, format="xport")
+        return df
+    except Exception as e:
+        raise ValueError(
+            f"Failed to parse XPT file '{filepath}': {e}. "
+            f"The file may be corrupted or not in valid SAS transport format."
+        ) from e

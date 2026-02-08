@@ -37,3 +37,17 @@
   - Cycles use letter suffixes: G=2011-12, H=2013-14, I=2015-16, J=2017-18
 ---
 
+## Iteration 3 - US-004: Implement XPT File Parser
+- **What was implemented:**
+  - `read_xpt(filepath)` function in `hba1cE/data.py`
+  - Uses `pandas.read_sas(filepath, format="xport")` to read SAS transport files
+  - Raises FileNotFoundError with informative message for missing files
+  - Wraps pandas exceptions in ValueError with helpful context
+- **Files changed:**
+  - `hba1cE/data.py` - Added pandas import and read_xpt function (~35 lines)
+  - `tests/test_data.py` - Created with 5 unit tests using mocking
+- **Learnings for future iterations:**
+  - Pandas `read_sas()` handles XPT format natively with `format="xport"` parameter
+  - Pandas doesn't have `to_sas()` method - use mocking for tests or external libraries
+  - Use `unittest.mock.patch` to mock pandas functions for predictable test behavior
+---
