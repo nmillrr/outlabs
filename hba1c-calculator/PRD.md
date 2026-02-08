@@ -70,12 +70,12 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want reliable unit conversion functions so that data from different sources can be harmonized.
 
 **Acceptance Criteria:**
-- [ ] Add `mg_dl_to_mmol_l(glucose_mgdl)` function in `hba1cE/utils.py` (glucose: ÷18.018)
-- [ ] Add `mmol_l_to_mg_dl(glucose_mmol)` function
-- [ ] Add `percent_to_mmol_mol(hba1c_percent)` for HbA1c NGSP→IFCC conversion
-- [ ] Add `mmol_mol_to_percent(hba1c_mmol)` for IFCC→NGSP conversion
-- [ ] Add unit tests in `tests/test_utils.py` verifying conversions
-- [ ] Tests pass: `pytest tests/test_utils.py`
+- [x] Add `mg_dl_to_mmol_l(glucose_mgdl)` function in `hba1cE/utils.py` (glucose: ÷18.018)
+- [x] Add `mmol_l_to_mg_dl(glucose_mmol)` function
+- [x] Add `percent_to_mmol_mol(hba1c_percent)` for HbA1c NGSP→IFCC conversion
+- [x] Add `mmol_mol_to_percent(hba1c_mmol)` for IFCC→NGSP conversion
+- [x] Add unit tests in `tests/test_utils.py` verifying conversions
+- [x] Tests pass: `pytest tests/test_utils.py`
 
 ---
 

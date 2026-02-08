@@ -2,5 +2,22 @@
 
 ## Learnings
 (Patterns discovered during implementation)
+- Use `python -m pytest` instead of `pytest` directly on Windows to avoid PATH issues
+- Numpy arrays can be passed through the conversion functions for vectorized operations
 
+---
+
+## Iteration 1 - US-002: Implement Unit Conversion Utilities
+- **What was implemented:**
+  - `mg_dl_to_mmol_l()` - glucose mg/dL to mmol/L conversion
+  - `mmol_l_to_mg_dl()` - glucose mmol/L to mg/dL conversion
+  - `percent_to_mmol_mol()` - HbA1c NGSP (%) to IFCC (mmol/mol) conversion
+  - `mmol_mol_to_percent()` - HbA1c IFCC (mmol/mol) to NGSP (%) conversion
+- **Files changed:**
+  - `hba1cE/utils.py` - Added all four conversion functions with docstrings
+  - `tests/test_utils.py` - Created with 15 comprehensive tests
+- **Learnings for future iterations:**
+  - Conversion factors: glucose ÷18.018, HbA1c uses (NGSP - 2.15) × 10.929
+  - Functions support both scalar and numpy array inputs
+  - Clinical thresholds: 126 mg/dL ≈ 7.0 mmol/L, 6.5% HbA1c ≈ 48 mmol/mol
 ---
