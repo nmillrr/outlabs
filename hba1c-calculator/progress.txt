@@ -83,3 +83,20 @@
   - Use Path.parent.mkdir(parents=True, exist_ok=True) to ensure output directory exists
   - Return both dict (for programmatic use) and save text file (for human review)
 ---
+
+## Iteration 6 - US-007: Create Data Sourcing Notebook
+- **What was implemented:**
+  - `notebooks/01_data_sourcing.ipynb` - Full Jupyter notebook demonstrating NHANES data pipeline
+  - Step 1: Downloading NHANES XPT files using `download_nhanes_glycemic()`
+  - Step 2: Parsing XPT files with `read_xpt()` function
+  - Step 3: Cleaning and merging data with `clean_glycemic_data()`
+  - Step 4: Generating quality report with `generate_quality_report()`
+  - Step 5: Visualizations - HbA1c vs FPG scatter, distributions, correlation matrix
+- **Files changed:**
+  - `notebooks/01_data_sourcing.ipynb` - Created new notebook (~350 lines)
+- **Learnings for future iterations:**
+  - Use `sys.path.insert(0, str(Path.cwd().parent))` in notebooks to import from parent package
+  - `plt.style.use('seaborn-v0_8-whitegrid')` for modern seaborn style (v0.12+ naming)
+  - Save cleaned data to `data/processed/` for use in subsequent notebooks
+  - Clinical thresholds: HbA1c 5.7%/6.5%, FPG 100/126 mg/dL - show as reference lines
+---

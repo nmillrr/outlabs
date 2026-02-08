@@ -134,11 +134,11 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want a notebook documenting the data pipeline so that the process is reproducible.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/01_data_sourcing.ipynb`
-- [ ] Notebook demonstrates: downloading, parsing, cleaning, quality report
-- [ ] Includes markdown documentation of each step
-- [ ] Visualizes HbA1c vs FPG scatter plot and distributions
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/01_data_sourcing.ipynb`
+- [x] Notebook demonstrates: downloading, parsing, cleaning, quality report
+- [x] Includes markdown documentation of each step
+- [x] Visualizes HbA1c vs FPG scatter plot and distributions
+- [x] Notebook executes without errors
 
 ---
 
