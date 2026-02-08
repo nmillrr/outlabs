@@ -108,12 +108,12 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want automated data cleaning so that outliers and missing values are handled consistently.
 
 **Acceptance Criteria:**
-- [ ] Add `clean_glycemic_data(ghb_df, glu_df, trigly_df, hdl_df, cbc_df, demo_df)` function in `hba1cE/data.py`
-- [ ] Merges datasets on SEQN (sample ID)
-- [ ] Renames columns to: hba1c_percent (LBXGH), fpg_mgdl (LBXGLU), tg_mgdl (LBXTR), hdl_mgdl (LBDHDD), hgb_gdl (LBXHGB), mcv_fl (LBXMCVSI), age_years (RIDAGEYR), sex (RIAGENDR)
-- [ ] Removes physiologic outliers (HbA1c < 3% or > 20%, FPG < 40 or > 600 mg/dL)
-- [ ] Returns cleaned DataFrame with complete cases only
-- [ ] Typecheck passes
+- [x] Add `clean_glycemic_data(ghb_df, glu_df, trigly_df, hdl_df, cbc_df, demo_df)` function in `hba1cE/data.py`
+- [x] Merges datasets on SEQN (sample ID)
+- [x] Renames columns to: hba1c_percent (LBXGH), fpg_mgdl (LBXGLU), tg_mgdl (LBXTR), hdl_mgdl (LBDHDD), hgb_gdl (LBXHGB), mcv_fl (LBXMCVSI), age_years (RIDAGEYR), sex (RIAGENDR)
+- [x] Removes physiologic outliers (HbA1c < 3% or > 20%, FPG < 40 or > 600 mg/dL)
+- [x] Returns cleaned DataFrame with complete cases only
+- [x] Typecheck passes
 
 ---
 

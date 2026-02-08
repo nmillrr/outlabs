@@ -174,3 +174,88 @@ def read_xpt(filepath: str) -> pd.DataFrame:
             f"Failed to parse XPT file '{filepath}': {e}. "
             f"The file may be corrupted or not in valid SAS transport format."
         ) from e
+
+
+def clean_glycemic_data(
+    ghb_df: pd.DataFrame,
+    glu_df: pd.DataFrame,
+    trigly_df: pd.DataFrame,
+    hdl_df: pd.DataFrame,
+    cbc_df: pd.DataFrame,
+    demo_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Clean and merge NHANES glycemic datasets.
+
+    Merges datasets on SEQN (sample ID), renames columns to standardized names,
+    removes physiologic outliers, and returns only complete cases.
+
+    Args:
+        ghb_df: DataFrame from GHB (glycohemoglobin/HbA1c) XPT file.
+        glu_df: DataFrame from GLU (fasting plasma glucose) XPT file.
+        trigly_df: DataFrame from TRIGLY (triglycerides) XPT file.
+        hdl_df: DataFrame from HDL (HDL cholesterol) XPT file.
+        cbc_df: DataFrame from CBC (complete blood count) XPT file.
+        demo_df: DataFrame from DEMO (demographics) XPT file.
+
+    Returns:
+        Cleaned DataFrame with columns:
+        - hba1c_percent: HbA1c in percent (from LBXGH)
+        - fpg_mgdl: Fasting plasma glucose in mg/dL (from LBXGLU)
+        - tg_mgdl: Triglycerides in mg/dL (from LBXTR)
+        - hdl_mgdl: HDL cholesterol in mg/dL (from LBDHDD)
+        - hgb_gdl: Hemoglobin in g/dL (from LBXHGB)
+        - mcv_fl: Mean corpuscular volume in fL (from LBXMCVSI)
+        - age_years: Age in years (from RIDAGEYR)
+        - sex: Sex (1=male, 2=female, from RIAGENDR)
+
+    Note:
+        Outliers are removed based on physiologic plausibility:
+        - HbA1c < 3% or > 20%
+        - FPG < 40 or > 600 mg/dL
+    """
+    # Select relevant columns from each dataset
+    ghb = ghb_df[["SEQN", "LBXGH"]].copy()
+    glu = glu_df[["SEQN", "LBXGLU"]].copy()
+    trigly = trigly_df[["SEQN", "LBXTR"]].copy()
+    hdl = hdl_df[["SEQN", "LBDHDD"]].copy()
+    cbc = cbc_df[["SEQN", "LBXHGB", "LBXMCVSI"]].copy()
+    demo = demo_df[["SEQN", "RIDAGEYR", "RIAGENDR"]].copy()
+
+    # Merge all datasets on SEQN
+    merged = ghb.merge(glu, on="SEQN", how="inner")
+    merged = merged.merge(trigly, on="SEQN", how="inner")
+    merged = merged.merge(hdl, on="SEQN", how="inner")
+    merged = merged.merge(cbc, on="SEQN", how="inner")
+    merged = merged.merge(demo, on="SEQN", how="inner")
+
+    # Rename columns to standardized names
+    column_mapping = {
+        "LBXGH": "hba1c_percent",
+        "LBXGLU": "fpg_mgdl",
+        "LBXTR": "tg_mgdl",
+        "LBDHDD": "hdl_mgdl",
+        "LBXHGB": "hgb_gdl",
+        "LBXMCVSI": "mcv_fl",
+        "RIDAGEYR": "age_years",
+        "RIAGENDR": "sex",
+    }
+    merged = merged.rename(columns=column_mapping)
+
+    # Remove SEQN column (no longer needed after merging)
+    merged = merged.drop(columns=["SEQN"])
+
+    # Drop rows with any missing values (complete cases only)
+    cleaned = merged.dropna()
+
+    # Remove physiologic outliers
+    # HbA1c: < 3% or > 20% are not physiologically plausible
+    cleaned = cleaned[(cleaned["hba1c_percent"] >= 3) & (cleaned["hba1c_percent"] <= 20)]
+
+    # FPG: < 40 or > 600 mg/dL are not physiologically plausible
+    cleaned = cleaned[(cleaned["fpg_mgdl"] >= 40) & (cleaned["fpg_mgdl"] <= 600)]
+
+    # Reset index after filtering
+    cleaned = cleaned.reset_index(drop=True)
+
+    return cleaned

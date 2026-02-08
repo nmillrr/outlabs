@@ -51,3 +51,19 @@
   - Pandas doesn't have `to_sas()` method - use mocking for tests or external libraries
   - Use `unittest.mock.patch` to mock pandas functions for predictable test behavior
 ---
+
+## Iteration 4 - US-005: Create NHANES Glycemic Data Cleaning Pipeline
+- **What was implemented:**
+  - `clean_glycemic_data(ghb_df, glu_df, trigly_df, hdl_df, cbc_df, demo_df)` function in `hba1cE/data.py`
+  - Merges 6 NHANES DataFrames on SEQN (sample ID) using inner join
+  - Renames NHANES columns to standardized names (hba1c_percent, fpg_mgdl, tg_mgdl, hdl_mgdl, hgb_gdl, mcv_fl, age_years, sex)
+  - Removes physiologic outliers (HbA1c < 3% or > 20%, FPG < 40 or > 600 mg/dL)
+  - Returns only complete cases (rows without missing values)
+- **Files changed:**
+  - `hba1cE/data.py` - Added `clean_glycemic_data()` function (~85 lines)
+  - `tests/test_data.py` - Added `TestCleanGlycemicData` class with 6 unit tests
+- **Learnings for future iterations:**
+  - NHANES column mappings: LBXGH=HbA1c, LBXGLU=FPG, LBXTR=TG, LBDHDD=HDL, LBXHGB=Hemoglobin, LBXMCVSI=MCV
+  - Use `pd.DataFrame.merge()` with `how="inner"` for multi-dataset joins
+  - Reset index after filtering to ensure sequential row indexing
+---
