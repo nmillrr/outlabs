@@ -150,12 +150,12 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want the ADAG-derived HbA1c estimation as the simplest baseline.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_hba1c_adag(fpg_mgdl)` in `hba1cE/models.py`
-- [ ] Formula: eHbA1c = (FPG + 46.7) / 28.7
-- [ ] Returns estimated HbA1c in percent
-- [ ] Raises ValueError for invalid inputs (negative, NaN, FPG < 40)
-- [ ] Add docstring with reference to Nathan et al. (2008)
-- [ ] Typecheck passes
+- [x] Add `calc_hba1c_adag(fpg_mgdl)` in `hba1cE/models.py`
+- [x] Formula: eHbA1c = (FPG + 46.7) / 28.7
+- [x] Returns estimated HbA1c in percent
+- [x] Raises ValueError for invalid inputs (negative, NaN, FPG < 40)
+- [x] Add docstring with reference to Nathan et al. (2008)
+- [x] Typecheck passes
 
 ---
 

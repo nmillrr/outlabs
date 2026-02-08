@@ -100,3 +100,19 @@
   - Save cleaned data to `data/processed/` for use in subsequent notebooks
   - Clinical thresholds: HbA1c 5.7%/6.5%, FPG 100/126 mg/dL - show as reference lines
 ---
+
+## Iteration 7 - US-008: Implement ADAG Equation (Inverted)
+- **What was implemented:**
+  - `calc_hba1c_adag(fpg_mgdl)` function in `hba1cE/models.py`
+  - Formula: eHbA1c = (FPG + 46.7) / 28.7
+  - Supports both scalar float and numpy array inputs
+  - Input validation: rejects negative, NaN, and FPG < 40 mg/dL
+  - Full docstring with Nathan et al. (2008) reference
+- **Files changed:**
+  - `hba1cE/models.py` - Added numpy/math imports and calc_hba1c_adag function (~60 lines)
+- **Learnings for future iterations:**
+  - ADAG equation from Nathan et al. 2008: eAG = 28.7 × HbA1c - 46.7 (inverted for HbA1c estimation)
+  - FPG=126 → eHbA1c ≈ 6.0%, FPG=154 → eHbA1c ≈ 7.0% (matches expected clinical values)
+  - Use `math.isnan()` for scalar NaN checks, `np.any(np.isnan())` for arrays
+---
+
