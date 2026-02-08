@@ -83,12 +83,12 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want to programmatically download NHANES glycemic data so that I have a reproducible data pipeline.
 
 **Acceptance Criteria:**
-- [ ] Add `download_nhanes_glycemic(output_dir, cycles)` function in `hba1cE/data.py`
-- [ ] Function downloads GHB (HbA1c), GLU (fasting glucose), TRIGLY, HDL, CBC XPT files for cycles 2011-2018
-- [ ] Downloads DEMO files for age/sex demographics
-- [ ] Creates `data/raw/` directory if not exists
-- [ ] Handles download errors gracefully with informative messages
-- [ ] Typecheck passes
+- [x] Add `download_nhanes_glycemic(output_dir, cycles)` function in `hba1cE/data.py`
+- [x] Function downloads GHB (HbA1c), GLU (fasting glucose), TRIGLY, HDL, CBC XPT files for cycles 2011-2018
+- [x] Downloads DEMO files for age/sex demographics
+- [x] Creates `data/raw/` directory if not exists
+- [x] Handles download errors gracefully with informative messages
+- [x] Typecheck passes
 
 ---
 

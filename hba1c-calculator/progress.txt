@@ -21,3 +21,19 @@
   - Functions support both scalar and numpy array inputs
   - Clinical thresholds: 126 mg/dL ≈ 7.0 mmol/L, 6.5% HbA1c ≈ 48 mmol/mol
 ---
+
+## Iteration 2 - US-003: Create NHANES Glycemic Download Module
+- **What was implemented:**
+  - `download_nhanes_glycemic(output_dir, cycles)` function in `hba1cE/data.py`
+  - Complete file mappings for all NHANES cycles 2011-2018 (GHB, GLU, TRIGLY, HDL, CBC, DEMO)
+  - Automatic `data/raw/` directory creation with Path.mkdir(parents=True)
+  - Graceful error handling for URLError, HTTPError, and OSError
+  - Skip existing files to avoid re-downloading
+- **Files changed:**
+  - `hba1cE/data.py` - Added download function with ~120 lines of implementation
+- **Learnings for future iterations:**
+  - NHANES file naming convention: `{DATA_TYPE}_{CYCLE_LETTER}.XPT` (e.g., GHB_J.XPT for 2017-2018)
+  - NHANES base URL: https://wwwn.cdc.gov/Nchs/Nhanes/{cycle}/{filename}
+  - Cycles use letter suffixes: G=2011-12, H=2013-14, I=2015-16, J=2017-18
+---
+
