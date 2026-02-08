@@ -163,11 +163,11 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want unit tests validating ADAG against known examples.
 
 **Acceptance Criteria:**
-- [ ] Add test in `tests/test_models.py` for ADAG
-- [ ] Test case: FPG=126 mg/dL → eHbA1c ≈ 6.0%
-- [ ] Test case: FPG=154 mg/dL → eHbA1c ≈ 7.0%
-- [ ] Test invalid input handling (negative, NaN)
-- [ ] Tests pass: `pytest tests/test_models.py`
+- [x] Add test in `tests/test_models.py` for ADAG
+- [x] Test case: FPG=126 mg/dL → eHbA1c ≈ 6.0%
+- [x] Test case: FPG=154 mg/dL → eHbA1c ≈ 7.0%
+- [x] Test invalid input handling (negative, NaN)
+- [x] Tests pass: `pytest tests/test_models.py`
 
 ---
 
