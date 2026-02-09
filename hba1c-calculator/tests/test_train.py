@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hba1cE.train import create_features
+from hba1cE.train import create_features, stratified_split
 
 
 class TestCreateFeatures:
@@ -127,3 +127,130 @@ class TestCreateFeatures:
         assert isinstance(X, np.ndarray)
         assert isinstance(feature_names, list)
         assert all(isinstance(name, str) for name in feature_names)
+
+
+class TestStratifiedSplit:
+    """Tests for stratified_split function."""
+
+    @pytest.fixture
+    def sample_df(self):
+        """Create sample DataFrame with data in all HbA1c strata."""
+        # Create samples across all strata: <5.7, 5.7-6.4, 6.5-8, 8-10, >10
+        np.random.seed(42)
+        n_per_stratum = 10
+        
+        # Stratum 0: <5.7%
+        hba1c_0 = np.random.uniform(4.5, 5.6, n_per_stratum)
+        fpg_0 = np.random.uniform(70, 100, n_per_stratum)
+        
+        # Stratum 1: 5.7-6.4%
+        hba1c_1 = np.random.uniform(5.7, 6.4, n_per_stratum)
+        fpg_1 = np.random.uniform(100, 120, n_per_stratum)
+        
+        # Stratum 2: 6.5-8%
+        hba1c_2 = np.random.uniform(6.5, 7.9, n_per_stratum)
+        fpg_2 = np.random.uniform(120, 160, n_per_stratum)
+        
+        # Stratum 3: 8-10%
+        hba1c_3 = np.random.uniform(8.0, 9.9, n_per_stratum)
+        fpg_3 = np.random.uniform(160, 220, n_per_stratum)
+        
+        # Stratum 4: >10%
+        hba1c_4 = np.random.uniform(10.1, 14.0, n_per_stratum)
+        fpg_4 = np.random.uniform(220, 350, n_per_stratum)
+        
+        hba1c = np.concatenate([hba1c_0, hba1c_1, hba1c_2, hba1c_3, hba1c_4])
+        fpg = np.concatenate([fpg_0, fpg_1, fpg_2, fpg_3, fpg_4])
+        n = len(hba1c)
+        
+        return pd.DataFrame({
+            "hba1c_percent": hba1c,
+            "fpg_mgdl": fpg,
+            "tg_mgdl": np.random.uniform(80, 200, n),
+            "hdl_mgdl": np.random.uniform(35, 70, n),
+            "age_years": np.random.uniform(25, 75, n),
+            "hgb_gdl": np.random.uniform(11, 16, n),
+            "mcv_fl": np.random.uniform(80, 100, n),
+        })
+
+    def test_basic_split(self, sample_df):
+        """Test that stratified_split returns correct output types and shapes."""
+        X_train, X_test, y_train, y_test = stratified_split(sample_df)
+        
+        # Check types
+        assert isinstance(X_train, np.ndarray)
+        assert isinstance(X_test, np.ndarray)
+        assert isinstance(y_train, np.ndarray)
+        assert isinstance(y_test, np.ndarray)
+        
+        # Check shapes - should have 11 features
+        assert X_train.shape[1] == 11
+        assert X_test.shape[1] == 11
+        
+        # Check split ratio (default 0.3 test)
+        total = len(sample_df)
+        assert len(y_train) + len(y_test) == total
+        assert len(y_test) == pytest.approx(total * 0.3, abs=2)
+
+    def test_stratification_maintained(self, sample_df):
+        """Test that all HbA1c strata are represented in both train and test."""
+        X_train, X_test, y_train, y_test = stratified_split(sample_df)
+        
+        # Define strata boundaries
+        def get_stratum(hba1c):
+            if hba1c < 5.7:
+                return 0
+            elif hba1c < 6.5:
+                return 1
+            elif hba1c < 8.0:
+                return 2
+            elif hba1c < 10.0:
+                return 3
+            else:
+                return 4
+        
+        train_strata = [get_stratum(y) for y in y_train]
+        test_strata = [get_stratum(y) for y in y_test]
+        
+        # All strata should be present in both sets
+        assert set(train_strata) == {0, 1, 2, 3, 4}
+        assert set(test_strata) == {0, 1, 2, 3, 4}
+
+    def test_custom_test_size(self, sample_df):
+        """Test that custom test_size parameter works."""
+        X_train, X_test, y_train, y_test = stratified_split(sample_df, test_size=0.2)
+        
+        total = len(sample_df)
+        assert len(y_test) == pytest.approx(total * 0.2, abs=2)
+
+    def test_reproducibility(self, sample_df):
+        """Test that same random_state produces identical splits."""
+        result1 = stratified_split(sample_df, random_state=123)
+        result2 = stratified_split(sample_df, random_state=123)
+        
+        np.testing.assert_array_equal(result1[0], result2[0])  # X_train
+        np.testing.assert_array_equal(result1[1], result2[1])  # X_test
+        np.testing.assert_array_equal(result1[2], result2[2])  # y_train
+        np.testing.assert_array_equal(result1[3], result2[3])  # y_test
+
+    def test_different_random_states_differ(self, sample_df):
+        """Test that different random_states produce different splits."""
+        result1 = stratified_split(sample_df, random_state=1)
+        result2 = stratified_split(sample_df, random_state=2)
+        
+        # y_train arrays should differ
+        assert not np.array_equal(result1[2], result2[2])
+
+    def test_missing_hba1c_column_raises_error(self):
+        """Test that missing hba1c_percent column raises ValueError."""
+        df = pd.DataFrame({
+            "fpg_mgdl": [100.0, 126.0],
+            "tg_mgdl": [100.0, 150.0],
+            "hdl_mgdl": [50.0, 45.0],
+            "age_years": [30.0, 50.0],
+            "hgb_gdl": [14.0, 13.0],
+            "mcv_fl": [90.0, 88.0],
+        })
+        
+        with pytest.raises(ValueError, match="Missing required column"):
+            stratified_split(df)

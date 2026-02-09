@@ -189,3 +189,23 @@
   - Clinical strata for evaluation: <5.7% (normal), 5.7-6.4% (prediabetes), ≥6.5% (diabetes)
 ---
 
+## Iteration 12 - US-013: Create Feature Engineering Module
+- **What was implemented:**
+  - `create_features(df)` function in `hba1cE/train.py`
+  - Creates 11 features total for ML training
+  - Raw biomarker features: fpg_mgdl, tg_mgdl, hdl_mgdl, age_years, hgb_gdl, mcv_fl
+  - Ratio features: tg_hdl_ratio, fpg_age_interaction
+  - Mechanistic estimator predictions: adag_estimate, kinetic_estimate, regression_estimate
+  - Returns tuple of (X, feature_names) for sklearn compatibility
+  - Comprehensive input validation for required columns
+  - 6 unit tests covering functionality, ratios, and error handling
+- **Files changed:**
+  - `hba1cE/train.py` - Created new module with create_features function (~85 lines)
+  - `tests/test_train.py` - Created with 6 unit tests for create_features
+- **Learnings for future iterations:**
+  - Feature engineering includes: raw biomarkers + ratio features + mechanistic estimator predictions
+  - TG/HDL ratio is a good predictor of insulin resistance
+  - Mechanistic estimator predictions can be used as features for hybrid ML approach
+  - Use `np.column_stack()` to combine feature arrays into single matrix
+---
+
