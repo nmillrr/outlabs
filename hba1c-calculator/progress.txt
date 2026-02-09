@@ -209,3 +209,23 @@
   - Use `np.column_stack()` to combine feature arrays into single matrix
 ---
 
+## Iteration 13 - US-014: Implement Train/Test Split with Stratification
+- **What was implemented:**
+  - `stratified_split(df, test_size=0.3, random_state=42)` function in `hba1cE/train.py`
+  - Stratifies by 5 HbA1c clinical ranges: <5.7%, 5.7-6.4%, 6.5-8%, 8-10%, >10%
+  - Uses sklearn's `train_test_split` with `stratify` parameter
+  - Returns X_train, X_test, y_train, y_test tuple
+  - Input validation for missing hba1c_percent column
+  - Checks that all strata have at least 2 samples
+  - 7 new unit tests covering functionality, stratification, reproducibility
+- **Files changed:**
+  - `hba1cE/train.py` - Added `stratified_split()` function (~70 lines) and sklearn import
+  - `tests/test_train.py` - Added `TestStratifiedSplit` class with 7 unit tests
+- **Learnings for future iterations:**
+  - Use `pd.cut()` with custom bins and labels for stratification grouping
+  - sklearn's `train_test_split` accepts `stratify` parameter for balanced splits
+  - Stratification bins: [0, 5.7, 6.5, 8.0, 10.0, inf] cover all clinical ranges
+  - Need at least 2 samples per stratum for valid stratified split
+  - Test fixture pattern useful for creating sample data across all strata
+---
+

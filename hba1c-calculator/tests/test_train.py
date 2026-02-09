@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hba1cE.train import create_features, stratified_split
+from hba1cE.train import create_features, stratified_split, train_ridge, save_model
 
 
 class TestCreateFeatures:
@@ -254,3 +254,119 @@ class TestStratifiedSplit:
         
         with pytest.raises(ValueError, match="Missing required column"):
             stratified_split(df)
+
+
+class TestTrainRidge:
+    """Tests for train_ridge function."""
+
+    def test_basic_training(self):
+        """Test that train_ridge returns a fitted Ridge model."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100) * 2 + 6  # Simulated HbA1c values
+
+        model = train_ridge(X_train, y_train)
+
+        # Check it's a Ridge model
+        from sklearn.linear_model import Ridge
+        assert isinstance(model, Ridge)
+
+        # Check model is fitted (has coef_)
+        assert hasattr(model, "coef_")
+        assert len(model.coef_) == 11
+        assert hasattr(model, "intercept_")
+
+    def test_prediction_works(self):
+        """Test that trained model can make predictions."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100) * 2 + 6
+
+        model = train_ridge(X_train, y_train)
+        
+        X_test = np.random.randn(20, 11)
+        y_pred = model.predict(X_test)
+
+        assert len(y_pred) == 20
+        assert isinstance(y_pred, np.ndarray)
+
+    def test_custom_alpha(self):
+        """Test that custom alpha parameter is respected."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100) * 2 + 6
+
+        model_alpha_1 = train_ridge(X_train, y_train, alpha=1.0)
+        model_alpha_10 = train_ridge(X_train, y_train, alpha=10.0)
+
+        # Higher alpha should shrink coefficients more
+        coef_norm_1 = np.linalg.norm(model_alpha_1.coef_)
+        coef_norm_10 = np.linalg.norm(model_alpha_10.coef_)
+        assert coef_norm_10 < coef_norm_1
+
+    def test_incompatible_shapes_raises_error(self):
+        """Test that incompatible X and y shapes raise ValueError."""
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(50)  # Wrong number of samples
+
+        with pytest.raises(ValueError, match="samples"):
+            train_ridge(X_train, y_train)
+
+    def test_single_sample(self):
+        """Test training with minimal data still works."""
+        X_train = np.array([[1.0, 2.0, 3.0]])
+        y_train = np.array([6.0])
+
+        model = train_ridge(X_train, y_train)
+        assert hasattr(model, "coef_")
+
+
+class TestSaveModel:
+    """Tests for save_model function."""
+
+    def test_save_model_creates_file(self, tmp_path):
+        """Test that save_model creates a file at the specified path."""
+        from sklearn.linear_model import Ridge
+
+        model = Ridge(alpha=1.0)
+        model.fit(np.random.randn(10, 3), np.random.randn(10))
+
+        filepath = tmp_path / "model.joblib"
+        save_model(model, str(filepath))
+
+        assert filepath.exists()
+
+    def test_saved_model_can_be_loaded(self, tmp_path):
+        """Test that saved model can be loaded and used."""
+        import joblib
+        from sklearn.linear_model import Ridge
+
+        X = np.random.randn(10, 3)
+        y = np.random.randn(10)
+        model = Ridge(alpha=1.0)
+        model.fit(X, y)
+
+        filepath = tmp_path / "model.joblib"
+        save_model(model, str(filepath))
+
+        loaded_model = joblib.load(filepath)
+        
+        # Predictions should be identical
+        X_test = np.random.randn(5, 3)
+        np.testing.assert_array_almost_equal(
+            model.predict(X_test),
+            loaded_model.predict(X_test)
+        )
+
+    def test_creates_parent_directories(self, tmp_path):
+        """Test that save_model creates parent directories if they don't exist."""
+        from sklearn.linear_model import Ridge
+
+        model = Ridge(alpha=1.0)
+        model.fit(np.random.randn(10, 3), np.random.randn(10))
+
+        filepath = tmp_path / "nested" / "dirs" / "model.joblib"
+        save_model(model, str(filepath))
+
+        assert filepath.exists()
+

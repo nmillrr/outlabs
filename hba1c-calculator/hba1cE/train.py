@@ -8,7 +8,9 @@ from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
+import joblib
 
 from hba1cE.models import (
     calc_hba1c_adag,
@@ -156,3 +158,70 @@ def stratified_split(
     )
 
     return X_train, X_test, y_train, y_test
+
+
+def train_ridge(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    alpha: float = 1.0,
+) -> Ridge:
+    """
+    Train a Ridge regression model for HbA1c prediction.
+
+    Ridge regression adds L2 regularization to linear regression,
+    which helps prevent overfitting and handles collinear features.
+
+    Args:
+        X_train: Training feature matrix of shape (n_samples, n_features).
+        y_train: Training target values of shape (n_samples,).
+        alpha: Regularization strength (default 1.0). Larger values
+            specify stronger regularization.
+
+    Returns:
+        Fitted Ridge regression model.
+
+    Raises:
+        ValueError: If X_train and y_train have incompatible shapes.
+
+    Example:
+        >>> from hba1cE.train import stratified_split, train_ridge
+        >>> X_train, X_test, y_train, y_test = stratified_split(df)
+        >>> model = train_ridge(X_train, y_train, alpha=1.0)
+        >>> y_pred = model.predict(X_test)
+    """
+    if X_train.shape[0] != y_train.shape[0]:
+        raise ValueError(
+            f"X_train has {X_train.shape[0]} samples but y_train has {y_train.shape[0]} samples"
+        )
+
+    model = Ridge(alpha=alpha)
+    model.fit(X_train, y_train)
+
+    return model
+
+
+def save_model(model: object, filepath: str) -> None:
+    """
+    Save a trained model to disk using joblib.
+
+    Uses joblib for efficient serialization of scikit-learn models,
+    which handles numpy arrays better than pickle.
+
+    Args:
+        model: Trained scikit-learn model object.
+        filepath: Path where the model should be saved.
+
+    Raises:
+        OSError: If the file cannot be written.
+
+    Example:
+        >>> model = train_ridge(X_train, y_train)
+        >>> save_model(model, "models/ridge_model.joblib")
+    """
+    from pathlib import Path
+
+    # Ensure parent directory exists
+    Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+
+    joblib.dump(model, filepath)
+

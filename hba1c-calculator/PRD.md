@@ -241,10 +241,10 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want a Ridge regression model as simple ML baseline.
 
 **Acceptance Criteria:**
-- [ ] Add `train_ridge(X_train, y_train, alpha=1.0)` in `hba1cE/train.py`
-- [ ] Returns fitted Ridge model
-- [ ] Add function `save_model(model, filepath)` using joblib
-- [ ] Typecheck passes
+- [x] Add `train_ridge(X_train, y_train, alpha=1.0)` in `hba1cE/train.py`
+- [x] Returns fitted Ridge model
+- [x] Add function `save_model(model, filepath)` using joblib
+- [x] Typecheck passes
 
 ---
 
