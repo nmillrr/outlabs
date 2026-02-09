@@ -217,12 +217,12 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want feature engineering functions for ML training.
 
 **Acceptance Criteria:**
-- [ ] Add `create_features(df)` function in `hba1cE/train.py`
-- [ ] Creates features: fpg_mgdl, tg_mgdl, hdl_mgdl, age_years, hgb_gdl, mcv_fl
-- [ ] Adds ratio features: tg_hdl_ratio, fpg_age_interaction
-- [ ] Adds all mechanistic estimator predictions as features (ADAG, kinetic, regression)
-- [ ] Returns feature matrix X and column names
-- [ ] Typecheck passes
+- [x] Add `create_features(df)` function in `hba1cE/train.py`
+- [x] Creates features: fpg_mgdl, tg_mgdl, hdl_mgdl, age_years, hgb_gdl, mcv_fl
+- [x] Adds ratio features: tg_hdl_ratio, fpg_age_interaction
+- [x] Adds all mechanistic estimator predictions as features (ADAG, kinetic, regression)
+- [x] Returns feature matrix X and column names
+- [x] Typecheck passes
 
 ---
 

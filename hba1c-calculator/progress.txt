@@ -168,3 +168,24 @@
   - Input validation mirrors other model functions (negative, NaN, physiological range checks)
 ---
 
+## Iteration 11 - US-012: Create Estimator Comparison Notebook
+- **What was implemented:**
+  - `notebooks/02_estimator_comparison.ipynb` - Jupyter notebook comparing all three mechanistic estimators
+  - Loads cleaned NHANES data from `data/processed/nhanes_glycemic_cleaned.csv`
+  - Applies ADAG, Glycation Kinetics, and Regression estimators to full dataset
+  - Fits regression coefficients on 70% training split
+  - Calculates performance metrics: RMSE, MAE, Bias, Pearson r, % within ±0.5%/±1.0%
+  - Generates scatter plots (estimated vs measured) for all three methods
+  - Creates Bland-Altman plots to assess bias and limits of agreement
+  - Includes error distribution histogram overlay
+  - Stratified analysis by HbA1c ranges (normal, prediabetes, diabetes)
+  - Comprehensive interpretation section covering pros/cons of each method
+- **Files changed:**
+  - `notebooks/02_estimator_comparison.ipynb` - Created new notebook (~400 lines)
+- **Learnings for future iterations:**
+  - All mechanistic estimators struggle in the diabetes range (HbA1c ≥6.5%)
+  - Multi-marker regression approach uses fitted coefficients that are dataset-specific
+  - Bland-Altman plots reveal systematic bias patterns across the HbA1c range
+  - Clinical strata for evaluation: <5.7% (normal), 5.7-6.4% (prediabetes), ≥6.5% (diabetes)
+---
+
