@@ -201,11 +201,11 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want a notebook comparing mechanistic estimators visually.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/02_estimator_comparison.ipynb`
-- [ ] Compare ADAG vs Kinetic vs Regression on NHANES data
-- [ ] Generate scatter plots: estimated vs measured HbA1c for each method
-- [ ] Include markdown interpretation of each estimator's limitations
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/02_estimator_comparison.ipynb`
+- [x] Compare ADAG vs Kinetic vs Regression on NHANES data
+- [x] Generate scatter plots: estimated vs measured HbA1c for each method
+- [x] Include markdown interpretation of each estimator's limitations
+- [x] Notebook executes without errors
 
 ---
 
