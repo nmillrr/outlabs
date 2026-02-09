@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hba1cE.train import create_features, stratified_split, train_ridge, save_model
+from hba1cE.train import create_features, stratified_split, train_ridge, train_random_forest, save_model
 
 
 class TestCreateFeatures:
@@ -319,6 +319,77 @@ class TestTrainRidge:
 
         model = train_ridge(X_train, y_train)
         assert hasattr(model, "coef_")
+
+
+class TestTrainRandomForest:
+    """Tests for train_random_forest function."""
+
+    def test_basic_training(self):
+        """Test that train_random_forest returns a fitted RandomForestRegressor."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100) * 2 + 6  # Simulated HbA1c values
+
+        model = train_random_forest(X_train, y_train)
+
+        # Check it's a RandomForestRegressor model
+        from sklearn.ensemble import RandomForestRegressor
+        assert isinstance(model, RandomForestRegressor)
+
+        # Check model is fitted (has feature_importances_)
+        assert hasattr(model, "feature_importances_")
+        assert len(model.feature_importances_) == 11
+
+    def test_prediction_works(self):
+        """Test that trained model can make predictions."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100) * 2 + 6
+
+        model = train_random_forest(X_train, y_train)
+        
+        X_test = np.random.randn(20, 11)
+        y_pred = model.predict(X_test)
+
+        assert len(y_pred) == 20
+        assert isinstance(y_pred, np.ndarray)
+
+    def test_custom_n_estimators(self):
+        """Test that custom n_estimators parameter is respected."""
+        np.random.seed(42)
+        X_train = np.random.randn(50, 5)
+        y_train = np.random.randn(50) * 2 + 6
+
+        model_100 = train_random_forest(X_train, y_train, n_estimators=100)
+        model_50 = train_random_forest(X_train, y_train, n_estimators=50)
+
+        # Check correct number of estimators
+        assert len(model_100.estimators_) == 100
+        assert len(model_50.estimators_) == 50
+
+    def test_incompatible_shapes_raises_error(self):
+        """Test that incompatible X and y shapes raise ValueError."""
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(50)  # Wrong number of samples
+
+        with pytest.raises(ValueError, match="samples"):
+            train_random_forest(X_train, y_train)
+
+    def test_reproducibility(self):
+        """Test that same random_state produces identical models."""
+        np.random.seed(42)
+        X_train = np.random.randn(50, 5)
+        y_train = np.random.randn(50) * 2 + 6
+
+        # Both calls use the fixed random_state=42 inside train_random_forest
+        model1 = train_random_forest(X_train, y_train)
+        model2 = train_random_forest(X_train, y_train)
+
+        X_test = np.random.randn(10, 5)
+        np.testing.assert_array_equal(
+            model1.predict(X_test),
+            model2.predict(X_test)
+        )
 
 
 class TestSaveModel:

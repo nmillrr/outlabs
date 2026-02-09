@@ -252,9 +252,9 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want a Random Forest model for nonlinear patterns.
 
 **Acceptance Criteria:**
-- [ ] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `hba1cE/train.py`
-- [ ] Returns fitted RandomForestRegressor
-- [ ] Typecheck passes
+- [x] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `hba1cE/train.py`
+- [x] Returns fitted RandomForestRegressor
+- [x] Typecheck passes
 
 ---
 

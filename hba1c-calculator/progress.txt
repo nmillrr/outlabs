@@ -229,3 +229,22 @@
   - Test fixture pattern useful for creating sample data across all strata
 ---
 
+## Iteration 14 - US-015: Train Ridge Regression Baseline
+- **What was implemented:**
+  - `train_ridge(X_train, y_train, alpha=1.0)` function in `hba1cE/train.py`
+  - `save_model(model, filepath)` function using joblib for model persistence
+  - Ridge model returns fitted sklearn Ridge regressor with L2 regularization
+  - Input validation for X/y shape compatibility
+  - save_model creates parent directories if they don't exist
+  - 5 new tests for train_ridge, 3 new tests for save_model
+- **Files changed:**
+  - `hba1cE/train.py` - Added Ridge import, joblib import, and two new functions (~70 lines)
+  - `tests/test_train.py` - Added TestTrainRidge (5 tests) and TestSaveModel (3 tests) classes
+- **Learnings for future iterations:**
+  - sklearn Ridge model is simple to train: `Ridge(alpha=alpha).fit(X, y)`
+  - joblib is preferred over pickle for sklearn models (handles numpy arrays better)
+  - Higher alpha parameter shrinks coefficients more (useful for regularization tuning)
+  - Use Path.parent.mkdir(parents=True, exist_ok=True) to ensure save directories exist
+  - Ridge model stores coefficients in .coef_ and intercept in .intercept_
+---
+
