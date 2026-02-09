@@ -149,3 +149,22 @@
   - Output always in range 3-20% for valid inputs
 ---
 
+## Iteration 10 - US-011: Implement Multi-Linear Regression Estimator
+- **What was implemented:**
+  - `calc_hba1c_regression(fpg_mgdl, age_years, tg_mgdl, hdl_mgdl, hgb_gdl, coefficients=None)` in `hba1cE/models.py`
+  - `fit_regression_coefficients(df)` to fit coefficients from NHANES data using sklearn
+  - Formula: eHbA1c = β₀ + β₁×FPG + β₂×Age + β₃×TG + β₄×HDL + β₅×Hgb
+  - Default placeholder coefficients for use before fitting
+  - Comprehensive input validation for both scalar and array inputs
+  - 14 new unit tests (11 for regression function, 3 for coefficient fitting)
+- **Files changed:**
+  - `hba1cE/models.py` - Added DEFAULT_REGRESSION_COEFFICIENTS dict and two new functions (~180 lines)
+  - `tests/test_models.py` - Added TestCalcHba1cRegression and TestFitRegressionCoefficients classes
+- **Learnings for future iterations:**
+  - Multi-linear regression formula: HbA1c = intercept + β_fpg×FPG + β_age×Age + β_tg×TG + β_hdl×HDL + β_hgb×Hgb
+  - Default coefficients: intercept=3.5, fpg=0.02, age=0.008, tg=0.001, hdl=-0.005, hgb=-0.05
+  - sklearn LinearRegression fits coefficients via model.coef_ and model.intercept_
+  - Coefficients can be passed to calc_hba1c_regression() for custom-fitted models
+  - Input validation mirrors other model functions (negative, NaN, physiological range checks)
+---
+

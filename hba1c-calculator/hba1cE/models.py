@@ -174,3 +174,179 @@ def calc_hba1c_kinetic(
     hba1c = BASELINE_HBA1C + glycated_fraction
 
     return hba1c
+
+
+# Default regression coefficients (placeholders - will be fitted from data)
+# These are reasonable starting estimates based on expected relationships
+DEFAULT_REGRESSION_COEFFICIENTS = {
+    "intercept": 3.5,      # Base HbA1c when all predictors are at reference
+    "fpg": 0.020,          # Higher FPG → higher HbA1c
+    "age": 0.008,          # Older age → slightly higher HbA1c
+    "tg": 0.001,           # Higher TG → slightly higher HbA1c
+    "hdl": -0.005,         # Higher HDL → slightly lower HbA1c
+    "hgb": -0.05,          # Higher Hgb → slightly lower HbA1c
+}
+
+
+def calc_hba1c_regression(
+    fpg_mgdl: Union[float, np.ndarray],
+    age_years: Union[float, np.ndarray],
+    tg_mgdl: Union[float, np.ndarray],
+    hdl_mgdl: Union[float, np.ndarray],
+    hgb_gdl: Union[float, np.ndarray],
+    coefficients: dict = None,
+) -> Union[float, np.ndarray]:
+    """
+    Estimate HbA1c using a multi-linear regression model.
+
+    This estimator combines multiple biomarkers to predict HbA1c using
+    a linear regression formula. Coefficients can be pre-fitted from
+    NHANES data using fit_regression_coefficients().
+
+    Formula:
+        eHbA1c = β₀ + β₁×FPG + β₂×Age + β₃×TG + β₄×HDL + β₅×Hgb
+
+    Args:
+        fpg_mgdl: Fasting plasma glucose in mg/dL.
+        age_years: Age in years.
+        tg_mgdl: Triglycerides in mg/dL.
+        hdl_mgdl: HDL cholesterol in mg/dL.
+        hgb_gdl: Hemoglobin in g/dL.
+        coefficients: Dictionary with keys 'intercept', 'fpg', 'age', 'tg',
+            'hdl', 'hgb'. If None, uses DEFAULT_REGRESSION_COEFFICIENTS.
+
+    Returns:
+        Estimated HbA1c in percent (%).
+
+    Raises:
+        ValueError: If inputs are negative, NaN, or outside physiological range.
+
+    Examples:
+        >>> calc_hba1c_regression(126.0, 50, 150, 50, 14.0)
+        5.83  # Approximate value with default coefficients
+    """
+    if coefficients is None:
+        coefficients = DEFAULT_REGRESSION_COEFFICIENTS
+
+    # Handle numpy arrays
+    is_array = isinstance(fpg_mgdl, np.ndarray)
+    
+    if is_array:
+        # Input validation for arrays
+        if np.any(np.isnan(fpg_mgdl)):
+            raise ValueError("FPG contains NaN values")
+        if np.any(fpg_mgdl < 0):
+            raise ValueError("FPG cannot be negative")
+        if np.any(fpg_mgdl < 40):
+            raise ValueError("FPG values below 40 mg/dL are physiologically implausible")
+        if np.any(np.isnan(age_years)):
+            raise ValueError("Age contains NaN values")
+        if np.any(age_years < 0):
+            raise ValueError("Age cannot be negative")
+        if np.any(np.isnan(tg_mgdl)):
+            raise ValueError("Triglycerides contains NaN values")
+        if np.any(tg_mgdl < 0):
+            raise ValueError("Triglycerides cannot be negative")
+        if np.any(np.isnan(hdl_mgdl)):
+            raise ValueError("HDL contains NaN values")
+        if np.any(hdl_mgdl < 0):
+            raise ValueError("HDL cannot be negative")
+        if np.any(np.isnan(hgb_gdl)):
+            raise ValueError("Hemoglobin contains NaN values")
+        if np.any(hgb_gdl <= 0):
+            raise ValueError("Hemoglobin must be positive")
+    else:
+        # Input validation for scalars
+        if math.isnan(fpg_mgdl):
+            raise ValueError("FPG cannot be NaN")
+        if fpg_mgdl < 0:
+            raise ValueError("FPG cannot be negative")
+        if fpg_mgdl < 40:
+            raise ValueError("FPG values below 40 mg/dL are physiologically implausible")
+        if math.isnan(age_years):
+            raise ValueError("Age cannot be NaN")
+        if age_years < 0:
+            raise ValueError("Age cannot be negative")
+        if math.isnan(tg_mgdl):
+            raise ValueError("Triglycerides cannot be NaN")
+        if tg_mgdl < 0:
+            raise ValueError("Triglycerides cannot be negative")
+        if math.isnan(hdl_mgdl):
+            raise ValueError("HDL cannot be NaN")
+        if hdl_mgdl < 0:
+            raise ValueError("HDL cannot be negative")
+        if math.isnan(hgb_gdl):
+            raise ValueError("Hemoglobin cannot be NaN")
+        if hgb_gdl <= 0:
+            raise ValueError("Hemoglobin must be positive")
+
+    # Calculate HbA1c using linear regression formula
+    hba1c = (
+        coefficients["intercept"]
+        + coefficients["fpg"] * fpg_mgdl
+        + coefficients["age"] * age_years
+        + coefficients["tg"] * tg_mgdl
+        + coefficients["hdl"] * hdl_mgdl
+        + coefficients["hgb"] * hgb_gdl
+    )
+
+    return hba1c
+
+
+def fit_regression_coefficients(df) -> dict:
+    """
+    Fit multi-linear regression coefficients from NHANES data.
+
+    This function fits a linear regression model to predict HbA1c from
+    fasting glucose, age, triglycerides, HDL, and hemoglobin using
+    ordinary least squares.
+
+    Args:
+        df: pandas DataFrame with columns: hba1c_percent, fpg_mgdl,
+            age_years, tg_mgdl, hdl_mgdl, hgb_gdl
+
+    Returns:
+        Dictionary with fitted coefficients: 'intercept', 'fpg', 'age',
+        'tg', 'hdl', 'hgb'
+
+    Raises:
+        ValueError: If required columns are missing from DataFrame.
+        ImportError: If scikit-learn is not installed.
+
+    Example:
+        >>> from hba1cE.data import load_cleaned_data
+        >>> df = load_cleaned_data()
+        >>> coeffs = fit_regression_coefficients(df)
+        >>> coeffs['fpg']  # Coefficient for FPG
+        0.025  # Example fitted value
+    """
+    try:
+        from sklearn.linear_model import LinearRegression
+    except ImportError:
+        raise ImportError("scikit-learn is required for fitting coefficients")
+
+    required_columns = ["hba1c_percent", "fpg_mgdl", "age_years", "tg_mgdl", "hdl_mgdl", "hgb_gdl"]
+    missing_cols = [col for col in required_columns if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns: {missing_cols}")
+
+    # Prepare features and target
+    feature_cols = ["fpg_mgdl", "age_years", "tg_mgdl", "hdl_mgdl", "hgb_gdl"]
+    X = df[feature_cols].values
+    y = df["hba1c_percent"].values
+
+    # Fit linear regression
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # Extract coefficients
+    coefficients = {
+        "intercept": float(model.intercept_),
+        "fpg": float(model.coef_[0]),
+        "age": float(model.coef_[1]),
+        "tg": float(model.coef_[2]),
+        "hdl": float(model.coef_[3]),
+        "hgb": float(model.coef_[4]),
+    }
+
+    return coefficients

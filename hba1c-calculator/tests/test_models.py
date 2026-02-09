@@ -11,7 +11,13 @@ import math
 import pytest
 import numpy as np
 
-from hba1cE.models import calc_hba1c_adag, calc_hba1c_kinetic
+from hba1cE.models import (
+    calc_hba1c_adag,
+    calc_hba1c_kinetic,
+    calc_hba1c_regression,
+    fit_regression_coefficients,
+    DEFAULT_REGRESSION_COEFFICIENTS,
+)
 
 
 class TestCalcHba1cAdag:
@@ -146,3 +152,129 @@ class TestCalcHba1cKinetic:
         assert all(3.0 < r < 20.0 for r in result)
         # Values should increase with FPG
         assert result[0] < result[1] < result[2]
+
+
+class TestCalcHba1cRegression:
+    """Tests for the multi-linear regression HbA1c estimation function."""
+
+    def test_returns_valid_hba1c_with_default_coefficients(self):
+        """Function should return valid HbA1c with default coefficients."""
+        result = calc_hba1c_regression(126.0, 50, 150, 50, 14.0)
+        # HbA1c should be in physiological range
+        assert 3.0 < result < 20.0, f"Expected 3-20%, got {result}%"
+
+    def test_higher_fpg_gives_higher_hba1c(self):
+        """Higher FPG should increase estimated HbA1c."""
+        low_fpg = calc_hba1c_regression(100.0, 50, 150, 50, 14.0)
+        high_fpg = calc_hba1c_regression(200.0, 50, 150, 50, 14.0)
+        assert high_fpg > low_fpg, "Higher FPG should give higher HbA1c"
+
+    def test_older_age_gives_higher_hba1c(self):
+        """Older age should increase estimated HbA1c (with default coefficients)."""
+        young = calc_hba1c_regression(126.0, 30, 150, 50, 14.0)
+        old = calc_hba1c_regression(126.0, 70, 150, 50, 14.0)
+        assert old > young, "Older age should give higher HbA1c"
+
+    def test_custom_coefficients_work(self):
+        """Custom coefficients should be used when provided."""
+        custom_coeffs = {
+            "intercept": 5.0,
+            "fpg": 0.01,
+            "age": 0.0,
+            "tg": 0.0,
+            "hdl": 0.0,
+            "hgb": 0.0,
+        }
+        result = calc_hba1c_regression(100.0, 50, 150, 50, 14.0, coefficients=custom_coeffs)
+        expected = 5.0 + 0.01 * 100.0  # 6.0
+        assert abs(result - expected) < 0.001, f"Expected {expected}, got {result}"
+
+    def test_negative_fpg_raises_value_error(self):
+        """Negative FPG should raise ValueError."""
+        with pytest.raises(ValueError, match="negative"):
+            calc_hba1c_regression(-50.0, 50, 150, 50, 14.0)
+
+    def test_nan_fpg_raises_value_error(self):
+        """NaN FPG should raise ValueError."""
+        with pytest.raises(ValueError, match="NaN"):
+            calc_hba1c_regression(float('nan'), 50, 150, 50, 14.0)
+
+    def test_fpg_below_40_raises_value_error(self):
+        """FPG below 40 mg/dL should raise ValueError."""
+        with pytest.raises(ValueError, match="below 40"):
+            calc_hba1c_regression(35.0, 50, 150, 50, 14.0)
+
+    def test_negative_age_raises_value_error(self):
+        """Negative age should raise ValueError."""
+        with pytest.raises(ValueError, match="negative"):
+            calc_hba1c_regression(126.0, -5, 150, 50, 14.0)
+
+    def test_nan_tg_raises_value_error(self):
+        """NaN triglycerides should raise ValueError."""
+        with pytest.raises(ValueError, match="NaN"):
+            calc_hba1c_regression(126.0, 50, float('nan'), 50, 14.0)
+
+    def test_negative_hemoglobin_raises_value_error(self):
+        """Negative hemoglobin should raise ValueError."""
+        with pytest.raises(ValueError, match="positive"):
+            calc_hba1c_regression(126.0, 50, 150, 50, -1.0)
+
+    def test_array_input_returns_array(self):
+        """Numpy array input should return corresponding array of estimates."""
+        fpg_values = np.array([100.0, 150.0, 200.0])
+        age_values = np.array([40, 50, 60])
+        tg_values = np.array([100.0, 150.0, 200.0])
+        hdl_values = np.array([50.0, 50.0, 50.0])
+        hgb_values = np.array([14.0, 14.0, 14.0])
+        result = calc_hba1c_regression(fpg_values, age_values, tg_values, hdl_values, hgb_values)
+        assert isinstance(result, np.ndarray)
+        assert len(result) == 3
+        # Values should increase with FPG (all other factors also increase)
+        assert result[0] < result[1] < result[2]
+
+
+class TestFitRegressionCoefficients:
+    """Tests for the fit_regression_coefficients function."""
+
+    def test_returns_dict_with_all_keys(self):
+        """Should return dictionary with all coefficient keys."""
+        import pandas as pd
+        # Create mock data
+        df = pd.DataFrame({
+            'hba1c_percent': [5.5, 6.0, 6.5, 7.0, 7.5],
+            'fpg_mgdl': [100.0, 110.0, 120.0, 140.0, 160.0],
+            'age_years': [40, 45, 50, 55, 60],
+            'tg_mgdl': [100.0, 120.0, 140.0, 160.0, 180.0],
+            'hdl_mgdl': [60.0, 55.0, 50.0, 45.0, 40.0],
+            'hgb_gdl': [14.0, 13.5, 13.0, 12.5, 12.0],
+        })
+        result = fit_regression_coefficients(df)
+        expected_keys = ['intercept', 'fpg', 'age', 'tg', 'hdl', 'hgb']
+        for key in expected_keys:
+            assert key in result, f"Missing key: {key}"
+
+    def test_raises_value_error_for_missing_columns(self):
+        """Should raise ValueError if required columns are missing."""
+        import pandas as pd
+        df = pd.DataFrame({
+            'fpg_mgdl': [100.0, 110.0],
+            'age_years': [40, 45],
+        })  # Missing hba1c_percent, tg_mgdl, hdl_mgdl, hgb_gdl
+        with pytest.raises(ValueError, match="Missing required columns"):
+            fit_regression_coefficients(df)
+
+    def test_coefficients_are_floats(self):
+        """All coefficients should be float values."""
+        import pandas as pd
+        df = pd.DataFrame({
+            'hba1c_percent': [5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0],
+            'fpg_mgdl': [100.0, 110.0, 120.0, 140.0, 160.0, 180.0, 200.0, 220.0, 240.0, 260.0],
+            'age_years': [40, 45, 50, 55, 60, 65, 70, 75, 80, 85],
+            'tg_mgdl': [100.0, 120.0, 140.0, 160.0, 180.0, 200.0, 220.0, 240.0, 260.0, 280.0],
+            'hdl_mgdl': [60.0, 55.0, 50.0, 45.0, 40.0, 38.0, 36.0, 34.0, 32.0, 30.0],
+            'hgb_gdl': [14.0, 13.5, 13.0, 12.5, 12.0, 11.5, 11.0, 10.5, 10.0, 9.5],
+        })
+        result = fit_regression_coefficients(df)
+        for key, value in result.items():
+            assert isinstance(value, float), f"Coefficient {key} should be float, got {type(value)}"
+

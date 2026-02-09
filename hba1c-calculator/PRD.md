@@ -189,11 +189,11 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want a multi-linear regression model using published NHANES coefficients.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_hba1c_regression(fpg_mgdl, age_years, tg_mgdl, hdl_mgdl, hgb_gdl)` in `hba1cE/models.py`
-- [ ] Formula: eHbA1c = β₀ + β₁×FPG + β₂×Age + β₃×TG + β₄×HDL + β₅×Hgb
-- [ ] Use placeholder coefficients initially (will be fitted from data)
-- [ ] Add `fit_regression_coefficients(df)` to derive coefficients from NHANES
-- [ ] Typecheck passes
+- [x] Add `calc_hba1c_regression(fpg_mgdl, age_years, tg_mgdl, hdl_mgdl, hgb_gdl)` in `hba1cE/models.py`
+- [x] Formula: eHbA1c = β₀ + β₁×FPG + β₂×Age + β₃×TG + β₄×HDL + β₅×Hgb
+- [x] Use placeholder coefficients initially (will be fitted from data)
+- [x] Add `fit_regression_coefficients(df)` to derive coefficients from NHANES
+- [x] Typecheck passes
 
 ---
 
