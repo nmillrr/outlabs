@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hba1cE.train import create_features, stratified_split, train_ridge, train_random_forest, save_model
+from hba1cE.train import create_features, stratified_split, train_ridge, train_random_forest, train_lightgbm, save_model
 
 
 class TestCreateFeatures:
@@ -441,3 +441,97 @@ class TestSaveModel:
 
         assert filepath.exists()
 
+
+class TestTrainLightGBM:
+    """Tests for train_lightgbm function."""
+
+    def test_basic_training(self):
+        """Test that train_lightgbm returns a fitted LGBMRegressor."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100) * 2 + 6  # Simulated HbA1c values
+        X_val = np.random.randn(30, 11)
+        y_val = np.random.randn(30) * 2 + 6
+
+        model = train_lightgbm(X_train, y_train, X_val, y_val)
+
+        # Check it's an LGBMRegressor model
+        from lightgbm import LGBMRegressor
+        assert isinstance(model, LGBMRegressor)
+
+        # Check model is fitted (has feature_importances_)
+        assert hasattr(model, "feature_importances_")
+        assert len(model.feature_importances_) == 11
+
+    def test_prediction_works(self):
+        """Test that trained model can make predictions."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100) * 2 + 6
+        X_val = np.random.randn(30, 11)
+        y_val = np.random.randn(30) * 2 + 6
+
+        model = train_lightgbm(X_train, y_train, X_val, y_val)
+        
+        X_test = np.random.randn(20, 11)
+        y_pred = model.predict(X_test)
+
+        assert len(y_pred) == 20
+        assert isinstance(y_pred, np.ndarray)
+
+    def test_early_stopping_applied(self):
+        """Test that early stopping actually limits the number of iterations."""
+        np.random.seed(42)
+        # Create data that trains quickly
+        X_train = np.random.randn(200, 5)
+        y_train = X_train[:, 0] * 2 + 5  # Simple linear relationship
+        X_val = np.random.randn(50, 5)
+        y_val = X_val[:, 0] * 2 + 5
+
+        model = train_lightgbm(
+            X_train, y_train, X_val, y_val,
+            n_estimators=1000,
+            early_stopping_rounds=5
+        )
+
+        # Early stopping should have caused fewer than 1000 iterations
+        # The model's best_iteration_ should be less than n_estimators
+        assert model.n_estimators_ < 1000
+
+    def test_incompatible_train_shapes_raises_error(self):
+        """Test that incompatible X_train and y_train shapes raise ValueError."""
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(50)  # Wrong number of samples
+        X_val = np.random.randn(30, 11)
+        y_val = np.random.randn(30)
+
+        with pytest.raises(ValueError, match="X_train has 100 samples but y_train has 50"):
+            train_lightgbm(X_train, y_train, X_val, y_val)
+
+    def test_incompatible_val_shapes_raises_error(self):
+        """Test that incompatible X_val and y_val shapes raise ValueError."""
+        X_train = np.random.randn(100, 11)
+        y_train = np.random.randn(100)
+        X_val = np.random.randn(30, 11)
+        y_val = np.random.randn(20)  # Wrong number of samples
+
+        with pytest.raises(ValueError, match="X_val has 30 samples but y_val has 20"):
+            train_lightgbm(X_train, y_train, X_val, y_val)
+
+    def test_reproducibility(self):
+        """Test that same random_state produces identical models."""
+        np.random.seed(42)
+        X_train = np.random.randn(100, 5)
+        y_train = np.random.randn(100) * 2 + 6
+        X_val = np.random.randn(30, 5)
+        y_val = np.random.randn(30) * 2 + 6
+
+        # Both calls use the fixed random_state=42 inside train_lightgbm
+        model1 = train_lightgbm(X_train, y_train, X_val, y_val)
+        model2 = train_lightgbm(X_train, y_train, X_val, y_val)
+
+        X_test = np.random.randn(10, 5)
+        np.testing.assert_array_equal(
+            model1.predict(X_test),
+            model2.predict(X_test)
+        )

@@ -266,3 +266,75 @@ def train_random_forest(
 
     return model
 
+
+def train_lightgbm(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_val: np.ndarray,
+    y_val: np.ndarray,
+    n_estimators: int = 1000,
+    early_stopping_rounds: int = 20,
+) -> "LGBMRegressor":
+    """
+    Train a LightGBM model for HbA1c prediction with early stopping.
+
+    LightGBM is a gradient boosting framework that uses tree-based learning.
+    It is efficient and often achieves best performance on tabular data.
+    Early stopping prevents overfitting by halting training when validation
+    performance stops improving.
+
+    Args:
+        X_train: Training feature matrix of shape (n_samples, n_features).
+        y_train: Training target values of shape (n_samples,).
+        X_val: Validation feature matrix for early stopping.
+        y_val: Validation target values for early stopping.
+        n_estimators: Maximum number of boosting iterations (default 1000).
+        early_stopping_rounds: Stop training if validation score doesn't
+            improve for this many rounds (default 20).
+
+    Returns:
+        Fitted LGBMRegressor model.
+
+    Raises:
+        ValueError: If X_train and y_train have incompatible shapes.
+        ValueError: If X_val and y_val have incompatible shapes.
+
+    Example:
+        >>> from hba1cE.train import stratified_split, train_lightgbm
+        >>> X_train, X_test, y_train, y_test = stratified_split(df, test_size=0.3)
+        >>> # Use part of test as validation for early stopping
+        >>> X_val, X_test, y_val, y_test = train_test_split(X_test, y_test, test_size=0.5)
+        >>> model = train_lightgbm(X_train, y_train, X_val, y_val)
+        >>> y_pred = model.predict(X_test)
+    """
+    if X_train.shape[0] != y_train.shape[0]:
+        raise ValueError(
+            f"X_train has {X_train.shape[0]} samples but y_train has {y_train.shape[0]} samples"
+        )
+    if X_val.shape[0] != y_val.shape[0]:
+        raise ValueError(
+            f"X_val has {X_val.shape[0]} samples but y_val has {y_val.shape[0]} samples"
+        )
+
+    from lightgbm import LGBMRegressor
+    import lightgbm
+
+    model = LGBMRegressor(
+        n_estimators=n_estimators,
+        random_state=42,
+        verbosity=-1,  # Suppress warnings
+    )
+
+    model.fit(
+        X_train,
+        y_train,
+        eval_set=[(X_val, y_val)],
+        callbacks=[
+            lightgbm.early_stopping(
+                stopping_rounds=early_stopping_rounds,
+                verbose=False,
+            )
+        ],
+    )
+
+    return model
