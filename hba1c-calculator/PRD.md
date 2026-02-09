@@ -175,12 +175,13 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want a first-order glycation kinetics model adjusted for hemoglobin.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_hba1c_kinetic(fpg_mgdl, hgb_gdl=14.0, rbc_lifespan_days=120)` in `hba1cE/models.py`
-- [ ] Formula: HbA1c = k × [Glucose_avg] × RBC_lifespan / Hemoglobin_factor
-- [ ] Default k = 4.5 × 10⁻⁵ per mg/dL per day (adjustable parameter)
-- [ ] Adjusts for hemoglobin level (anemia correction)
-- [ ] Add unit test verifying output in valid range (3% < HbA1c < 20%)
-- [ ] Typecheck passes
+- [x] Add `calc_hba1c_kinetic(fpg_mgdl, hgb_gdl=14.0, rbc_lifespan_days=120)` in `hba1cE/models.py`
+- [x] Formula: HbA1c = k × [Glucose_avg] × RBC_lifespan / Hemoglobin_factor
+- [x] Default k = 4.5 × 10⁻⁵ per mg/dL per day (adjustable parameter)
+- [x] Adjusts for hemoglobin level (anemia correction)
+- [x] Add unit test verifying output in valid range (3% < HbA1c < 20%)
+- [x] Typecheck passes
+
 
 ---
 

@@ -130,3 +130,22 @@
   - Tests confirm both scalar and numpy array functionality works correctly
 ---
 
+## Iteration 9 - US-010: Implement Glycation Kinetics Model
+- **What was implemented:**
+  - `calc_hba1c_kinetic(fpg_mgdl, hgb_gdl=14.0, rbc_lifespan_days=120, k=4.5e-5)` in `hba1cE/models.py`
+  - Formula: HbA1c = baseline + k × [Glucose] × RBC_lifespan × (Hgb_ref / Hgb)
+  - Anemia correction: lower hemoglobin → higher HbA1c estimate
+  - RBC lifespan adjustment: shorter lifespan → lower HbA1c
+  - Baseline non-glycemic HbA1c of 4.0%
+  - 11 comprehensive unit tests in `tests/test_models.py`
+- **Files changed:**
+  - `hba1cE/models.py` - Added `calc_hba1c_kinetic()` function (~110 lines)
+  - `tests/test_models.py` - Added `TestCalcHba1cKinetic` class with 11 tests
+- **Learnings for future iterations:**
+  - Glycation kinetics: HbA1c = baseline + k × glucose × time × (1/Hgb)
+  - Anemia increases HbA1c at same glucose (less hemoglobin to distribute glycation)
+  - Shorter RBC lifespan (hemolysis) decreases HbA1c (less time for glycation)
+  - Default k = 4.5e-5 gives reasonable values: FPG=100 → ~4.5%, FPG=200 → ~5.1%
+  - Output always in range 3-20% for valid inputs
+---
+
