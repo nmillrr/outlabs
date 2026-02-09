@@ -8,9 +8,10 @@ from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, train_test_split
 import joblib
 
 from hba1cE.models import (
@@ -338,3 +339,78 @@ def train_lightgbm(
     )
 
     return model
+
+
+def cross_validate_model(
+    model: object,
+    X: np.ndarray,
+    y: np.ndarray,
+    n_splits: int = 10,
+) -> dict:
+    """
+    Perform k-fold cross-validation to evaluate model performance.
+
+    Uses k-fold cross-validation to compute RMSE and MAE metrics,
+    providing both mean and standard deviation across folds for
+    robust performance estimation.
+
+    Args:
+        model: A scikit-learn compatible estimator (must have fit/predict methods).
+        X: Feature matrix of shape (n_samples, n_features).
+        y: Target values of shape (n_samples,).
+        n_splits: Number of cross-validation folds (default 10).
+
+    Returns:
+        Dictionary with keys:
+        - RMSE_mean: Mean RMSE across all folds
+        - RMSE_std: Standard deviation of RMSE across folds
+        - MAE_mean: Mean MAE across all folds
+        - MAE_std: Standard deviation of MAE across folds
+
+    Raises:
+        ValueError: If X and y have incompatible shapes.
+        ValueError: If n_splits < 2.
+
+    Example:
+        >>> from hba1cE.train import train_ridge, cross_validate_model
+        >>> model = Ridge(alpha=1.0)
+        >>> results = cross_validate_model(model, X, y, n_splits=10)
+        >>> print(f"RMSE: {results['RMSE_mean']:.3f} ± {results['RMSE_std']:.3f}")
+    """
+    if X.shape[0] != y.shape[0]:
+        raise ValueError(
+            f"X has {X.shape[0]} samples but y has {y.shape[0]} samples"
+        )
+    if n_splits < 2:
+        raise ValueError(f"n_splits must be >= 2, got {n_splits}")
+
+    kfold = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    rmse_scores = []
+    mae_scores = []
+
+    for train_idx, val_idx in kfold.split(X):
+        X_train, X_val = X[train_idx], X[val_idx]
+        y_train, y_val = y[train_idx], y[val_idx]
+
+        # Clone model to get a fresh instance for each fold
+        model_clone = clone(model)
+        model_clone.fit(X_train, y_train)
+
+        y_pred = model_clone.predict(X_val)
+
+        # Calculate RMSE
+        rmse = np.sqrt(np.mean((y_val - y_pred) ** 2))
+        rmse_scores.append(rmse)
+
+        # Calculate MAE
+        mae = np.mean(np.abs(y_val - y_pred))
+        mae_scores.append(mae)
+
+    return {
+        "RMSE_mean": float(np.mean(rmse_scores)),
+        "RMSE_std": float(np.std(rmse_scores)),
+        "MAE_mean": float(np.mean(mae_scores)),
+        "MAE_std": float(np.std(mae_scores)),
+    }
+

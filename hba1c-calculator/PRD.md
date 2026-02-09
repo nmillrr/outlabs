@@ -273,9 +273,9 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want 10-fold CV to evaluate models consistently.
 
 **Acceptance Criteria:**
-- [ ] Add `cross_validate_model(model, X, y, n_splits=10)` in `hba1cE/train.py`
-- [ ] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
-- [ ] Typecheck passes
+- [x] Add `cross_validate_model(model, X, y, n_splits=10)` in `hba1cE/train.py`
+- [x] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
+- [x] Typecheck passes
 
 ---
 

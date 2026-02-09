@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hba1cE.train import create_features, stratified_split, train_ridge, train_random_forest, train_lightgbm, save_model
+from hba1cE.train import create_features, stratified_split, train_ridge, train_random_forest, train_lightgbm, save_model, cross_validate_model
 
 
 class TestCreateFeatures:
@@ -535,3 +535,119 @@ class TestTrainLightGBM:
             model1.predict(X_test),
             model2.predict(X_test)
         )
+
+
+class TestCrossValidateModel:
+    """Tests for cross_validate_model function."""
+
+    def test_basic_cross_validation(self):
+        """Test that cross_validate_model returns correct structure."""
+        from sklearn.linear_model import Ridge
+
+        np.random.seed(42)
+        X = np.random.randn(100, 5)
+        y = X[:, 0] * 2 + 5 + np.random.randn(100) * 0.1  # Simple relationship
+
+        model = Ridge(alpha=1.0)
+        results = cross_validate_model(model, X, y, n_splits=5)
+
+        # Check return type
+        assert isinstance(results, dict)
+
+        # Check all expected keys are present
+        assert "RMSE_mean" in results
+        assert "RMSE_std" in results
+        assert "MAE_mean" in results
+        assert "MAE_std" in results
+
+    def test_metrics_are_valid_floats(self):
+        """Test that all returned metrics are valid positive floats."""
+        from sklearn.linear_model import Ridge
+
+        np.random.seed(42)
+        X = np.random.randn(100, 5)
+        y = X[:, 0] * 2 + 5 + np.random.randn(100) * 0.1
+
+        model = Ridge(alpha=1.0)
+        results = cross_validate_model(model, X, y, n_splits=5)
+
+        # All values should be non-negative floats
+        for key, value in results.items():
+            assert isinstance(value, float), f"{key} should be float"
+            assert value >= 0, f"{key} should be non-negative"
+            assert not np.isnan(value), f"{key} should not be NaN"
+            assert not np.isinf(value), f"{key} should not be infinite"
+
+    def test_works_with_different_models(self):
+        """Test that cross_validate_model works with different model types."""
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.linear_model import Ridge
+
+        np.random.seed(42)
+        X = np.random.randn(100, 5)
+        y = X[:, 0] * 2 + 5 + np.random.randn(100) * 0.2
+
+        # Test with Ridge
+        ridge_results = cross_validate_model(Ridge(alpha=1.0), X, y, n_splits=3)
+        assert "RMSE_mean" in ridge_results
+
+        # Test with RandomForest (use fewer estimators for speed)
+        rf_results = cross_validate_model(
+            RandomForestRegressor(n_estimators=10, random_state=42),
+            X, y, n_splits=3
+        )
+        assert "RMSE_mean" in rf_results
+
+    def test_incompatible_shapes_raises_error(self):
+        """Test that incompatible X and y shapes raise ValueError."""
+        from sklearn.linear_model import Ridge
+
+        X = np.random.randn(100, 5)
+        y = np.random.randn(50)  # Wrong number of samples
+
+        with pytest.raises(ValueError, match="samples"):
+            cross_validate_model(Ridge(), X, y)
+
+    def test_invalid_n_splits_raises_error(self):
+        """Test that n_splits < 2 raises ValueError."""
+        from sklearn.linear_model import Ridge
+
+        X = np.random.randn(100, 5)
+        y = np.random.randn(100)
+
+        with pytest.raises(ValueError, match="n_splits must be >= 2"):
+            cross_validate_model(Ridge(), X, y, n_splits=1)
+
+    def test_reproducibility(self):
+        """Test that results are reproducible."""
+        from sklearn.linear_model import Ridge
+
+        np.random.seed(42)
+        X = np.random.randn(100, 5)
+        y = X[:, 0] * 2 + 5 + np.random.randn(100) * 0.1
+
+        model = Ridge(alpha=1.0)
+        results1 = cross_validate_model(model, X, y, n_splits=5)
+        results2 = cross_validate_model(model, X, y, n_splits=5)
+
+        assert results1["RMSE_mean"] == pytest.approx(results2["RMSE_mean"])
+        assert results1["RMSE_std"] == pytest.approx(results2["RMSE_std"])
+        assert results1["MAE_mean"] == pytest.approx(results2["MAE_mean"])
+        assert results1["MAE_std"] == pytest.approx(results2["MAE_std"])
+
+    def test_std_lower_than_mean_for_good_model(self):
+        """Test that std is reasonably lower than mean for a good model."""
+        from sklearn.linear_model import Ridge
+
+        np.random.seed(42)
+        # Create data with clear pattern
+        X = np.random.randn(200, 5)
+        y = X[:, 0] * 2 + X[:, 1] * 0.5 + 5 + np.random.randn(200) * 0.1
+
+        model = Ridge(alpha=1.0)
+        results = cross_validate_model(model, X, y, n_splits=10)
+
+        # For a good model, std should be less than mean (reasonable variation)
+        assert results["RMSE_std"] < results["RMSE_mean"]
+        assert results["MAE_std"] < results["MAE_mean"]
+
