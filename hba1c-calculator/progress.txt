@@ -326,3 +326,63 @@
   - All 103 tests pass after implementation
 ---
 
+## Iteration 19 - US-019: Create Model Training Notebook
+- **What was implemented:**
+  - `notebooks/03_model_training.ipynb` - Complete ML training workflow notebook
+  - Step 1: Loading cleaned NHANES data from `data/processed/nhanes_glycemic_cleaned.csv`
+  - Step 2: Feature engineering using `create_features()` (11 features)
+  - Step 3: Stratified train/test split by HbA1c clinical ranges
+  - Step 4: Training Ridge, Random Forest, and LightGBM models
+  - Step 5: 10-fold cross-validation for all models
+  - Step 6: Results comparison table with formatted RMSE/MAE metrics
+  - Step 7: Bar chart visualization of CV results
+  - Step 8: Saving best model to `models/` directory
+  - Step 9: Test set evaluation with scatter plot
+- **Files changed:**
+  - `notebooks/03_model_training.ipynb` - Created new notebook (~400 lines)
+- **Learnings for future iterations:**
+  - Use `plt.style.use('seaborn-v0_8-whitegrid')` for modern seaborn style
+  - Create validation set from training data for LightGBM early stopping
+  - Use simpler model configs (fewer estimators) for CV to reduce runtime
+  - Save all models, not just best, for later comparison
+  - All 103 tests pass after implementation
+---
+
+
+## Iteration 20 - US-021: Implement Lin's CCC
+- **What was implemented:**
+  - `lins_ccc(y_true, y_pred)` function in `hba1cE/evaluate.py`
+  - Formula: CCC = 2 * cov(X,Y) / (var(X) + var(Y) + (mean_X - mean_Y)^2)
+  - Returns CCC value in range [-1, 1]
+  - Handles edge case of constant identical arrays (returns 1.0)
+  - Fixed validation order: length-mismatch check now runs before min-elements check
+  - 9 comprehensive unit tests in `tests/test_evaluate.py` (TestLinsCCC class)
+- **Files changed:**
+  - `hba1cE/evaluate.py` - Fixed validation order in lins_ccc function
+- **Learnings for future iterations:**
+  - Validation order matters: check length mismatch before minimum element count
+  - Lin's CCC combines precision (Pearson r) and accuracy (bias correction)
+  - CCC < Pearson r when there is systematic bias between measurements
+  - Use `python3` not `python` on this system
+  - All 20 evaluate tests pass
+---
+
+## Iteration 21 - US-022: Create Comprehensive Evaluation Function
+- **What was implemented:**
+  - `evaluate_model(y_true, y_pred, model_name)` function in `hba1cE/evaluate.py`
+  - Returns dict with: model_name, rmse, mae, bias, r_pearson, lin_ccc, ba_stats, pct_within_0_5
+  - RMSE and MAE computed from prediction errors
+  - Pearson r via scipy.stats.pearsonr
+  - Reuses existing `lins_ccc` and `bland_altman_stats` functions
+  - pct_within_0_5 = percentage of predictions within ±0.5% of measured HbA1c
+  - Comprehensive input validation (length mismatch, NaN, min 2 elements)
+  - 10 unit tests in `tests/test_evaluate.py` (TestEvaluateModel class)
+- **Files changed:**
+  - `hba1cE/evaluate.py` - Added `evaluate_model()` function (~90 lines)
+  - `tests/test_evaluate.py` - Added TestEvaluateModel class with 10 tests
+- **Learnings for future iterations:**
+  - Reuse existing metric functions (lins_ccc, bland_altman_stats) inside composite functions
+  - scipy.stats.pearsonr returns (r, p_value) tuple
+  - pct_within_0_5 is a clinically relevant metric: % of estimates within ±0.5% HbA1c
+  - All 30 evaluate tests pass
+---

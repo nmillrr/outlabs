@@ -233,3 +233,78 @@ def evaluate_model(
         "ba_stats": ba,
         "pct_within_0_5": pct_within_0_5,
     }
+
+
+def evaluate_by_hba1c_strata(
+    y_true: Union[np.ndarray, list],
+    y_pred: Union[np.ndarray, list],
+    hba1c_values: Union[np.ndarray, list],
+) -> Dict[str, Dict[str, object]]:
+    """Evaluate model performance stratified by HbA1c clinical ranges.
+
+    Splits predictions into three clinically meaningful HbA1c strata
+    (normal, prediabetes, diabetes) and computes comprehensive metrics
+    for each stratum using :func:`evaluate_model`.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True (reference) HbA1c values, e.g. HPLC-measured.
+    y_pred : array-like
+        Predicted (estimated) HbA1c values.
+    hba1c_values : array-like
+        HbA1c values used for stratification (typically same as *y_true*).
+
+    Returns
+    -------
+    dict
+        Dictionary keyed by stratum name (``"normal"``, ``"prediabetes"``,
+        ``"diabetes"``).  Each value is a metrics dict from
+        :func:`evaluate_model`, or ``None`` if the stratum contains fewer
+        than 2 samples.
+
+    Raises
+    ------
+    ValueError
+        If inputs have different lengths or contain NaN values.
+    """
+    y_true_arr = np.asarray(y_true, dtype=float)
+    y_pred_arr = np.asarray(y_pred, dtype=float)
+    hba1c_arr = np.asarray(hba1c_values, dtype=float)
+
+    if y_true_arr.ndim != 1 or y_pred_arr.ndim != 1 or hba1c_arr.ndim != 1:
+        raise ValueError("Inputs must be 1-dimensional arrays.")
+
+    if not (len(y_true_arr) == len(y_pred_arr) == len(hba1c_arr)):
+        raise ValueError(
+            f"All inputs must have the same length. "
+            f"Got y_true={len(y_true_arr)}, y_pred={len(y_pred_arr)}, "
+            f"hba1c_values={len(hba1c_arr)}."
+        )
+
+    if len(y_true_arr) == 0:
+        raise ValueError("Inputs must not be empty.")
+
+    if (
+        np.any(np.isnan(y_true_arr))
+        or np.any(np.isnan(y_pred_arr))
+        or np.any(np.isnan(hba1c_arr))
+    ):
+        raise ValueError("Inputs must not contain NaN values.")
+
+    strata = {
+        "normal": hba1c_arr < 5.7,
+        "prediabetes": (hba1c_arr >= 5.7) & (hba1c_arr < 6.5),
+        "diabetes": hba1c_arr >= 6.5,
+    }
+
+    results: Dict[str, object] = {}
+    for name, mask in strata.items():
+        if np.sum(mask) < 2:
+            results[name] = None
+        else:
+            results[name] = evaluate_model(
+                y_true_arr[mask], y_pred_arr[mask], model_name=name
+            )
+
+    return results
