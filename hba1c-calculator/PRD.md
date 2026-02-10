@@ -321,10 +321,10 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want a single function returning all metrics.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_model(y_true, y_pred, model_name)` in `hba1cE/evaluate.py`
-- [ ] Returns dict: rmse, mae, bias, r_pearson, lin_ccc, ba_stats, pct_within_0_5
-- [ ] pct_within_0_5 = percentage of predictions within ±0.5% of measured
-- [ ] Typecheck passes
+- [x] Add `evaluate_model(y_true, y_pred, model_name)` in `hba1cE/evaluate.py`
+- [x] Returns dict: rmse, mae, bias, r_pearson, lin_ccc, ba_stats, pct_within_0_5
+- [x] pct_within_0_5 = percentage of predictions within ±0.5% of measured
+- [x] Typecheck passes
 
 ---
 

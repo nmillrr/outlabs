@@ -144,3 +144,92 @@ def lins_ccc(
         return 1.0
 
     return float(numerator / denominator)
+
+
+def evaluate_model(
+    y_true: Union[np.ndarray, list],
+    y_pred: Union[np.ndarray, list],
+    model_name: str = "model",
+) -> Dict[str, object]:
+    """Compute comprehensive evaluation metrics for an HbA1c estimation model.
+
+    Calculates RMSE, MAE, mean bias, Pearson correlation, Lin's CCC,
+    Bland-Altman statistics, and the percentage of predictions within
+    ±0.5% of measured HbA1c.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True (reference) HbA1c values, e.g. HPLC-measured.
+    y_pred : array-like
+        Predicted (estimated) HbA1c values.
+    model_name : str, optional
+        Name of the model being evaluated (default ``"model"``).
+
+    Returns
+    -------
+    dict
+        Dictionary with keys:
+        - model_name: Name of the evaluated model.
+        - rmse: Root Mean Squared Error.
+        - mae: Mean Absolute Error.
+        - bias: Mean signed difference (pred − true).
+        - r_pearson: Pearson correlation coefficient.
+        - lin_ccc: Lin's Concordance Correlation Coefficient.
+        - ba_stats: Bland-Altman statistics dict.
+        - pct_within_0_5: Percentage of predictions within ±0.5% of true.
+
+    Raises
+    ------
+    ValueError
+        If inputs have different lengths, fewer than 2 elements,
+        or contain NaN values.
+    """
+    y_true_arr = np.asarray(y_true, dtype=float)
+    y_pred_arr = np.asarray(y_pred, dtype=float)
+
+    if y_true_arr.ndim != 1 or y_pred_arr.ndim != 1:
+        raise ValueError("Inputs must be 1-dimensional arrays.")
+
+    if len(y_true_arr) != len(y_pred_arr):
+        raise ValueError(
+            f"Inputs must have the same length. "
+            f"Got y_true={len(y_true_arr)}, y_pred={len(y_pred_arr)}."
+        )
+
+    if len(y_true_arr) < 2:
+        raise ValueError("Inputs must have at least 2 elements.")
+
+    if np.any(np.isnan(y_true_arr)) or np.any(np.isnan(y_pred_arr)):
+        raise ValueError("Inputs must not contain NaN values.")
+
+    errors = y_pred_arr - y_true_arr
+    rmse = float(np.sqrt(np.mean(errors ** 2)))
+    mae = float(np.mean(np.abs(errors)))
+    bias = float(np.mean(errors))
+
+    # Pearson correlation
+    from scipy.stats import pearsonr
+
+    r_pearson, _ = pearsonr(y_true_arr, y_pred_arr)
+
+    # Lin's CCC (reuse existing function)
+    ccc = lins_ccc(y_true_arr, y_pred_arr)
+
+    # Bland-Altman statistics (reuse existing function)
+    ba = bland_altman_stats(y_true_arr, y_pred_arr)
+
+    # Percentage within ±0.5%
+    within = np.abs(errors) <= 0.5
+    pct_within_0_5 = float(np.mean(within) * 100.0)
+
+    return {
+        "model_name": model_name,
+        "rmse": rmse,
+        "mae": mae,
+        "bias": bias,
+        "r_pearson": float(r_pearson),
+        "lin_ccc": ccc,
+        "ba_stats": ba,
+        "pct_within_0_5": pct_within_0_5,
+    }
