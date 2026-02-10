@@ -4,7 +4,7 @@ Functions for computing agreement statistics, concordance metrics,
 and clinical performance measures against HPLC-measured HbA1c reference values.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -449,3 +449,87 @@ def evaluate_by_subgroup(
             )
 
     return results
+
+
+def bootstrap_ci(
+    y_true: Union[np.ndarray, list],
+    y_pred: Union[np.ndarray, list],
+    metric_func: "Callable[[np.ndarray, np.ndarray], float]",
+    n_bootstrap: int = 2000,
+    confidence_level: float = 0.95,
+    random_state: int = 42,
+) -> "Tuple[float, float, float]":
+    """Compute bootstrap confidence intervals for a metric.
+
+    Resamples *y_true* and *y_pred* with replacement *n_bootstrap* times,
+    computes *metric_func* on each resample, and returns a percentile-based
+    confidence interval.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True (reference) HbA1c values.
+    y_pred : array-like
+        Predicted (estimated) HbA1c values.
+    metric_func : callable
+        A function ``f(y_true, y_pred) -> float`` that returns a scalar metric.
+    n_bootstrap : int, optional
+        Number of bootstrap iterations (default 2000).
+    confidence_level : float, optional
+        Confidence level for the interval (default 0.95 → 95 % CI).
+    random_state : int, optional
+        Seed for the random number generator (default 42).
+
+    Returns
+    -------
+    tuple of (float, float, float)
+        ``(lower, upper, mean)`` where *lower* and *upper* are the
+        percentile-based bounds and *mean* is the average bootstrap metric.
+
+    Raises
+    ------
+    ValueError
+        If inputs have different lengths, fewer than 2 elements,
+        contain NaN values, n_bootstrap < 1, or confidence_level is
+        not in (0, 1).
+    """
+    y_true_arr = np.asarray(y_true, dtype=float)
+    y_pred_arr = np.asarray(y_pred, dtype=float)
+
+    if y_true_arr.ndim != 1 or y_pred_arr.ndim != 1:
+        raise ValueError("Inputs must be 1-dimensional arrays.")
+
+    if len(y_true_arr) != len(y_pred_arr):
+        raise ValueError(
+            f"Inputs must have the same length. "
+            f"Got y_true={len(y_true_arr)}, y_pred={len(y_pred_arr)}."
+        )
+
+    if len(y_true_arr) < 2:
+        raise ValueError("Inputs must have at least 2 elements.")
+
+    if np.any(np.isnan(y_true_arr)) or np.any(np.isnan(y_pred_arr)):
+        raise ValueError("Inputs must not contain NaN values.")
+
+    if n_bootstrap < 1:
+        raise ValueError("n_bootstrap must be at least 1.")
+
+    if not (0.0 < confidence_level < 1.0):
+        raise ValueError("confidence_level must be between 0 and 1 (exclusive).")
+
+    rng = np.random.default_rng(random_state)
+    n = len(y_true_arr)
+    scores: List[float] = []
+
+    for _ in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        score = metric_func(y_true_arr[idx], y_pred_arr[idx])
+        scores.append(float(score))
+
+    scores_arr = np.array(scores)
+    alpha = 1.0 - confidence_level
+    lower = float(np.percentile(scores_arr, 100 * alpha / 2))
+    upper = float(np.percentile(scores_arr, 100 * (1 - alpha / 2)))
+    mean = float(np.mean(scores_arr))
+
+    return (lower, upper, mean)

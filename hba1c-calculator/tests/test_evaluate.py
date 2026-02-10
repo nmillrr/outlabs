@@ -6,6 +6,7 @@ import pytest
 
 from hba1cE.evaluate import (
     bland_altman_stats,
+    bootstrap_ci,
     define_subgroups,
     evaluate_by_hba1c_strata,
     evaluate_by_subgroup,
@@ -473,3 +474,63 @@ class TestEvaluateBySubgroup:
             evaluate_by_subgroup(
                 [5.0, float("nan")], [5.1, 6.1], df, "g", ["a"]
             )
+
+
+class TestBootstrapCI:
+    """Tests for bootstrap_ci function."""
+
+    @staticmethod
+    def _rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        return float(np.sqrt(np.mean((y_pred - y_true) ** 2)))
+
+    def test_returns_tuple_of_three(self):
+        """Should return a (lower, upper, mean) tuple."""
+        y_true = [5.0, 6.0, 7.0, 8.0, 9.0]
+        y_pred = [5.1, 6.2, 6.9, 8.1, 9.0]
+        result = bootstrap_ci(y_true, y_pred, self._rmse, n_bootstrap=100)
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+
+    def test_lower_le_upper(self):
+        """Lower bound should be <= upper bound."""
+        y_true = [5.0, 6.0, 7.0, 8.0, 9.0]
+        y_pred = [5.1, 6.2, 6.9, 8.1, 9.0]
+        lower, upper, mean = bootstrap_ci(y_true, y_pred, self._rmse, n_bootstrap=500)
+        assert lower <= upper
+
+    def test_mean_between_bounds(self):
+        """Mean should be between lower and upper bounds."""
+        y_true = np.array([5.0, 6.0, 7.0, 8.0, 9.0, 5.5, 6.5, 7.5])
+        y_pred = np.array([5.1, 6.2, 6.9, 8.1, 9.0, 5.6, 6.4, 7.6])
+        lower, upper, mean = bootstrap_ci(y_true, y_pred, self._rmse, n_bootstrap=500)
+        assert lower <= mean <= upper
+
+    def test_reproducibility(self):
+        """Same random_state should produce identical results."""
+        y_true = [5.0, 6.0, 7.0, 8.0, 9.0]
+        y_pred = [5.1, 6.2, 6.9, 8.1, 9.0]
+        r1 = bootstrap_ci(y_true, y_pred, self._rmse, n_bootstrap=200, random_state=99)
+        r2 = bootstrap_ci(y_true, y_pred, self._rmse, n_bootstrap=200, random_state=99)
+        assert r1 == r2
+
+    def test_with_lins_ccc(self):
+        """Should work with lins_ccc as metric function."""
+        y_true = [5.0, 6.0, 7.0, 8.0, 9.0]
+        y_pred = [5.1, 6.0, 7.1, 8.0, 9.1]
+        lower, upper, mean = bootstrap_ci(y_true, y_pred, lins_ccc, n_bootstrap=200)
+        assert -1.0 <= lower <= upper <= 1.0
+
+    def test_mismatched_lengths_raises(self):
+        """Should raise ValueError for mismatched lengths."""
+        with pytest.raises(ValueError, match="same length"):
+            bootstrap_ci([5.0, 6.0], [5.0], self._rmse)
+
+    def test_too_few_elements_raises(self):
+        """Should raise ValueError for fewer than 2 elements."""
+        with pytest.raises(ValueError, match="at least 2"):
+            bootstrap_ci([5.0], [5.0], self._rmse)
+
+    def test_nan_raises(self):
+        """Should raise ValueError for NaN values."""
+        with pytest.raises(ValueError, match="NaN"):
+            bootstrap_ci([5.0, float("nan")], [5.0, 6.0], self._rmse)

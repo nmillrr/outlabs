@@ -386,3 +386,45 @@
   - pct_within_0_5 is a clinically relevant metric: % of estimates within ±0.5% HbA1c
   - All 30 evaluate tests pass
 ---
+
+## Iteration 22 - US-023: Implement HbA1c-Stratified Evaluation
+- **What was implemented:**
+  - `evaluate_by_hba1c_strata(y_true, y_pred, hba1c_values)` function in `hba1cE/evaluate.py`
+  - Stratifies by 3 clinical ranges: <5.7% (normal), 5.7-6.4% (prediabetes), ≥6.5% (diabetes)
+  - Returns metrics dict for each stratum using `evaluate_model()`, or None if <2 samples
+  - Input validation for length mismatch, NaN, and empty inputs
+  - 8 unit tests in `tests/test_evaluate.py` (TestEvaluateByHba1cStrata class)
+- **Files changed:**
+  - `hba1cE/evaluate.py` - Already had evaluate_by_hba1c_strata implemented
+  - `tests/test_evaluate.py` - Already had 8 tests for the function
+  - `PRD.md` - Marked US-023 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - Function was already implemented from a previous iteration but PRD was not updated
+  - Always check if code already exists before implementing
+  - All 38 evaluate tests pass
+---
+
+## Iteration 23 - US-024: Implement Subgroup Evaluation (anemia, age)
+- **What was implemented:**
+  - `define_subgroups(df)` function in `hba1cE/evaluate.py`
+    - Creates `anemia` column: Hgb < 12 g/dL (female, sex=2) or < 13 g/dL (male, sex=1)
+    - Creates `age_group` column: <40, 40-60, >60 years
+    - Creates `mcv_group` column: low (<80 fL), normal (80-100 fL), high (>100 fL)
+    - Returns a copy (does not modify original DataFrame)
+  - `evaluate_by_subgroup(y_true, y_pred, df, subgroup_col, subgroup_values)` function
+    - Evaluates model performance for each subgroup value using `evaluate_model()`
+    - Returns None for subgroups with < 2 samples
+    - Handles both boolean and string subgroup values
+  - 7 tests for `define_subgroups` (anemia detection, age groups, MCV groups, missing columns)
+  - 7 tests for `evaluate_by_subgroup` (metrics per subgroup, sparse subgroups, validation errors)
+- **Files changed:**
+  - `hba1cE/evaluate.py` - Added `define_subgroups()` and `evaluate_by_subgroup()` functions (~140 lines)
+  - `tests/test_evaluate.py` - Added `TestDefineSubgroups` (7 tests) and `TestEvaluateBySubgroup` (7 tests)
+  - `PRD.md` - Marked US-024 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - NHANES sex coding: 1 = male, 2 = female
+  - Anemia thresholds: Hgb < 12 g/dL (female), < 13 g/dL (male)
+  - Use `np.select()` for multi-condition categorical assignment in DataFrames
+  - `evaluate_by_subgroup` is generic - works with any subgroup column, not just predefined ones
+  - All 52 evaluate tests pass
+---
