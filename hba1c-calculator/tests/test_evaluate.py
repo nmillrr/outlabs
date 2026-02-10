@@ -3,7 +3,12 @@
 import numpy as np
 import pytest
 
-from hba1cE.evaluate import bland_altman_stats, evaluate_model, lins_ccc
+from hba1cE.evaluate import (
+    bland_altman_stats,
+    evaluate_by_hba1c_strata,
+    evaluate_model,
+    lins_ccc,
+)
 
 
 class TestBlandAltmanStats:
@@ -256,3 +261,71 @@ class TestEvaluateModel:
         with pytest.raises(ValueError, match="at least 2"):
             evaluate_model([5.0], [5.0])
 
+
+class TestEvaluateByHba1cStrata:
+    """Tests for evaluate_by_hba1c_strata function."""
+
+    def test_returns_three_strata(self):
+        """Result should contain normal, prediabetes, diabetes keys."""
+        y_true = [5.0, 5.5, 6.0, 6.5, 7.0, 8.0]
+        y_pred = [5.1, 5.4, 6.1, 6.6, 7.1, 8.2]
+        hba1c = [5.0, 5.5, 6.0, 6.5, 7.0, 8.0]
+        result = evaluate_by_hba1c_strata(y_true, y_pred, hba1c)
+        assert set(result.keys()) == {"normal", "prediabetes", "diabetes"}
+
+    def test_normal_strata_metrics(self):
+        """Normal stratum should compute metrics for HbA1c < 5.7."""
+        y_true = [5.0, 5.2, 5.4, 5.6, 6.0, 6.2, 7.0, 8.0]
+        y_pred = [5.0, 5.2, 5.4, 5.6, 6.0, 6.2, 7.0, 8.0]
+        hba1c = [5.0, 5.2, 5.4, 5.6, 6.0, 6.2, 7.0, 8.0]
+        result = evaluate_by_hba1c_strata(y_true, y_pred, hba1c)
+        assert result["normal"] is not None
+        assert result["normal"]["rmse"] == pytest.approx(0.0, abs=1e-10)
+        assert result["normal"]["model_name"] == "normal"
+
+    def test_diabetes_strata_metrics(self):
+        """Diabetes stratum should compute metrics for HbA1c >= 6.5."""
+        y_true = [5.0, 5.5, 7.0, 8.0, 9.0]
+        y_pred = [5.1, 5.6, 7.2, 8.3, 9.1]
+        hba1c = [5.0, 5.5, 7.0, 8.0, 9.0]
+        result = evaluate_by_hba1c_strata(y_true, y_pred, hba1c)
+        assert result["diabetes"] is not None
+        assert result["diabetes"]["rmse"] > 0.0
+        assert result["diabetes"]["model_name"] == "diabetes"
+
+    def test_sparse_stratum_returns_none(self):
+        """Strata with fewer than 2 samples should return None."""
+        # All values are normal, prediabetes and diabetes have <2 samples
+        y_true = [5.0, 5.2, 5.4]
+        y_pred = [5.1, 5.3, 5.5]
+        hba1c = [5.0, 5.2, 5.4]
+        result = evaluate_by_hba1c_strata(y_true, y_pred, hba1c)
+        assert result["normal"] is not None
+        assert result["prediabetes"] is None
+        assert result["diabetes"] is None
+
+    def test_single_sample_stratum_returns_none(self):
+        """A stratum with exactly 1 sample should return None."""
+        y_true = [5.0, 5.2, 6.0]
+        y_pred = [5.1, 5.3, 6.1]
+        hba1c = [5.0, 5.2, 6.0]  # only 1 prediabetes sample
+        result = evaluate_by_hba1c_strata(y_true, y_pred, hba1c)
+        assert result["normal"] is not None
+        assert result["prediabetes"] is None
+
+    def test_mismatched_lengths_raises(self):
+        """Should raise ValueError for inputs of different lengths."""
+        with pytest.raises(ValueError, match="same length"):
+            evaluate_by_hba1c_strata([5.0, 6.0], [5.1], [5.0, 6.0])
+
+    def test_nan_raises(self):
+        """Should raise ValueError for NaN values."""
+        with pytest.raises(ValueError, match="NaN"):
+            evaluate_by_hba1c_strata(
+                [5.0, 6.0], [5.1, 6.1], [5.0, float("nan")]
+            )
+
+    def test_empty_raises(self):
+        """Should raise ValueError for empty inputs."""
+        with pytest.raises(ValueError, match="empty"):
+            evaluate_by_hba1c_strata([], [], [])
