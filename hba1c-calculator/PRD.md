@@ -332,10 +332,10 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want to evaluate models by HbA1c clinical ranges.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_by_hba1c_strata(y_true, y_pred, hba1c_values)` in `hba1cE/evaluate.py`
-- [ ] Stratifies by: <5.7% (normal), 5.7-6.4% (prediabetes), ≥6.5% (diabetes)
-- [ ] Returns metrics dict for each stratum
-- [ ] Typecheck passes
+- [x] Add `evaluate_by_hba1c_strata(y_true, y_pred, hba1c_values)` in `hba1cE/evaluate.py`
+- [x] Stratifies by: <5.7% (normal), 5.7-6.4% (prediabetes), ≥6.5% (diabetes)
+- [x] Returns metrics dict for each stratum
+- [x] Typecheck passes
 
 ---
 
