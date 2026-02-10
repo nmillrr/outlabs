@@ -299,10 +299,10 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want Bland-Altman statistics for agreement analysis.
 
 **Acceptance Criteria:**
-- [ ] Add `bland_altman_stats(y_true, y_pred)` in `hba1cE/evaluate.py`
-- [ ] Returns dict: mean_bias, std_diff, loa_lower, loa_upper
-- [ ] Add unit test with known values
-- [ ] Tests pass
+- [x] Add `bland_altman_stats(y_true, y_pred)` in `hba1cE/evaluate.py`
+- [x] Returns dict: mean_bias, std_diff, loa_lower, loa_upper
+- [x] Add unit test with known values
+- [x] Tests pass
 
 ---
 
@@ -310,10 +310,10 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want Lin's Concordance Correlation Coefficient for validation.
 
 **Acceptance Criteria:**
-- [ ] Add `lins_ccc(y_true, y_pred)` in `hba1cE/evaluate.py`
-- [ ] Returns CCC value between -1 and 1
-- [ ] Add unit test: identical arrays → CCC = 1.0
-- [ ] Tests pass
+- [x] Add `lins_ccc(y_true, y_pred)` in `hba1cE/evaluate.py`
+- [x] Returns CCC value between -1 and 1
+- [x] Add unit test: identical arrays → CCC = 1.0
+- [x] Tests pass
 
 ---
 
