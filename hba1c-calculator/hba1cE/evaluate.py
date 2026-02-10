@@ -4,7 +4,7 @@ Functions for computing agreement statistics, concordance metrics,
 and clinical performance measures against HPLC-measured HbA1c reference values.
 """
 
-from typing import Dict, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 
@@ -305,6 +305,147 @@ def evaluate_by_hba1c_strata(
         else:
             results[name] = evaluate_model(
                 y_true_arr[mask], y_pred_arr[mask], model_name=name
+            )
+
+    return results
+
+
+def define_subgroups(df: "pd.DataFrame") -> "pd.DataFrame":
+    """Create clinical subgroup columns on a DataFrame.
+
+    Adds boolean or categorical columns for clinically relevant subgroups
+    that may influence HbA1c estimation accuracy.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing at least ``hgb_gdl``, ``sex``, ``age_years``,
+        and ``mcv_fl`` columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        A copy of *df* with three new columns:
+
+        - ``anemia`` (bool): ``True`` when Hgb < 12 g/dL (female, sex == 2)
+          or Hgb < 13 g/dL (male, sex == 1).
+        - ``age_group`` (str): ``"<40"``, ``"40-60"``, or ``">60"``.
+        - ``mcv_group`` (str): ``"low"`` (< 80 fL), ``"normal"``
+          (80–100 fL), or ``"high"`` (> 100 fL).
+
+    Raises
+    ------
+    ValueError
+        If any of the required columns are missing from *df*.
+    """
+    import pandas as pd
+
+    required_cols = {"hgb_gdl", "sex", "age_years", "mcv_fl"}
+    missing = required_cols - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+
+    out = df.copy()
+
+    # Anemia: sex-specific hemoglobin thresholds
+    # NHANES coding: 1 = male, 2 = female
+    out["anemia"] = False
+    out.loc[(out["sex"] == 2) & (out["hgb_gdl"] < 12.0), "anemia"] = True
+    out.loc[(out["sex"] == 1) & (out["hgb_gdl"] < 13.0), "anemia"] = True
+
+    # Age groups
+    conditions_age = [
+        out["age_years"] < 40,
+        (out["age_years"] >= 40) & (out["age_years"] <= 60),
+        out["age_years"] > 60,
+    ]
+    out["age_group"] = np.select(conditions_age, ["<40", "40-60", ">60"], default="<40")
+
+    # MCV groups
+    conditions_mcv = [
+        out["mcv_fl"] < 80,
+        (out["mcv_fl"] >= 80) & (out["mcv_fl"] <= 100),
+        out["mcv_fl"] > 100,
+    ]
+    out["mcv_group"] = np.select(conditions_mcv, ["low", "normal", "high"], default="normal")
+
+    return out
+
+
+def evaluate_by_subgroup(
+    y_true: Union[np.ndarray, list],
+    y_pred: Union[np.ndarray, list],
+    df: "pd.DataFrame",
+    subgroup_col: str,
+    subgroup_values: List[str],
+) -> Dict[str, Optional[Dict[str, object]]]:
+    """Evaluate model performance for each value of a subgroup column.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True (reference) HbA1c values.
+    y_pred : array-like
+        Predicted (estimated) HbA1c values.
+    df : pd.DataFrame
+        DataFrame with the same number of rows as *y_true* / *y_pred*,
+        containing the column named *subgroup_col*.
+    subgroup_col : str
+        Name of the column in *df* that defines subgroups.
+    subgroup_values : list of str
+        Specific values of *subgroup_col* to evaluate.
+
+    Returns
+    -------
+    dict
+        Dictionary keyed by subgroup value.  Each value is a metrics dict
+        from :func:`evaluate_model`, or ``None`` if the subgroup contains
+        fewer than 2 samples.
+
+    Raises
+    ------
+    ValueError
+        If *y_true* and *y_pred* differ in length, if lengths don't match
+        *df*, if *subgroup_col* is not in *df*, or if inputs contain NaN.
+    """
+    y_true_arr = np.asarray(y_true, dtype=float)
+    y_pred_arr = np.asarray(y_pred, dtype=float)
+
+    if y_true_arr.ndim != 1 or y_pred_arr.ndim != 1:
+        raise ValueError("Inputs must be 1-dimensional arrays.")
+
+    if len(y_true_arr) != len(y_pred_arr):
+        raise ValueError(
+            f"y_true and y_pred must have the same length. "
+            f"Got y_true={len(y_true_arr)}, y_pred={len(y_pred_arr)}."
+        )
+
+    if len(y_true_arr) != len(df):
+        raise ValueError(
+            f"y_true/y_pred length ({len(y_true_arr)}) must match "
+            f"DataFrame length ({len(df)})."
+        )
+
+    if subgroup_col not in df.columns:
+        raise ValueError(f"Column '{subgroup_col}' not found in DataFrame.")
+
+    if np.any(np.isnan(y_true_arr)) or np.any(np.isnan(y_pred_arr)):
+        raise ValueError("Inputs must not contain NaN values.")
+
+    results: Dict[str, Optional[Dict[str, object]]] = {}
+    for value in subgroup_values:
+        # Handle both boolean and string subgroup values
+        if isinstance(value, bool):
+            mask = df[subgroup_col].values == value
+        else:
+            mask = df[subgroup_col].values.astype(str) == str(value)
+
+        n_samples = int(np.sum(mask))
+        if n_samples < 2:
+            results[str(value)] = None
+        else:
+            results[str(value)] = evaluate_model(
+                y_true_arr[mask], y_pred_arr[mask], model_name=f"{subgroup_col}={value}"
             )
 
     return results

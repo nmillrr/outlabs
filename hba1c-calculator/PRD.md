@@ -343,13 +343,13 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want to evaluate models in clinically relevant subgroups.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_by_subgroup(y_true, y_pred, df, subgroup_col, subgroup_values)` in `hba1cE/evaluate.py`
-- [ ] Add `define_subgroups(df)` function that creates subgroup columns:
+- [x] Add `evaluate_by_subgroup(y_true, y_pred, df, subgroup_col, subgroup_values)` in `hba1cE/evaluate.py`
+- [x] Add `define_subgroups(df)` function that creates subgroup columns:
   - anemia: Hgb < 12 g/dL (female) or < 13 g/dL (male)
   - age_group: <40, 40-60, >60 years
   - mcv_group: low (<80), normal (80-100), high (>100) fL
-- [ ] Returns metrics dict for each subgroup
-- [ ] Typecheck passes
+- [x] Returns metrics dict for each subgroup
+- [x] Typecheck passes
 
 ---
 

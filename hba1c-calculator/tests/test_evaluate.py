@@ -1,11 +1,14 @@
 """Unit tests for hba1cE.evaluate module."""
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from hba1cE.evaluate import (
     bland_altman_stats,
+    define_subgroups,
     evaluate_by_hba1c_strata,
+    evaluate_by_subgroup,
     evaluate_model,
     lins_ccc,
 )
@@ -329,3 +332,144 @@ class TestEvaluateByHba1cStrata:
         """Should raise ValueError for empty inputs."""
         with pytest.raises(ValueError, match="empty"):
             evaluate_by_hba1c_strata([], [], [])
+
+
+class TestDefineSubgroups:
+    """Tests for define_subgroups function."""
+
+    def _make_df(self):
+        """Create a sample DataFrame with required columns."""
+        return pd.DataFrame({
+            "hgb_gdl": [14.0, 11.5, 12.5, 10.0, 15.0, 13.5],
+            "sex": [1, 2, 1, 2, 1, 2],
+            "age_years": [25, 45, 65, 30, 55, 70],
+            "mcv_fl": [75, 85, 105, 90, 78, 95],
+        })
+
+    def test_anemia_female(self):
+        """Female with Hgb < 12 should be flagged as anemic."""
+        df = self._make_df()
+        result = define_subgroups(df)
+        # Index 1: female (sex=2), Hgb=11.5 < 12 → anemia
+        assert result.loc[1, "anemia"] is True or result.loc[1, "anemia"] == True
+        # Index 3: female (sex=2), Hgb=10.0 < 12 → anemia
+        assert result.loc[3, "anemia"] is True or result.loc[3, "anemia"] == True
+
+    def test_anemia_male(self):
+        """Male with Hgb < 13 should be flagged as anemic."""
+        df = self._make_df()
+        result = define_subgroups(df)
+        # Index 2: male (sex=1), Hgb=12.5 < 13 → anemia
+        assert result.loc[2, "anemia"] is True or result.loc[2, "anemia"] == True
+        # Index 0: male (sex=1), Hgb=14.0 >= 13 → no anemia
+        assert result.loc[0, "anemia"] is False or result.loc[0, "anemia"] == False
+
+    def test_no_anemia(self):
+        """Subjects with normal Hgb should not be flagged."""
+        df = self._make_df()
+        result = define_subgroups(df)
+        # Index 0: male, Hgb=14.0 → no anemia
+        assert result.loc[0, "anemia"] == False
+        # Index 4: male, Hgb=15.0 → no anemia
+        assert result.loc[4, "anemia"] == False
+        # Index 5: female, Hgb=13.5 >= 12 → no anemia
+        assert result.loc[5, "anemia"] == False
+
+    def test_age_groups(self):
+        """Age groups should be correctly assigned."""
+        df = self._make_df()
+        result = define_subgroups(df)
+        assert result.loc[0, "age_group"] == "<40"   # age 25
+        assert result.loc[3, "age_group"] == "<40"   # age 30
+        assert result.loc[1, "age_group"] == "40-60"  # age 45
+        assert result.loc[4, "age_group"] == "40-60"  # age 55
+        assert result.loc[2, "age_group"] == ">60"   # age 65
+        assert result.loc[5, "age_group"] == ">60"   # age 70
+
+    def test_mcv_groups(self):
+        """MCV groups should be correctly assigned."""
+        df = self._make_df()
+        result = define_subgroups(df)
+        assert result.loc[0, "mcv_group"] == "low"     # mcv 75
+        assert result.loc[4, "mcv_group"] == "low"     # mcv 78
+        assert result.loc[1, "mcv_group"] == "normal"  # mcv 85
+        assert result.loc[3, "mcv_group"] == "normal"  # mcv 90
+        assert result.loc[5, "mcv_group"] == "normal"  # mcv 95
+        assert result.loc[2, "mcv_group"] == "high"    # mcv 105
+
+    def test_does_not_modify_original(self):
+        """Should return a copy, not modify the original DataFrame."""
+        df = self._make_df()
+        _ = define_subgroups(df)
+        assert "anemia" not in df.columns
+
+    def test_missing_column_raises(self):
+        """Should raise ValueError if required columns are missing."""
+        df = pd.DataFrame({"hgb_gdl": [14.0], "sex": [1]})
+        with pytest.raises(ValueError, match="Missing required columns"):
+            define_subgroups(df)
+
+
+class TestEvaluateBySubgroup:
+    """Tests for evaluate_by_subgroup function."""
+
+    def _make_data(self):
+        """Create sample data for subgroup evaluation."""
+        df = pd.DataFrame({
+            "age_group": ["<40", "<40", "<40", "40-60", "40-60", "40-60",
+                          ">60", ">60", ">60"],
+        })
+        y_true = np.array([5.0, 5.5, 5.2, 6.0, 6.5, 6.2, 7.0, 7.5, 7.2])
+        y_pred = np.array([5.1, 5.4, 5.3, 6.1, 6.4, 6.3, 7.1, 7.6, 7.1])
+        return y_true, y_pred, df
+
+    def test_returns_metrics_per_subgroup(self):
+        """Should return metrics dict for each requested subgroup."""
+        y_true, y_pred, df = self._make_data()
+        result = evaluate_by_subgroup(y_true, y_pred, df, "age_group",
+                                      ["<40", "40-60", ">60"])
+        assert set(result.keys()) == {"<40", "40-60", ">60"}
+        for key in result:
+            assert result[key] is not None
+            assert "rmse" in result[key]
+
+    def test_sparse_subgroup_returns_none(self):
+        """Subgroup with < 2 samples should return None."""
+        df = pd.DataFrame({"group": ["a", "a", "b"]})
+        y_true = [5.0, 6.0, 7.0]
+        y_pred = [5.1, 6.1, 7.1]
+        result = evaluate_by_subgroup(y_true, y_pred, df, "group", ["a", "b"])
+        assert result["a"] is not None
+        assert result["b"] is None  # only 1 sample
+
+    def test_model_name_includes_subgroup_info(self):
+        """Model name should include subgroup column and value."""
+        y_true, y_pred, df = self._make_data()
+        result = evaluate_by_subgroup(y_true, y_pred, df, "age_group", ["<40"])
+        assert result["<40"]["model_name"] == "age_group=<40"
+
+    def test_mismatched_lengths_raises(self):
+        """Should raise ValueError for mismatched y_true/y_pred lengths."""
+        df = pd.DataFrame({"g": ["a", "b"]})
+        with pytest.raises(ValueError, match="same length"):
+            evaluate_by_subgroup([5.0, 6.0], [5.1], df, "g", ["a"])
+
+    def test_df_length_mismatch_raises(self):
+        """Should raise ValueError when df length doesn't match arrays."""
+        df = pd.DataFrame({"g": ["a"]})
+        with pytest.raises(ValueError, match="must match"):
+            evaluate_by_subgroup([5.0, 6.0], [5.1, 6.1], df, "g", ["a"])
+
+    def test_missing_column_raises(self):
+        """Should raise ValueError for missing subgroup column."""
+        df = pd.DataFrame({"g": ["a", "b"]})
+        with pytest.raises(ValueError, match="not found"):
+            evaluate_by_subgroup([5.0, 6.0], [5.1, 6.1], df, "missing", ["a"])
+
+    def test_nan_raises(self):
+        """Should raise ValueError for NaN values."""
+        df = pd.DataFrame({"g": ["a", "b"]})
+        with pytest.raises(ValueError, match="NaN"):
+            evaluate_by_subgroup(
+                [5.0, float("nan")], [5.1, 6.1], df, "g", ["a"]
+            )
