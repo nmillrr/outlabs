@@ -357,9 +357,9 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want bootstrap CIs for reporting uncertainty.
 
 **Acceptance Criteria:**
-- [ ] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `hba1cE/evaluate.py`
-- [ ] Returns (lower, upper, mean) tuple
-- [ ] Typecheck passes
+- [x] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `hba1cE/evaluate.py`
+- [x] Returns (lower, upper, mean) tuple
+- [x] Typecheck passes
 
 ---
 

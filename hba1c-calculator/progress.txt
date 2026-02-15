@@ -428,3 +428,20 @@
   - `evaluate_by_subgroup` is generic - works with any subgroup column, not just predefined ones
   - All 52 evaluate tests pass
 ---
+
+## Iteration 24 - US-025: Implement Bootstrap Confidence Intervals
+- **What was implemented:**
+  - `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000, confidence_level=0.95, random_state=42)` in `hba1cE/evaluate.py`
+  - Resamples y_true and y_pred with replacement n_bootstrap times
+  - Computes metric_func on each resample and returns percentile-based CI
+  - Returns (lower, upper, mean) tuple
+  - 8 unit tests in `tests/test_evaluate.py` (TestBootstrapCI class)
+- **Files changed:**
+  - `hba1cE/evaluate.py` - Already had bootstrap_ci implemented
+  - `tests/test_evaluate.py` - Already had 8 tests for bootstrap_ci
+  - `PRD.md` - Marked US-025 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - Function was already implemented from a previous iteration but PRD was not updated
+  - Always check if code already exists before implementing
+  - All 60 evaluate tests pass
+---
