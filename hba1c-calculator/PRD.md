@@ -367,11 +367,11 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want to identify potential external validation datasets.
 
 **Acceptance Criteria:**
-- [ ] Research and document potential external datasets in `notebooks/external_data_sources.md`
-- [ ] Consider: UK Biobank, ARIC, Framingham, MESA (if accessible)
-- [ ] Document access requirements and data variables available
-- [ ] If no accessible dataset, document NHANES-only validation plan
-- [ ] Typecheck passes (no code changes, documentation only)
+- [x] Research and document potential external datasets in `notebooks/external_data_sources.md`
+- [x] Consider: UK Biobank, ARIC, Framingham, MESA (if accessible)
+- [x] Document access requirements and data variables available
+- [x] If no accessible dataset, document NHANES-only validation plan
+- [x] Typecheck passes (no code changes, documentation only)
 
 ---
 
