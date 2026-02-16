@@ -379,13 +379,13 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a researcher, I want a notebook with full model evaluation and plots.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/04_evaluation.ipynb`
-- [ ] Evaluates all models and estimators on internal test set
-- [ ] Generates Bland-Altman plots
-- [ ] Shows subgroup analysis (anemia, age, HbA1c strata)
-- [ ] Compares hybrid ML vs individual estimators
-- [ ] Reports % within ±0.5% threshold
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/04_evaluation.ipynb`
+- [x] Evaluates all models and estimators on internal test set
+- [x] Generates Bland-Altman plots
+- [x] Shows subgroup analysis (anemia, age, HbA1c strata)
+- [x] Compares hybrid ML vs individual estimators
+- [x] Reports % within ±0.5% threshold
+- [x] Notebook executes without errors
 
 ---
 
