@@ -411,11 +411,11 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want a simple API for making predictions.
 
 **Acceptance Criteria:**
-- [ ] Add `predict_hba1c(fpg, tg=None, hdl=None, age=None, hgb=None, mcv=None, method='hybrid')` in `hba1cE/predict.py`
-- [ ] method='adag', 'kinetic', 'regression' uses specific estimator
-- [ ] method='hybrid' uses best ML model (accepts partial inputs gracefully)
-- [ ] Returns dict: hba1c_pred, ci_lower, ci_upper, method, warning (if inputs incomplete)
-- [ ] Typecheck passes
+- [x] Add `predict_hba1c(fpg, tg=None, hdl=None, age=None, hgb=None, mcv=None, method='hybrid')` in `hba1cE/predict.py`
+- [x] method='adag', 'kinetic', 'regression' uses specific estimator
+- [x] method='hybrid' uses best ML model (accepts partial inputs gracefully)
+- [x] Returns dict: hba1c_pred, ci_lower, ci_upper, method, warning (if inputs incomplete)
+- [x] Typecheck passes
 
 ---
 
