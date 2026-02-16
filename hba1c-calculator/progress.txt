@@ -445,3 +445,78 @@
   - Always check if code already exists before implementing
   - All 60 evaluate tests pass
 ---
+
+## Iteration 25 - US-026: Search for External Validation Datasets
+- **What was implemented:**
+  - Created `notebooks/external_data_sources.md` documenting potential external validation datasets
+  - Tier 1 (Restricted Access): UK Biobank, ARIC, MESA, Framingham Heart Study
+  - Tier 2 (Open Access): Figshare HbA1c–FPG validity data, Kaggle diabetes prediction dataset, Mendeley Iraqi diabetes dataset
+  - Tier 3 (Clinical/Hospital): UCI 130-Hospitals dataset (categorical HbA1c only)
+  - Documented access requirements, variables available, HbA1c methods, timelines
+  - Recommended NHANES-only validation plan as fallback (temporal split + stratified holdout)
+  - Recommended ARIC via BioLINCC for future external validation
+- **Files changed:**
+  - `notebooks/external_data_sources.md` - Created new documentation (~130 lines)
+  - `PRD.md` - Marked US-026 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - ARIC and MESA are best external validation options (HPLC HbA1c, multi-ethnic US populations)
+  - BioLINCC is the main portal for accessing NHLBI-funded study data (free, requires IRB)
+  - Application timelines are 2–6 months, so NHANES-only validation is practical for current timeline
+  - Kaggle/Figshare datasets may lack measurement method documentation — use cautiously
+  - All 163 tests pass (no code changes in this iteration)
+---
+
+## Iteration 26 - US-027: Create Evaluation Notebook
+- **What was implemented:**
+  - `notebooks/04_evaluation.ipynb` — Comprehensive evaluation notebook with 9 steps
+  - Step 1: Load cleaned NHANES data and trained ML models (Ridge, RF, LightGBM)
+  - Step 2: Generate predictions from all 6 methods (ADAG, Kinetic, Regression, Ridge, RF, LightGBM)
+  - Step 3: Full metrics table (RMSE, MAE, bias, Pearson r, Lin's CCC, % within ±0.5%)
+  - Step 4: Bland-Altman plots (2×3 grid) for all methods
+  - Step 5: HbA1c strata analysis (normal, prediabetes, diabetes) for all methods
+  - Step 6: Subgroup analysis (anemia, age group, MCV group) for LightGBM
+  - Step 7: Hybrid ML vs mechanistic estimator comparison with scatter plots
+  - Step 8: Bootstrap 95% CIs for key metrics (RMSE, MAE, bias, CCC, % within ±0.5%)
+  - Step 9: Clinical classification agreement (normal/prediabetes/diabetes)
+- **Files changed:**
+  - `notebooks/04_evaluation.ipynb` - Created new notebook (~800 lines)
+  - `PRD.md` - Marked US-027 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - Use `define_subgroups()` on the test DataFrame to create anemia/age/MCV columns
+  - Reconstruct test-set DataFrame by re-splitting with same random_state to get original indices
+  - `evaluate_by_subgroup()` is generic — accepts any subgroup column and value list
+  - `bootstrap_ci()` accepts any metric function matching `(y_true, y_pred) → float`
+  - All 163 tests pass (no code changes, notebook only)
+---
+
+## Iteration 27 - US-028: External Validation with Open-Access Dataset
+- **What was implemented:**
+  - Downloaded the Kaggle Diabetes Prediction Dataset (100k records) to `data/external/diabetes_prediction_dataset.csv`
+  - `load_external_kaggle_diabetes(filepath, *, download_url=None)` function in `hba1cE/data.py`
+    - Reads CSV, renames columns to NHANES schema (hba1c_percent, fpg_mgdl, age_years, sex)
+    - Maps gender strings to NHANES numeric codes (Male→1, Female→2), drops "Other"
+    - Applies physiologic outlier filters (HbA1c 3–20%, glucose 40–600 mg/dL)
+    - Auto-downloads from GitHub mirror if file is missing
+  - 6 unit tests in `tests/test_data.py` (TestLoadExternalKaggleDiabetes class)
+  - `notebooks/05_external_validation.ipynb` — Comprehensive external validation notebook:
+    - Loads and cleans external dataset
+    - Applies ADAG estimator (only estimator usable — dataset lacks TG, HDL, Hgb, MCV)
+    - Full metrics: RMSE, MAE, bias, Pearson r, Lin's CCC, % within ±0.5%, Bland-Altman
+    - Scatter plot, Bland-Altman plot, error distribution histogram
+    - HbA1c-stratified evaluation (normal, prediabetes, diabetes)
+    - Bootstrap 95% CIs for key metrics
+    - Clinical classification agreement at 5.7%/6.5% thresholds
+    - Comprehensive limitations section
+- **Files changed:**
+  - `hba1cE/data.py` - Added `load_external_kaggle_diabetes()` function (~115 lines)
+  - `tests/test_data.py` - Added TestLoadExternalKaggleDiabetes class with 6 tests
+  - `data/external/diabetes_prediction_dataset.csv` - Downloaded Kaggle dataset
+  - `notebooks/05_external_validation.ipynb` - Created new notebook
+  - `PRD.md` - Marked US-028 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - Kaggle dataset is synthetic/aggregated — only 18 discrete HbA1c values and 18 discrete glucose values
+  - Glucose may not be fasting — ADAG estimates will have systematic bias
+  - Dataset lacks TG, HDL, Hgb, MCV — ML models cannot be applied
+  - For rigorous external validation, apply for ARIC via BioLINCC (HPLC-measured HbA1c)
+  - All 169 tests pass (6 new data tests)
+---
