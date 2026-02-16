@@ -375,3 +375,117 @@ def generate_quality_report(df: pd.DataFrame, output_path: str) -> Dict[str, Any
         f.write("\n".join(report_lines))
 
     return report
+
+
+# ---------------------------------------------------------------------------
+# External validation dataset(s)
+# ---------------------------------------------------------------------------
+
+# URL for a GitHub-hosted mirror of the Kaggle "Diabetes Prediction" dataset
+_KAGGLE_DIABETES_URL = (
+    "https://raw.githubusercontent.com/leslie-zi-pan/"
+    "diabetes-prediction/dev/data/raw/diabetes_prediction_dataset.csv"
+)
+
+
+def load_external_kaggle_diabetes(
+    filepath: str,
+    *,
+    download_url: Optional[str] = None,
+) -> pd.DataFrame:
+    """Load and clean the Kaggle Diabetes Prediction dataset.
+
+    The dataset contains ``HbA1c_level``, ``blood_glucose_level``, ``age``,
+    ``gender``, and ``bmi`` among other fields.  This loader standardises
+    column names so they align with the NHANES schema used elsewhere in
+    the project.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to a local CSV copy of the dataset.  If the file does not
+        exist and *download_url* is provided, the loader will attempt to
+        download it first.
+    download_url : str, optional
+        URL from which to download the CSV if *filepath* does not exist.
+        Defaults to a GitHub mirror of the Kaggle dataset when ``None``.
+
+    Returns
+    -------
+    pd.DataFrame
+        Cleaned DataFrame with columns:
+
+        * ``hba1c_percent`` – measured HbA1c (%)
+        * ``fpg_mgdl``      – blood glucose level (mg/dL; may not be
+          strictly fasting)
+        * ``age_years``      – patient age
+        * ``sex``            – 1 = male, 2 = female (NHANES convention)
+        * ``bmi``            – body-mass index
+
+    Raises
+    ------
+    FileNotFoundError
+        If *filepath* does not exist and the download fails or is not
+        attempted.
+    ValueError
+        If required columns are missing from the CSV.
+
+    Notes
+    -----
+    * The dataset is synthetic / aggregated and HbA1c values are
+      discretised (only 18 unique levels).
+    * Glucose values may **not** be fasting – treat results with caution.
+    * Lipid panel (TG, HDL), haemoglobin, and MCV are **not** available;
+      only the ADAG mechanistic estimator can be applied directly.
+    """
+    path = Path(filepath)
+
+    # Attempt download if file is missing -----------------------------------
+    if not path.exists():
+        url = download_url or _KAGGLE_DIABETES_URL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            print(f"[DOWNLOADING] Kaggle diabetes dataset from {url}")
+            urllib.request.urlretrieve(url, path)
+            print(f"[SUCCESS] Saved to {path}")
+        except Exception as exc:
+            raise FileNotFoundError(
+                f"Dataset not found at '{filepath}' and download failed: {exc}"
+            ) from exc
+
+    # Read -------------------------------------------------------------------
+    df = pd.read_csv(str(path))
+
+    # Validate required columns
+    required = {"HbA1c_level", "blood_glucose_level", "age", "gender"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Missing required columns in external dataset: {missing}"
+        )
+
+    # Rename to match NHANES schema -----------------------------------------
+    df = df.rename(columns={
+        "HbA1c_level": "hba1c_percent",
+        "blood_glucose_level": "fpg_mgdl",
+        "age": "age_years",
+    })
+
+    # Map gender to NHANES numeric convention (1=male, 2=female)
+    gender_map = {"Male": 1, "Female": 2}
+    df["sex"] = df["gender"].map(gender_map)
+    df = df.drop(columns=["gender"])
+
+    # Keep only rows with known sex (drop "Other" and any unmapped)
+    df = df.dropna(subset=["sex"])
+    df["sex"] = df["sex"].astype(int)
+
+    # Apply physiologic outlier filters (same thresholds as NHANES cleaning)
+    df = df[(df["hba1c_percent"] >= 3) & (df["hba1c_percent"] <= 20)]
+    df = df[(df["fpg_mgdl"] >= 40) & (df["fpg_mgdl"] <= 600)]
+
+    # Drop any remaining NaN in key columns
+    df = df.dropna(subset=["hba1c_percent", "fpg_mgdl", "age_years"])
+
+    df = df.reset_index(drop=True)
+    return df

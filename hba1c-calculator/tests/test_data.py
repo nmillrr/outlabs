@@ -13,7 +13,12 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import numpy as np
 
-from hba1cE.data import read_xpt, clean_glycemic_data, generate_quality_report
+from hba1cE.data import (
+    read_xpt,
+    clean_glycemic_data,
+    generate_quality_report,
+    load_external_kaggle_diabetes,
+)
 
 
 class TestReadXpt:
@@ -335,3 +340,85 @@ class TestGenerateQualityReport:
         assert "DESCRIPTIVE STATISTICS" in content
         assert "HbA1c DISTRIBUTION" in content
         assert "FPG DISTRIBUTION" in content
+
+
+class TestLoadExternalKaggleDiabetes:
+    """Tests for the load_external_kaggle_diabetes function."""
+
+    @pytest.fixture
+    def sample_csv(self, tmp_path):
+        """Create a small CSV file mimicking the Kaggle dataset."""
+        csv_path = tmp_path / "diabetes_prediction_dataset.csv"
+        df = pd.DataFrame({
+            "gender": ["Male", "Female", "Other", "Male", "Female"],
+            "age": [45.0, 60.0, 30.0, 55.0, 70.0],
+            "hypertension": [0, 1, 0, 0, 1],
+            "heart_disease": [0, 0, 0, 1, 0],
+            "smoking_history": ["never", "former", "never", "current", "never"],
+            "bmi": [25.0, 30.0, 22.0, 28.0, 33.0],
+            "HbA1c_level": [5.0, 6.5, 4.8, 7.0, 8.0],
+            "blood_glucose_level": [100, 140, 90, 200, 260],
+            "diabetes": [0, 1, 0, 1, 1],
+        })
+        df.to_csv(csv_path, index=False)
+        return csv_path
+
+    def test_load_basic(self, sample_csv):
+        """Test basic loading returns a DataFrame with expected rows."""
+        df = load_external_kaggle_diabetes(str(sample_csv))
+        assert isinstance(df, pd.DataFrame)
+        # "Other" gender rows are dropped → 4 rows remain
+        assert len(df) == 4
+
+    def test_load_column_names(self, sample_csv):
+        """Test that columns are renamed to NHANES-compatible names."""
+        df = load_external_kaggle_diabetes(str(sample_csv))
+        assert "hba1c_percent" in df.columns
+        assert "fpg_mgdl" in df.columns
+        assert "age_years" in df.columns
+        assert "sex" in df.columns
+        # Original names should not remain
+        assert "HbA1c_level" not in df.columns
+        assert "blood_glucose_level" not in df.columns
+        assert "gender" not in df.columns
+
+    def test_load_sex_mapping(self, sample_csv):
+        """Test that gender strings are mapped to NHANES numeric codes."""
+        df = load_external_kaggle_diabetes(str(sample_csv))
+        assert set(df["sex"].unique()) <= {1, 2}
+
+    def test_load_outlier_filtering(self, tmp_path):
+        """Test that physiologic outliers are removed."""
+        csv_path = tmp_path / "outliers.csv"
+        df = pd.DataFrame({
+            "gender": ["Male", "Male", "Male"],
+            "age": [50.0, 50.0, 50.0],
+            "hypertension": [0, 0, 0],
+            "heart_disease": [0, 0, 0],
+            "smoking_history": ["never", "never", "never"],
+            "bmi": [25.0, 25.0, 25.0],
+            "HbA1c_level": [5.5, 2.0, 22.0],   # row 2 & 3 are outliers
+            "blood_glucose_level": [100, 100, 100],
+            "diabetes": [0, 0, 0],
+        })
+        df.to_csv(csv_path, index=False)
+
+        result = load_external_kaggle_diabetes(str(csv_path))
+        assert len(result) == 1
+        assert result.iloc[0]["hba1c_percent"] == 5.5
+
+    def test_load_missing_columns(self, tmp_path):
+        """Test that ValueError is raised when required columns are absent."""
+        csv_path = tmp_path / "bad.csv"
+        pd.DataFrame({"col_a": [1, 2]}).to_csv(csv_path, index=False)
+
+        with pytest.raises(ValueError, match="Missing required columns"):
+            load_external_kaggle_diabetes(str(csv_path))
+
+    def test_load_file_not_found(self, tmp_path):
+        """Test FileNotFoundError when file missing and download disabled."""
+        bad_path = tmp_path / "nonexistent.csv"
+        with pytest.raises(FileNotFoundError):
+            load_external_kaggle_diabetes(
+                str(bad_path), download_url="http://invalid.invalid/x.csv"
+            )

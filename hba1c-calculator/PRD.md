@@ -389,11 +389,25 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 
 ---
 
+#### US-028: External validation with open-access dataset
+**Description:** As a researcher, I want to validate the best model against an independent external dataset so that I can demonstrate generalisability beyond NHANES.
+
+**Acceptance Criteria:**
+- [x] Identify and download a suitable open-access external dataset (e.g. Figshare HbA1c–FPG validity data, Kaggle diabetes prediction, or Mendeley Iraqi diabetes dataset)
+- [x] Write a loader/cleaning function in `hba1cE/data.py` for the chosen dataset
+- [x] Run the best ML model and mechanistic estimators on the external dataset
+- [x] Report RMSE, MAE, Lin's CCC, % within ±0.5%, and Bland-Altman statistics
+- [x] Create `notebooks/05_external_validation.ipynb` documenting results
+- [x] Document any dataset limitations (measurement method, demographics, sample size)
+- [x] All existing tests still pass
+
+---
+
 ### Phase 5: Package & Documentation
 
 ---
 
-#### US-028: Create prediction API
+#### US-029: Create prediction API
 **Description:** As a developer, I want a simple API for making predictions.
 
 **Acceptance Criteria:**
@@ -405,7 +419,7 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 
 ---
 
-#### US-029: Create package setup.py
+#### US-030: Create package setup.py
 **Description:** As a developer, I want the package to be pip-installable.
 
 **Acceptance Criteria:**
@@ -416,7 +430,7 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 
 ---
 
-#### US-030: Write README with usage examples
+#### US-031: Write README with usage examples
 **Description:** As a user, I want clear documentation to use the package.
 
 **Acceptance Criteria:**
@@ -428,7 +442,7 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 
 ---
 
-#### US-031: Run full test suite
+#### US-032: Run full test suite
 **Description:** As a developer, I want all tests passing before release.
 
 **Acceptance Criteria:**
