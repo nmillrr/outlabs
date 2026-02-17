@@ -423,10 +423,10 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a developer, I want the package to be pip-installable.
 
 **Acceptance Criteria:**
-- [ ] Create `setup.py` with name='hba1cE', version='0.1.0'
-- [ ] Includes dependencies from requirements.txt
-- [ ] Package installs with `pip install -e .`
-- [ ] Import works: `from hba1cE import models`
+- [x] Create `setup.py` with name='hba1cE', version='0.1.0'
+- [x] Includes dependencies from requirements.txt
+- [x] Package installs with `pip install -e .`
+- [x] Import works: `from hba1cE import models`
 
 ---
 

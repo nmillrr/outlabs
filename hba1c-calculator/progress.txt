@@ -520,3 +520,52 @@
   - For rigorous external validation, apply for ARIC via BioLINCC (HPLC-measured HbA1c)
   - All 169 tests pass (6 new data tests)
 ---
+
+## Iteration 28 - US-029: Create Prediction API
+- **What was implemented:**
+  - `predict_hba1c(fpg, tg=None, hdl=None, age=None, hgb=None, mcv=None, method='hybrid')` in `hba1cE/predict.py`
+  - Supports 4 methods: `adag`, `kinetic`, `regression`, `hybrid`
+  - Mechanistic methods (adag, kinetic, regression) call corresponding `calc_hba1c_*` functions
+  - Hybrid method loads trained ML model from `models/` directory, falls back to ADAG if no model found
+  - Missing optional inputs replaced with population median defaults for hybrid method
+  - Returns dict with: hba1c_pred, ci_lower, ci_upper, method, warning
+  - `_build_feature_vector()` constructs 11-feature vector matching `create_features()` output
+  - `_load_best_model()` searches for `best_model.joblib` or any `.joblib` file in models dir
+  - Input validation for fpg (negative, NaN, < 40 mg/dL) and method
+  - Warning system for missing inputs and method fallback
+  - 27 unit tests in `tests/test_predict.py` covering all methods, validation, helpers
+- **Files changed:**
+  - `hba1cE/predict.py` - Created new module (~290 lines)
+  - `tests/test_predict.py` - Created with 27 comprehensive tests
+  - `PRD.md` - Marked US-029 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - MagicMock objects can't be serialized with joblib; use real sklearn models in serialization tests
+  - Population median defaults: TG=120, HDL=52, Age=50, Hgb=14.0, MCV=90
+  - Feature vector must match `create_features()` output order exactly (11 features)
+  - Hybrid CI uses simple ±0.5% empirical interval (typical RMSE for trained models)
+  - All 196 tests pass (27 new predict tests)
+---
+
+## Iteration 29 - US-030: Create Package setup.py
+- **What was implemented:**
+  - `setup.py` with setuptools configuration for hba1cE package
+  - name='hba1cE', version='0.1.0'
+  - Reads dependencies from `requirements.txt` dynamically
+  - Reads long description from `README.md`
+  - Excludes tests and notebooks from package distribution
+  - Includes classifiers for PyPI (Science/Research, Healthcare)
+  - extras_require for dev dependencies (pytest)
+- **Files changed:**
+  - `setup.py` - Created new file (~50 lines)
+  - `PRD.md` - Marked US-030 acceptance criteria as complete
+- **Verification:**
+  - `pip install -e .` succeeded
+  - `from hba1cE import models, utils, data` all work
+  - `hba1cE.__version__` returns '0.1.0'
+  - All 196 tests pass
+- **Learnings for future iterations:**
+  - Use `find_packages(exclude=...)` to keep tests and notebooks out of distribution
+  - Read requirements.txt dynamically in setup.py to keep single source of truth
+  - Editable install (`pip install -e .`) creates .egg-info directory in project root
+  - python_requires=">=3.8" sets minimum Python version
+---
