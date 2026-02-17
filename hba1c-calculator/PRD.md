@@ -434,11 +434,11 @@ Unlike Free Testosterone or LDL-C, there is no universally established mechanist
 **Description:** As a user, I want clear documentation to use the package.
 
 **Acceptance Criteria:**
-- [ ] Update README.md with: Installation, Quick Start, API Reference
-- [ ] Include code examples for each estimator
-- [ ] Document clinical limitations and when direct HbA1c is required
-- [ ] Explain subgroup considerations (anemia, hemoglobinopathies)
-- [ ] README renders correctly on GitHub
+- [x] Update README.md with: Installation, Quick Start, API Reference
+- [x] Include code examples for each estimator
+- [x] Document clinical limitations and when direct HbA1c is required
+- [x] Explain subgroup considerations (anemia, hemoglobinopathies)
+- [x] README renders correctly on GitHub
 
 ---
 
