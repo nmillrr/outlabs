@@ -569,3 +569,40 @@
   - Editable install (`pip install -e .`) creates .egg-info directory in project root
   - python_requires=">=3.8" sets minimum Python version
 ---
+
+## Iteration 30 - US-031: Write README with Usage Examples
+- **What was implemented:**
+  - Complete rewrite of `README.md` with all acceptance criteria met
+  - **Installation** section: source install, dependencies, macOS libomp note, dev install
+  - **Quick Start** section: 4 code examples (ADAG, kinetic, regression, unified API)
+  - **API Reference** for all modules: models, predict, evaluate, utils, data
+  - **Clinical Limitations**: when direct HbA1c is required, accuracy considerations
+  - **Subgroup Considerations**: table covering anemia, hemoglobinopathies, CKD, pregnancy, age extremes, transfusion
+  - Project Structure, Notebooks guide, Validation Summary, References
+- **Files changed:**
+  - `README.md` - Complete rewrite (~230 lines)
+  - `PRD.md` - Marked US-031 acceptance criteria as complete
+- **Verification:**
+  - All 196 tests pass (no code changes, documentation only)
+  - README uses standard markdown, renders correctly on GitHub
+- **Learnings for future iterations:**
+  - Include macOS-specific dependency notes (e.g., libomp for LightGBM)
+  - API reference tables are more scannable than long prose descriptions
+  - Clinical limitations section is critical for research tools to set proper expectations
+---
+
+## Iteration 31 - US-032: Run Full Test Suite
+- **What was implemented:**
+  - Ran `pytest tests/ -v` — all 196 tests pass, 0 failures, 0 errors
+  - Ran `pytest --cov=hba1cE` — 88% total coverage on core modules
+  - Per-module coverage: __init__.py 100%, data.py 73%, evaluate.py 94%, models.py 78%, predict.py 100%, train.py 99%, utils.py 100%
+  - All modules exceed the 70% coverage threshold
+- **Files changed:**
+  - `PRD.md` - Marked US-032 acceptance criteria as complete
+- **Learnings for future iterations:**
+  - Use `--cov-report=term-missing` to see which specific lines lack coverage
+  - Missing coverage in data.py is mostly the download function (network I/O, untested by design)
+  - Missing coverage in models.py is mostly numpy array branch validation paths
+  - 3 warnings from sklearn about LGBMRegressor feature names — cosmetic only
+  - All 32 user stories now complete
+---
