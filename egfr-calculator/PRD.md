@@ -85,13 +85,13 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want reliable unit conversion functions so that data from different lab systems can be harmonized.
 
 **Acceptance Criteria:**
-- [ ] Add `creatinine_mgdl_to_umoll(cr_mgdl)` (×88.4) in `eGFR/utils.py`
-- [ ] Add `creatinine_umoll_to_mgdl(cr_umoll)` (÷88.4)
-- [ ] Add `egfr_to_ckd_stage(egfr)` returning G1–G5 string
-- [ ] Add `lbs_to_kg(weight_lbs)` and `kg_to_lbs(weight_kg)`
-- [ ] Add `inches_to_cm(height_in)` and `cm_to_inches(height_cm)`
-- [ ] Add unit tests in `tests/test_utils.py` verifying all conversions
-- [ ] Tests pass: `pytest tests/test_utils.py`
+- [x] Add `creatinine_mgdl_to_umoll(cr_mgdl)` (×88.4) in `eGFR/utils.py`
+- [x] Add `creatinine_umoll_to_mgdl(cr_umoll)` (÷88.4)
+- [x] Add `egfr_to_ckd_stage(egfr)` returning G1–G5 string
+- [x] Add `lbs_to_kg(weight_lbs)` and `kg_to_lbs(weight_kg)`
+- [x] Add `inches_to_cm(height_in)` and `cm_to_inches(height_cm)`
+- [x] Add unit tests in `tests/test_utils.py` verifying all conversions
+- [x] Tests pass: `pytest tests/test_utils.py`
 
 ---
 
