@@ -2,5 +2,31 @@
 
 ## Learnings
 (Patterns discovered during implementation)
+- Use `python3` not `python` on this machine
+- Project root is `egfr-calculator/`, package is `eGFR/`
 
+---
+
+## Iteration 1 - US-001: Create project structure and dependencies
+- Created `eGFR/` package with `__init__.py`, `models.py`, `utils.py`, `data.py`, `train.py`, `evaluate.py`, `predict.py`
+- Created `tests/` with `test_models.py`, `test_utils.py`
+- Created `notebooks/` directory
+- Created `requirements.txt` with all specified dependencies
+- All imports verified, typecheck passes, pytest runs clean
+- Files changed: eGFR/__init__.py, eGFR/models.py, eGFR/utils.py, eGFR/data.py, eGFR/train.py, eGFR/evaluate.py, eGFR/predict.py, tests/__init__.py, tests/test_models.py, tests/test_utils.py, notebooks/README.md, requirements.txt
+- Learnings for future iterations:
+  - python3 is the correct command (not python)
+  - All modules have docstrings as required
+  - Git working from project root
+---
+
+## Iteration 2 - US-002: Implement unit conversion utilities
+- Implemented 6 functions in `eGFR/utils.py`: creatinine_mgdl_to_umoll, creatinine_umoll_to_mgdl, egfr_to_ckd_stage, lbs_to_kg, kg_to_lbs, inches_to_cm, cm_to_inches
+- Wrote 23 tests in `tests/test_utils.py` covering all conversions, boundary cases, and roundtrips
+- All tests pass
+- Files changed: eGFR/utils.py, tests/test_utils.py, PRD.md
+- Learnings for future iterations:
+  - pytest.approx is useful for float comparison
+  - KDIGO 2012 CKD stages: G1≥90, G2≥60, G3a≥45, G3b≥30, G4≥15, G5<15
+  - egfr_to_ckd_stage is available in utils for future use by models and evaluate modules
 ---
