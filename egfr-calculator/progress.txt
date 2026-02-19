@@ -30,3 +30,20 @@
   - KDIGO 2012 CKD stages: G1≥90, G2≥60, G3a≥45, G3b≥30, G4≥15, G5<15
   - egfr_to_ckd_stage is available in utils for future use by models and evaluate modules
 ---
+
+## Iteration 3 - US-003: Create NHANES kidney data download module
+- Implemented `download_nhanes_kidney(output_dir, cycles)` in `eGFR/data.py`
+- Downloads BIOPRO, DEMO, BMX for 2005-2018 cycles and SSPRT cystatin C for 1999-2002
+- Uses `urllib.request.urlretrieve` (stdlib only, no extra dependencies)
+- Graceful error handling for HTTP errors, network errors, and file errors
+- Skip-if-exists logic to avoid redundant downloads
+- Creates `data/raw/` with `os.makedirs(exist_ok=True)`
+- Returns summary dict with `downloaded` and `failed` lists
+- All 23 existing tests pass, typecheck passes
+- Files changed: eGFR/data.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - PowerShell uses `;` not `&&` for chaining commands
+  - `_CYCLE_SUFFIX` dict maps NHANES cycles to CDC filename suffixes
+  - NHANES URL pattern: `https://wwwn.cdc.gov/Nchs/Nhanes/{cycle}/{DATASET}{suffix}.XPT`
+  - SSPRT (cystatin C) only available for 1999-2002 cycles
+---

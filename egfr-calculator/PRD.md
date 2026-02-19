@@ -99,13 +99,13 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want to programmatically download NHANES kidney function data so that I have a reproducible data pipeline.
 
 **Acceptance Criteria:**
-- [ ] Add `download_nhanes_kidney(output_dir, cycles)` function in `eGFR/data.py`
-- [ ] Function downloads BIOPRO (biochemistry profile with creatinine), DEMO (demographics) XPT files for cycles 2005-2018
-- [ ] Downloads SSPRT (cystatin C) XPT files for cycles where available (1999-2002)
-- [ ] Downloads BMX (body measures — weight, height) for Cockcroft-Gault
-- [ ] Creates `data/raw/` directory if not exists
-- [ ] Handles download errors gracefully with informative messages
-- [ ] Typecheck passes
+- [x] Add `download_nhanes_kidney(output_dir, cycles)` function in `eGFR/data.py`
+- [x] Function downloads BIOPRO (biochemistry profile with creatinine), DEMO (demographics) XPT files for cycles 2005-2018
+- [x] Downloads SSPRT (cystatin C) XPT files for cycles where available (1999-2002)
+- [x] Downloads BMX (body measures — weight, height) for Cockcroft-Gault
+- [x] Creates `data/raw/` directory if not exists
+- [x] Handles download errors gracefully with informative messages
+- [x] Typecheck passes
 
 ---
 
