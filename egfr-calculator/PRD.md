@@ -113,11 +113,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want to parse NHANES XPT files into pandas DataFrames so that data is usable.
 
 **Acceptance Criteria:**
-- [ ] Add `read_xpt(filepath)` function in `eGFR/data.py`
-- [ ] Function reads SAS transport format and returns DataFrame
-- [ ] Handles missing file with informative error
-- [ ] Add unit test with mock data
-- [ ] Tests pass
+- [x] Add `read_xpt(filepath)` function in `eGFR/data.py`
+- [x] Function reads SAS transport format and returns DataFrame
+- [x] Handles missing file with informative error
+- [x] Add unit test with mock data
+- [x] Tests pass
 
 ---
 

@@ -47,3 +47,18 @@
   - NHANES URL pattern: `https://wwwn.cdc.gov/Nchs/Nhanes/{cycle}/{DATASET}{suffix}.XPT`
   - SSPRT (cystatin C) only available for 1999-2002 cycles
 ---
+
+## Iteration 4 - US-004: Implement XPT file parser
+- Added `read_xpt(filepath)` function in `eGFR/data.py` using `pd.read_sas(format='xport')`
+- Raises `FileNotFoundError` for missing files with informative message
+- Raises `ValueError` for corrupt/unparseable files (wraps underlying exceptions)
+- Created `tests/test_data.py` with 6 tests using `unittest.mock` for happy-path and real files for error-path
+- All 29 tests pass (6 new + 23 existing)
+- Files changed: eGFR/data.py, tests/test_data.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `pd.DataFrame.to_sas()` does not exist in pandas 2.3.3 — cannot write XPT from Python easily
+  - Use `unittest.mock.patch("eGFR.data.pd.read_sas")` to mock XPT reading in tests
+  - SAS XPORT V5 binary format is complex; mocking is more practical than constructing test binaries
+  - `pd.read_sas(path, format="xport", encoding="utf-8")` is the correct call for XPT files
+---
+

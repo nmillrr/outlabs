@@ -13,6 +13,55 @@ import urllib.request
 import urllib.error
 from typing import List, Optional
 
+import pandas as pd
+
+
+# ---------------------------------------------------------------------------
+# XPT (SAS transport) file reader
+# ---------------------------------------------------------------------------
+
+def read_xpt(filepath: str) -> pd.DataFrame:
+    """Read a SAS transport (XPT) file and return a pandas DataFrame.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the ``.XPT`` file to read.
+
+    Returns
+    -------
+    pd.DataFrame
+        The contents of the XPT file as a DataFrame.
+
+    Raises
+    ------
+    FileNotFoundError
+        If *filepath* does not exist.
+    ValueError
+        If the file cannot be parsed as a valid SAS transport file.
+
+    Examples
+    --------
+    >>> from eGFR.data import read_xpt
+    >>> df = read_xpt("data/raw/BIOPRO_J.XPT")
+    >>> df.head()
+    """
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(
+            f"XPT file not found: '{filepath}'. "
+            "Please check the path or download the data first using "
+            "download_nhanes_kidney()."
+        )
+
+    try:
+        df = pd.read_sas(filepath, format="xport", encoding="utf-8")
+    except Exception as exc:
+        raise ValueError(
+            f"Failed to parse '{filepath}' as a SAS transport (XPT) file: {exc}"
+        ) from exc
+
+    return df
+
 
 # ---------------------------------------------------------------------------
 # NHANES cycle name suffixes used in CDC URLs
