@@ -11,8 +11,10 @@ Provides functions for:
 import os
 import urllib.request
 import urllib.error
-from typing import List, Optional
+import warnings
+from typing import Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 
 
@@ -233,3 +235,149 @@ def download_nhanes_kidney(
     # --- Summary -----------------------------------------------------------
     print(f"\nDone. {len(downloaded)} files saved, {len(failed)} failed.")
     return {"downloaded": downloaded, "failed": failed}
+
+
+# ---------------------------------------------------------------------------
+# IDMS creatinine standardization correction factor
+# Pre-2007 NHANES creatinine was NOT calibrated to IDMS standards.
+# Correction: adjusted_Cr = 0.95 × original_Cr
+# Reference: Selvin et al., Clin Chem 2007
+# ---------------------------------------------------------------------------
+_IDMS_CORRECTION_FACTOR = 0.95
+
+
+# ---------------------------------------------------------------------------
+# Data cleaning / harmonization
+# ---------------------------------------------------------------------------
+
+# Columns we expect from each NHANES dataset and their standardized names
+_BIOPRO_RENAME: Dict[str, str] = {
+    "SEQN": "seqn",
+    "LBXSCR": "cr_mgdl",
+}
+
+_DEMO_RENAME: Dict[str, str] = {
+    "SEQN": "seqn",
+    "RIDAGEYR": "age_years",
+    "RIAGENDR": "sex",
+}
+
+_BMX_RENAME: Dict[str, str] = {
+    "SEQN": "seqn",
+    "BMXWT": "weight_kg",
+    "BMXHT": "height_cm",
+}
+
+_CYSTATIN_RENAME: Dict[str, str] = {
+    "SEQN": "seqn",
+    "SSPRT": "cystatin_c_mgL",
+}
+
+
+def clean_kidney_data(
+    biopro_df: pd.DataFrame,
+    demo_df: pd.DataFrame,
+    bmx_df: pd.DataFrame,
+    cystatin_df: Optional[pd.DataFrame] = None,
+    *,
+    apply_idms_correction: bool = False,
+) -> pd.DataFrame:
+    """Clean and merge NHANES kidney-function datasets.
+
+    Merges BIOPRO (creatinine), DEMO (demographics), BMX (body measures),
+    and optionally cystatin C data on SEQN.  Renames columns to a
+    standardised schema, applies IDMS creatinine correction for pre-2007
+    cycles when requested, removes physiologic outliers, and returns
+    complete cases.
+
+    Parameters
+    ----------
+    biopro_df : pd.DataFrame
+        Biochemistry profile data containing at least ``SEQN`` and ``LBXSCR``.
+    demo_df : pd.DataFrame
+        Demographics data containing at least ``SEQN``, ``RIDAGEYR``, and
+        ``RIAGENDR``.
+    bmx_df : pd.DataFrame
+        Body measures data containing at least ``SEQN``, ``BMXWT``, and
+        ``BMXHT``.
+    cystatin_df : pd.DataFrame, optional
+        Cystatin C data containing at least ``SEQN`` and ``SSPRT``.
+    apply_idms_correction : bool, default False
+        If ``True``, multiply creatinine values by 0.95 to correct for
+        non-IDMS-standardised assays (pre-2007 NHANES data).
+
+    Returns
+    -------
+    pd.DataFrame
+        Cleaned DataFrame with columns: ``seqn``, ``cr_mgdl``,
+        ``age_years``, ``sex``, ``weight_kg``, ``height_cm``, and
+        optionally ``cystatin_c_mgL``.  Only complete (non-NaN) rows are
+        returned.
+
+    Raises
+    ------
+    ValueError
+        If any required column is missing from the input DataFrames.
+    """
+
+    # ── Validate required columns ──────────────────────────────────────
+    _validate_columns(biopro_df, {"SEQN", "LBXSCR"}, "biopro_df")
+    _validate_columns(demo_df, {"SEQN", "RIDAGEYR", "RIAGENDR"}, "demo_df")
+    _validate_columns(bmx_df, {"SEQN", "BMXWT", "BMXHT"}, "bmx_df")
+    if cystatin_df is not None:
+        _validate_columns(cystatin_df, {"SEQN", "SSPRT"}, "cystatin_df")
+
+    # ── Select & rename ────────────────────────────────────────────────
+    bio = biopro_df[list(_BIOPRO_RENAME.keys())].rename(columns=_BIOPRO_RENAME)
+    dem = demo_df[list(_DEMO_RENAME.keys())].rename(columns=_DEMO_RENAME)
+    bmx = bmx_df[list(_BMX_RENAME.keys())].rename(columns=_BMX_RENAME)
+
+    # ── Merge on SEQN (inner join) ─────────────────────────────────────
+    merged = bio.merge(dem, on="seqn", how="inner").merge(
+        bmx, on="seqn", how="inner"
+    )
+
+    # Optionally merge cystatin C
+    if cystatin_df is not None:
+        cys = cystatin_df[list(_CYSTATIN_RENAME.keys())].rename(
+            columns=_CYSTATIN_RENAME
+        )
+        merged = merged.merge(cys, on="seqn", how="left")
+
+    # ── IDMS creatinine correction (pre-2007 data) ─────────────────────
+    if apply_idms_correction:
+        merged["cr_mgdl"] = merged["cr_mgdl"] * _IDMS_CORRECTION_FACTOR
+
+    # ── Remove physiologic outliers ────────────────────────────────────
+    n_before = len(merged)
+
+    # Creatinine outside 0.2–15 mg/dL
+    cr_mask = (merged["cr_mgdl"] >= 0.2) & (merged["cr_mgdl"] <= 15.0)
+    # Adults only (age >= 18)
+    age_mask = merged["age_years"] >= 18
+
+    merged = merged.loc[cr_mask & age_mask].copy()
+
+    n_outliers = n_before - len(merged)
+    if n_outliers > 0:
+        warnings.warn(
+            f"Removed {n_outliers} rows as physiologic outliers "
+            f"(creatinine outside 0.2–15 mg/dL or age < 18)."
+        )
+
+    # ── Drop rows with any remaining NaN in core columns ───────────────
+    core_cols = ["seqn", "cr_mgdl", "age_years", "sex", "weight_kg", "height_cm"]
+    merged = merged.dropna(subset=core_cols).reset_index(drop=True)
+
+    return merged
+
+
+def _validate_columns(
+    df: pd.DataFrame, required: set, df_name: str
+) -> None:
+    """Raise ``ValueError`` if *df* is missing any *required* columns."""
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"{df_name} is missing required column(s): {sorted(missing)}"
+        )

@@ -125,13 +125,13 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want automated data cleaning so that outliers and missing values are handled consistently.
 
 **Acceptance Criteria:**
-- [ ] Add `clean_kidney_data(biopro_df, demo_df, bmx_df, cystatin_df=None)` function in `eGFR/data.py`
-- [ ] Merges datasets on SEQN (sample ID)
-- [ ] Renames columns to: cr_mgdl (LBXSCR), age_years (RIDAGEYR), sex (RIAGENDR), weight_kg (BMXWT), height_cm (BMXHT), cystatin_c_mgL (SSPRT if available)
-- [ ] Applies IDMS creatinine standardization correction for pre-2007 NHANES cycles
-- [ ] Removes physiologic outliers (creatinine < 0.2 or > 15 mg/dL, age < 18)
-- [ ] Returns cleaned DataFrame with complete cases only
-- [ ] Typecheck passes
+- [x] Add `clean_kidney_data(biopro_df, demo_df, bmx_df, cystatin_df=None)` function in `eGFR/data.py`
+- [x] Merges datasets on SEQN (sample ID)
+- [x] Renames columns to: cr_mgdl (LBXSCR), age_years (RIDAGEYR), sex (RIAGENDR), weight_kg (BMXWT), height_cm (BMXHT), cystatin_c_mgL (SSPRT if available)
+- [x] Applies IDMS creatinine standardization correction for pre-2007 NHANES cycles
+- [x] Removes physiologic outliers (creatinine < 0.2 or > 15 mg/dL, age < 18)
+- [x] Returns cleaned DataFrame with complete cases only
+- [x] Typecheck passes
 
 ---
 
