@@ -62,3 +62,35 @@
   - `pd.read_sas(path, format="xport", encoding="utf-8")` is the correct call for XPT files
 ---
 
+## Iteration 5 - US-005: Create NHANES kidney data cleaning pipeline
+- Added `clean_kidney_data(biopro_df, demo_df, bmx_df, cystatin_df=None, *, apply_idms_correction=False)` in `eGFR/data.py`
+- Merges BIOPRO, DEMO, BMX on SEQN (inner join), optionally merges cystatin C (left join)
+- Renames columns: LBXSCR→cr_mgdl, RIDAGEYR→age_years, RIAGENDR→sex, BMXWT→weight_kg, BMXHT→height_cm, SSPRT→cystatin_c_mgL
+- IDMS correction: multiplies creatinine by 0.95 when `apply_idms_correction=True` (for pre-2007 cycles)
+- Removes outliers: creatinine < 0.2 or > 15 mg/dL, age < 18
+- Drops NaN in core columns, resets index
+- Added `_validate_columns()` helper for input validation
+- Wrote 20 tests in `tests/test_data.py` (total: 49 tests pass)
+- Files changed: eGFR/data.py, tests/test_data.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - Terminal output encoding issues with pytest-sugar Unicode characters on Windows; use `-p no:sugar` and `-q` for cleaner output
+  - Dict-based rename mapping pattern (`_BIOPRO_RENAME`, `_DEMO_RENAME`, etc.) keeps column mapping maintainable
+  - `warnings.warn()` is the right approach for non-fatal data quality issues (outlier removal)
+  - `_validate_columns()` pattern gives clear error messages for missing columns
+---
+
+## Iteration 6 - US-006: Generate data quality report
+- Added `generate_quality_report(df, output_path)` in `eGFR/data.py`
+- Report includes: record count, mean/SD for creatinine/age/weight/height/cystatin C (if present)
+- CKD stage distribution computed via private `_calc_ckd_epi_2021()` helper + `egfr_to_ckd_stage()` from utils
+- Sex distribution breakdown with counts and percentages
+- Saves report as text file, auto-creates parent directories
+- Returns report text as string
+- Added `_calc_ckd_epi_2021()` private helper (CKD-EPI 2021 equation) since models.py is not yet implemented
+- Added 13 tests in `tests/test_data.py` (total: 62 tests pass)
+- Files changed: eGFR/data.py, tests/test_data.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `_calc_ckd_epi_2021()` is a private helper; when US-008 implements models.py, consider refactoring to use the public API
+  - `value_counts()` returns a Series; use `.get(key, default)` for safe access
+  - `list[str]` type hint works in Python 3.9+ (no need for `List[str]` from typing)
+---

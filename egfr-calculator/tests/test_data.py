@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from eGFR.data import read_xpt, clean_kidney_data
+from eGFR.data import read_xpt, clean_kidney_data, generate_quality_report
 
 
 # ---------------------------------------------------------------------------
@@ -333,4 +333,121 @@ class TestCleanKidneyData:
         bad_cys = pd.DataFrame({"SEQN": [1]})
         with pytest.raises(ValueError, match="cystatin_df is missing"):
             clean_kidney_data(sample_biopro, sample_demo, sample_bmx, cystatin_df=bad_cys)
+
+
+# ---------------------------------------------------------------------------
+# Helper: build a cleaned DataFrame for quality-report tests
+# ---------------------------------------------------------------------------
+
+def _make_cleaned_df(n=5, include_cystatin=False):
+    """Return a DataFrame that looks like output of clean_kidney_data."""
+    data = {
+        "seqn": list(range(1, n + 1)),
+        "cr_mgdl": [0.9, 1.2, 1.5, 0.7, 2.0][:n],
+        "age_years": [45, 60, 75, 30, 50][:n],
+        "sex": [1, 2, 1, 2, 1][:n],
+        "weight_kg": [80.0, 65.0, 90.0, 55.0, 75.0][:n],
+        "height_cm": [175.0, 160.0, 180.0, 165.0, 170.0][:n],
+    }
+    if include_cystatin:
+        data["cystatin_c_mgL"] = [0.8, 1.1, 0.9, 1.0, 1.2][:n]
+    return pd.DataFrame(data)
+
+
+# ---------------------------------------------------------------------------
+# Tests for generate_quality_report
+# ---------------------------------------------------------------------------
+
+class TestGenerateQualityReport:
+    """Tests for the generate_quality_report function."""
+
+    def test_returns_string(self, tmp_path):
+        """Should return the report text as a string."""
+        df = _make_cleaned_df()
+        report = generate_quality_report(df, str(tmp_path / "report.txt"))
+        assert isinstance(report, str)
+
+    def test_saves_file(self, tmp_path):
+        """Report should be saved to the specified path."""
+        out = str(tmp_path / "report.txt")
+        generate_quality_report(_make_cleaned_df(), out)
+        assert os.path.isfile(out)
+        with open(out, encoding="utf-8") as f:
+            content = f.read()
+        assert "DATA QUALITY REPORT" in content
+
+    def test_creates_parent_dirs(self, tmp_path):
+        """Should create parent directories if they don't exist."""
+        out = str(tmp_path / "sub" / "dir" / "report.txt")
+        generate_quality_report(_make_cleaned_df(), out)
+        assert os.path.isfile(out)
+
+    def test_record_count(self, tmp_path):
+        """Report should include the correct total record count."""
+        df = _make_cleaned_df(n=5)
+        report = generate_quality_report(df, str(tmp_path / "r.txt"))
+        assert "Total records: 5" in report
+
+    def test_descriptive_stats_present(self, tmp_path):
+        """Report should include mean/SD for creatinine, age, weight, height."""
+        report = generate_quality_report(_make_cleaned_df(), str(tmp_path / "r.txt"))
+        assert "Creatinine (mg/dL): mean=" in report
+        assert "Age (years): mean=" in report
+        assert "Weight (kg): mean=" in report
+        assert "Height (cm): mean=" in report
+
+    def test_descriptive_stats_values(self, tmp_path):
+        """Mean and SD should be numerically correct."""
+        df = _make_cleaned_df(n=5)
+        report = generate_quality_report(df, str(tmp_path / "r.txt"))
+        # cr_mgdl = [0.9, 1.2, 1.5, 0.7, 2.0] → mean ≈ 1.26
+        expected_cr_mean = np.mean([0.9, 1.2, 1.5, 0.7, 2.0])
+        assert f"mean={expected_cr_mean:.2f}" in report
+
+    def test_ckd_stage_distribution_present(self, tmp_path):
+        """Report should have CKD stage distribution section."""
+        report = generate_quality_report(_make_cleaned_df(), str(tmp_path / "r.txt"))
+        assert "CKD Stage Distribution (CKD-EPI 2021)" in report
+        for stage in ["G1", "G2", "G3a", "G3b", "G4", "G5"]:
+            assert stage in report
+
+    def test_sex_distribution_present(self, tmp_path):
+        """Report should include sex distribution."""
+        report = generate_quality_report(_make_cleaned_df(), str(tmp_path / "r.txt"))
+        assert "Sex Distribution" in report
+        assert "Male:" in report
+        assert "Female:" in report
+
+    def test_sex_counts_correct(self, tmp_path):
+        """Sex counts should match the input data."""
+        df = _make_cleaned_df(n=5)  # sex = [1, 2, 1, 2, 1] → 3 male, 2 female
+        report = generate_quality_report(df, str(tmp_path / "r.txt"))
+        assert "Male:   3 (60.0%)" in report
+        assert "Female: 2 (40.0%)" in report
+
+    def test_cystatin_c_included_when_present(self, tmp_path):
+        """Cystatin C stats should appear when column is present."""
+        df = _make_cleaned_df(include_cystatin=True)
+        report = generate_quality_report(df, str(tmp_path / "r.txt"))
+        assert "Cystatin C (mg/L): mean=" in report
+
+    def test_cystatin_c_absent_when_not_present(self, tmp_path):
+        """Cystatin C stats should NOT appear when column is absent."""
+        df = _make_cleaned_df(include_cystatin=False)
+        report = generate_quality_report(df, str(tmp_path / "r.txt"))
+        assert "Cystatin C" not in report
+
+    def test_missing_column_raises(self, tmp_path):
+        """Missing required columns should raise ValueError."""
+        bad_df = pd.DataFrame({"cr_mgdl": [1.0]})
+        with pytest.raises(ValueError, match="df is missing"):
+            generate_quality_report(bad_df, str(tmp_path / "r.txt"))
+
+    def test_report_saved_matches_returned(self, tmp_path):
+        """Saved file content should match the returned string."""
+        out = str(tmp_path / "r.txt")
+        returned = generate_quality_report(_make_cleaned_df(), out)
+        with open(out, encoding="utf-8") as f:
+            saved = f.read()
+        assert returned == saved
 

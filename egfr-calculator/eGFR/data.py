@@ -381,3 +381,158 @@ def _validate_columns(
         raise ValueError(
             f"{df_name} is missing required column(s): {sorted(missing)}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Private CKD-EPI 2021 helper (used by quality report before models.py
+# implements the full public API)
+# ---------------------------------------------------------------------------
+
+def _calc_ckd_epi_2021(cr_mgdl: float, age_years: float, sex: int) -> float:
+    """Compute CKD-EPI 2021 eGFR for a single observation.
+
+    Parameters
+    ----------
+    cr_mgdl : float
+        Serum creatinine in mg/dL.
+    age_years : float
+        Age in years (≥ 18).
+    sex : int
+        1 = male, 2 = female (NHANES coding).
+
+    Returns
+    -------
+    float
+        Estimated GFR in mL/min/1.73 m².
+    """
+    is_female = sex == 2
+    kappa = 0.7 if is_female else 0.9
+    alpha = -0.241 if is_female else -0.302
+    female_factor = 1.012 if is_female else 1.0
+
+    cr_ratio = cr_mgdl / kappa
+    return (
+        142.0
+        * min(cr_ratio, 1.0) ** alpha
+        * max(cr_ratio, 1.0) ** (-1.200)
+        * (0.9938 ** age_years)
+        * female_factor
+    )
+
+
+# ---------------------------------------------------------------------------
+# Data quality report
+# ---------------------------------------------------------------------------
+
+def generate_quality_report(df: pd.DataFrame, output_path: str) -> str:
+    """Generate a data quality report for a cleaned kidney-function DataFrame.
+
+    The report includes:
+      - Total record count
+      - Mean and standard deviation for creatinine, age, weight, height,
+        and cystatin C (if present)
+      - CKD stage distribution computed via CKD-EPI 2021 eGFR
+      - Sex distribution breakdown
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Cleaned DataFrame produced by :func:`clean_kidney_data`.  Must
+        contain at least ``cr_mgdl``, ``age_years``, ``sex``, ``weight_kg``,
+        and ``height_cm``.
+    output_path : str
+        File path where the text report will be saved.  Parent directories
+        are created automatically if they do not exist.
+
+    Returns
+    -------
+    str
+        The full report text (also saved to *output_path*).
+
+    Raises
+    ------
+    ValueError
+        If *df* is missing required columns.
+    """
+    from eGFR.utils import egfr_to_ckd_stage
+
+    # ── Validate required columns ──────────────────────────────────────
+    required = {"cr_mgdl", "age_years", "sex", "weight_kg", "height_cm"}
+    _validate_columns(df, required, "df")
+
+    lines: list[str] = []
+    lines.append("=" * 60)
+    lines.append("  DATA QUALITY REPORT")
+    lines.append("=" * 60)
+    lines.append("")
+
+    # ── Record count ───────────────────────────────────────────────────
+    lines.append(f"Total records: {len(df)}")
+    lines.append("")
+
+    # ── Descriptive statistics ─────────────────────────────────────────
+    lines.append("-" * 40)
+    lines.append("Descriptive Statistics")
+    lines.append("-" * 40)
+
+    stat_columns = [
+        ("cr_mgdl", "Creatinine (mg/dL)"),
+        ("age_years", "Age (years)"),
+        ("weight_kg", "Weight (kg)"),
+        ("height_cm", "Height (cm)"),
+    ]
+    if "cystatin_c_mgL" in df.columns:
+        stat_columns.append(("cystatin_c_mgL", "Cystatin C (mg/L)"))
+
+    for col, label in stat_columns:
+        mean_val = df[col].mean()
+        std_val = df[col].std()
+        lines.append(f"  {label}: mean={mean_val:.2f}, SD={std_val:.2f}")
+
+    lines.append("")
+
+    # ── CKD stage distribution (CKD-EPI 2021) ─────────────────────────
+    lines.append("-" * 40)
+    lines.append("CKD Stage Distribution (CKD-EPI 2021)")
+    lines.append("-" * 40)
+
+    egfr_values = df.apply(
+        lambda row: _calc_ckd_epi_2021(row["cr_mgdl"], row["age_years"], row["sex"]),
+        axis=1,
+    )
+    stages = egfr_values.apply(egfr_to_ckd_stage)
+    stage_counts = stages.value_counts()
+
+    for stage in ["G1", "G2", "G3a", "G3b", "G4", "G5"]:
+        count = stage_counts.get(stage, 0)
+        pct = 100.0 * count / len(df) if len(df) > 0 else 0.0
+        lines.append(f"  {stage}: {count} ({pct:.1f}%)")
+
+    lines.append("")
+
+    # ── Sex distribution ───────────────────────────────────────────────
+    lines.append("-" * 40)
+    lines.append("Sex Distribution")
+    lines.append("-" * 40)
+
+    sex_counts = df["sex"].value_counts()
+    n_male = sex_counts.get(1, 0)
+    n_female = sex_counts.get(2, 0)
+    pct_male = 100.0 * n_male / len(df) if len(df) > 0 else 0.0
+    pct_female = 100.0 * n_female / len(df) if len(df) > 0 else 0.0
+    lines.append(f"  Male:   {n_male} ({pct_male:.1f}%)")
+    lines.append(f"  Female: {n_female} ({pct_female:.1f}%)")
+
+    lines.append("")
+    lines.append("=" * 60)
+
+    report = "\n".join(lines)
+
+    # ── Save to file ───────────────────────────────────────────────────
+    out_dir = os.path.dirname(output_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(report)
+
+    return report

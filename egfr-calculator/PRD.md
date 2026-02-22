@@ -139,12 +139,12 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a quality report so that I can verify data before analysis.
 
 **Acceptance Criteria:**
-- [ ] Add `generate_quality_report(df, output_path)` function in `eGFR/data.py`
-- [ ] Report includes: record count, mean/SD for creatinine/age/weight/height/cystatin C
-- [ ] Includes CKD stage distribution based on CKD-EPI 2021 eGFR
-- [ ] Includes sex distribution breakdown
-- [ ] Saves report to specified path as text file
-- [ ] Typecheck passes
+- [x] Add `generate_quality_report(df, output_path)` function in `eGFR/data.py`
+- [x] Report includes: record count, mean/SD for creatinine/age/weight/height/cystatin C
+- [x] Includes CKD stage distribution based on CKD-EPI 2021 eGFR
+- [x] Includes sex distribution breakdown
+- [x] Saves report to specified path as text file
+- [x] Typecheck passes
 
 ---
 
