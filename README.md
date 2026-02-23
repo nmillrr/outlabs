@@ -14,6 +14,8 @@
 
 Healthcare shouldn't depend on expensive lab equipment. **Outlabs** develops open-source, clinically-validated models that estimate biomarkers from routine blood tests—making advanced diagnostics accessible to rural clinics, low-resource hospitals, and global health organizations worldwide.
 
+Currently shipping **3 calculators** across endocrinology, cardiology, and diabetology.
+
 Outlabs combines:
 - **Mechanistic solvers** derived from peer-reviewed biochemistry literature
 - **Machine learning models** trained on large population datasets (NHANES, UK Biobank)
@@ -53,6 +55,21 @@ All wrapped in clean Python APIs that any clinician or researcher can use.
 **Input requirements:** Total cholesterol, HDL, Triglycerides (standard lipid panel)
 
 **Validation target:** Mean bias < ±5 mg/dL, Lin's CCC ≥ 0.95 vs. beta-quantification
+
+---
+
+### HbA1c Estimation ([hba1c-calculator/](hba1c-calculator/))
+
+| Method | Description | Status |
+|--------|-------------|--------|
+| **ADAG (Nathan 2008)** | Inverse mean-glucose-to-HbA1c mapping | ✅ Complete |
+| **Kinetic** | First-order glycation kinetics with hemoglobin adjustment | ✅ Complete |
+| **Multi-marker Regression** | Linear model using FPG, age, TG, HDL, Hgb | ✅ Complete |
+| **Hybrid ML** | Ridge / Random Forest / LightGBM ensemble | ✅ Complete |
+
+**Input requirements:** Fasting plasma glucose (required); optional TG, HDL, age, hemoglobin, MCV
+
+**Validation target:** RMSE < 0.5%, mean bias < ±0.2%, Lin's CCC ≥ 0.85 vs. HPLC-measured HbA1c
 
 ---
 
@@ -110,6 +127,30 @@ print(f"LDL-C: {result['ldl_pred']:.1f} mg/dL")
 print(f"95% CI: [{result['ci_lower']:.1f}, {result['ci_upper']:.1f}]")
 ```
 
+### HbA1c Calculator
+
+```bash
+cd outlabs/hba1c-calculator
+pip install -e .
+```
+
+```python
+from hba1cE.models import calc_hba1c_adag, calc_hba1c_kinetic
+from hba1cE.predict import predict_hba1c
+
+# Simple glucose-only estimation
+hba1c = calc_hba1c_adag(fpg_mgdl=126.0)
+print(f"Estimated HbA1c: {hba1c:.1f}%")  # → 6.0%
+
+# Or use the unified prediction API with hybrid ML
+result = predict_hba1c(
+    fpg=126, tg=150, hdl=45, age=55,
+    hgb=14.0, mcv=90.0, method='hybrid'
+)
+print(f"HbA1c: {result['hba1c_pred']:.1f}%")
+print(f"95% CI: [{result['ci_lower']:.1f}, {result['ci_upper']:.1f}]%")
+```
+
 ---
 
 ## 📊 Why This Matters
@@ -120,6 +161,7 @@ Many important biomarkers are **expensive or inaccessible** to measure directly 
 
 1. **Free Testosterone** — Requires equilibrium dialysis; calculated from TT, SHBG, Albumin
 2. **LDL Cholesterol** — Gold standard requires ultracentrifugation; calculated from lipid panel
+3. **HbA1c** — Requires HPLC or immunoassay; estimated from fasting glucose + routine markers
 
 ### The Accuracy Problem
 
@@ -150,17 +192,29 @@ outlabs/
 │   ├── FT_Model_Whitepaper.md   # Technical methodology
 │   └── setup.py                  # pip-installable
 │
-└── ldl-calculator/
-    ├── ldlC/                     # Python package
-    │   ├── models.py            # Friedewald, Martin-Hopkins, Sampson
-    │   ├── predict.py           # Unified prediction API
-    │   ├── train.py             # ML model training
-    │   ├── evaluate.py          # Bland-Altman, Lin's CCC
-    │   ├── data.py              # NHANES lipid data pipeline
-    │   └── utils.py             # Unit conversions
-    ├── tests/                    # Comprehensive test suite
-    ├── notebooks/                # Reproducible analysis
-    └── setup.py                  # pip-installable
+├── ldl-calculator/
+│   ├── ldlC/                     # Python package
+│   │   ├── models.py            # Friedewald, Martin-Hopkins, Sampson
+│   │   ├── predict.py           # Unified prediction API
+│   │   ├── train.py             # ML model training
+│   │   ├── evaluate.py          # Bland-Altman, Lin's CCC
+│   │   ├── data.py              # NHANES lipid data pipeline
+│   │   └── utils.py             # Unit conversions
+│   ├── tests/                    # Comprehensive test suite
+│   ├── notebooks/                # Reproducible analysis
+│   └── setup.py                  # pip-installable
+│
+└── hba1c-calculator/
+    ├── hba1cE/                    # Python package
+    │   ├── models.py             # ADAG, kinetic, regression estimators
+    │   ├── predict.py            # Unified prediction API
+    │   ├── train.py              # ML model training (Ridge, RF, LightGBM)
+    │   ├── evaluate.py           # Validation metrics & subgroup analysis
+    │   ├── data.py               # NHANES glycemic data pipeline
+    │   └── utils.py              # Unit conversions (mg/dL ↔ mmol/L)
+    ├── tests/                     # Unit tests (196+ tests)
+    ├── notebooks/                 # Reproducible analysis (5 notebooks)
+    └── setup.py                   # pip-installable
 ```
 
 ---
@@ -187,6 +241,17 @@ outlabs/
 | ML Models | Ensemble hybrid model | 🔄 In Progress |
 | Validation | Beta-quantification comparison | ⏳ Planned |
 
+### HbA1c Calculator
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Data Infrastructure | NHANES glycemic panel pipeline | ✅ Complete |
+| Mechanistic Estimators | ADAG, Kinetic, Multi-marker Regression | ✅ Complete |
+| Prediction API | Unified interface with CI | ✅ Complete |
+| ML Models | Ridge, Random Forest, LightGBM hybrid | ✅ Complete |
+| Evaluation | Bland-Altman, subgroup analysis, bootstrap CIs | ✅ Complete |
+| External Validation | Open-access dataset validation | ✅ Complete |
+
 ---
 
 ## 🎯 Future Models
@@ -196,8 +261,9 @@ outlabs/
 | Free Testosterone | 🔄 Active | Hypogonadism, PCOS |
 | Bioavailable Testosterone | ✅ Complete | Androgen status |
 | LDL Cholesterol | 🔄 Active | Cardiovascular risk |
+| HbA1c | ✅ Complete | Diabetes screening & monitoring |
+| eGFR variants | 🔄 Active | Kidney function |
 | Free T3/T4 | 📋 Planned | Thyroid function |
-| eGFR variants | 📋 Planned | Kidney function |
 | Free PSA ratio | 📋 Planned | Prostate screening |
 
 ---
@@ -220,6 +286,11 @@ outlabs/
 3. **Friedewald WT, et al.** (1972). Estimation of LDL cholesterol without use of the preparative ultracentrifuge. *Clin Chem*.
 4. **Martin SS, et al.** (2013). Comparison of a novel method vs the Friedewald equation for estimating LDL-C. *JAMA*. [DOI: 10.1001/jama.2013.280532](https://doi.org/10.1001/jama.2013.280532)
 5. **Sampson M, et al.** (2020). A new equation for LDL-C in patients with hypertriglyceridemia. *JAMA Cardiology*. [DOI: 10.1001/jamacardio.2020.0013](https://doi.org/10.1001/jamacardio.2020.0013)
+
+### HbA1c
+6. **Nathan DM, et al.** (2008). Translating the A1C Assay Into Estimated Average Glucose Values. *Diabetes Care*. [DOI: 10.2337/dc08-0545](https://doi.org/10.2337/dc08-0545)
+7. **Sacks DB, et al.** (2011). Guidelines and Recommendations for Laboratory Analysis in the Diagnosis and Management of Diabetes Mellitus. *Diabetes Care*. [DOI: 10.2337/dc11-9998](https://doi.org/10.2337/dc11-9998)
+8. **Bergenstal RM, et al.** (2018). Racial Differences in the Relationship of Glucose Concentrations and HbA1c Levels. *Ann Intern Med*. [DOI: 10.7326/M17-2865](https://doi.org/10.7326/M17-2865)
 
 ---
 
