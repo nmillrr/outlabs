@@ -182,12 +182,12 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want unit tests validating CKD-EPI 2021 against published reference values.
 
 **Acceptance Criteria:**
-- [ ] Add test in `tests/test_models.py` for CKD-EPI 2021
-- [ ] Test case: 50-year-old male, SCr=1.0 mg/dL → eGFR ≈ 92 mL/min/1.73m²
-- [ ] Test case: 50-year-old female, SCr=0.8 mg/dL → eGFR ≈ 99 mL/min/1.73m²
-- [ ] Test case: 70-year-old male, SCr=1.5 mg/dL → eGFR ≈ 45 mL/min/1.73m²
-- [ ] Test invalid input handling (negative, NaN, age < 18)
-- [ ] Tests pass: `pytest tests/test_models.py`
+- [x] Add test in `tests/test_models.py` for CKD-EPI 2021
+- [x] Test case: 50-year-old male, SCr=1.0 mg/dL → eGFR ≈ 92 mL/min/1.73m²
+- [x] Test case: 50-year-old female, SCr=0.8 mg/dL → eGFR ≈ 99 mL/min/1.73m²
+- [x] Test case: 70-year-old male, SCr=1.5 mg/dL → eGFR ≈ 45 mL/min/1.73m²
+- [x] Test invalid input handling (negative, NaN, age < 18)
+- [x] Tests pass: `pytest tests/test_models.py`
 
 ---
 
