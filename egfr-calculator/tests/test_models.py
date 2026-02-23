@@ -7,7 +7,13 @@ import warnings
 
 import pytest
 
-from eGFR.models import calc_egfr_ckd_epi_2021, calc_egfr_mdrd, _normalize_sex
+from eGFR.models import (
+    calc_egfr_ckd_epi_2021,
+    calc_egfr_mdrd,
+    calc_crcl_cockcroft_gault,
+    calc_crcl_cockcroft_gault_bsa,
+    _normalize_sex,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -272,3 +278,160 @@ class TestMDRDValidation:
         with pytest.raises(ValueError, match="Invalid sex string"):
             calc_egfr_mdrd(1.0, 50, "X")
 
+
+# ---------------------------------------------------------------------------
+# calc_crcl_cockcroft_gault — known-value tests
+# ---------------------------------------------------------------------------
+
+
+class TestCockcroftGaultKnownValues:
+    """Verify Cockcroft-Gault against expected values.
+
+    Formula: CrCl = [(140 - Age) × Weight / (72 × SCr)] × 0.85 [if female]
+
+    Reference: Cockcroft DW, Gault MH. Nephron. 1976;16(1):31-41.
+    """
+
+    def test_70yo_70kg_male_scr_1_0(self):
+        """70 M 70 kg, SCr=1.0 → CrCl ≈ 68 mL/min (PRD spec)."""
+        # (140-70)*70 / (72*1.0) = 4900/72 ≈ 68.06
+        result = calc_crcl_cockcroft_gault(1.0, 70, 70.0, "M")
+        assert result == pytest.approx(68.06, abs=1.0)
+
+    def test_50yo_80kg_male_scr_1_2(self):
+        """50 M 80 kg, SCr=1.2 → CrCl ≈ 83.3."""
+        # (140-50)*80 / (72*1.2) = 7200/86.4 ≈ 83.33
+        result = calc_crcl_cockcroft_gault(1.2, 50, 80.0, "M")
+        assert result == pytest.approx(83.33, abs=1.0)
+
+    def test_50yo_60kg_female_scr_0_8(self):
+        """50 F 60 kg, SCr=0.8 → CrCl ≈ 79.9."""
+        # (140-50)*60 / (72*0.8) * 0.85 = 5400/57.6 * 0.85 ≈ 93.75*0.85 ≈ 79.69
+        result = calc_crcl_cockcroft_gault(0.8, 50, 60.0, "F")
+        assert result == pytest.approx(79.69, abs=1.0)
+
+    def test_female_factor(self):
+        """Female CrCl should be 0.85 × male CrCl."""
+        male = calc_crcl_cockcroft_gault(1.0, 50, 70.0, "M")
+        female = calc_crcl_cockcroft_gault(1.0, 50, 70.0, "F")
+        assert female == pytest.approx(male * 0.85, rel=1e-6)
+
+    def test_nhanes_sex_coding(self):
+        """NHANES coding (1=male, 2=female) works."""
+        str_result = calc_crcl_cockcroft_gault(1.0, 50, 70.0, "M")
+        int_result = calc_crcl_cockcroft_gault(1.0, 50, 70.0, 1)
+        assert str_result == pytest.approx(int_result, rel=1e-10)
+
+    def test_age_effect(self):
+        """Older patient should have lower CrCl."""
+        young = calc_crcl_cockcroft_gault(1.0, 25, 70.0, "M")
+        old = calc_crcl_cockcroft_gault(1.0, 75, 70.0, "M")
+        assert young > old
+
+    def test_weight_effect(self):
+        """Heavier patient should have higher CrCl."""
+        light = calc_crcl_cockcroft_gault(1.0, 50, 50.0, "M")
+        heavy = calc_crcl_cockcroft_gault(1.0, 50, 100.0, "M")
+        assert heavy > light
+
+    def test_returns_mL_min_not_bsa_adjusted(self):
+        """CrCl should be in mL/min (not normalized to 1.73 m²)."""
+        # Verify it returns a reasonable value in mL/min range
+        result = calc_crcl_cockcroft_gault(1.0, 50, 70.0, "M")
+        assert 50 < result < 200  # Reasonable mL/min range
+
+
+# ---------------------------------------------------------------------------
+# calc_crcl_cockcroft_gault_bsa — BSA-adjusted tests
+# ---------------------------------------------------------------------------
+
+
+class TestCockcroftGaultBSA:
+    """Verify BSA-adjusted Cockcroft-Gault variant."""
+
+    def test_bsa_adjustment_applied(self):
+        """BSA-adjusted result should differ from raw CrCl."""
+        raw = calc_crcl_cockcroft_gault(1.0, 50, 70.0, "M")
+        adjusted = calc_crcl_cockcroft_gault_bsa(1.0, 50, 70.0, "M", 175.0)
+        assert raw != adjusted
+
+    def test_bsa_known_value(self):
+        """Verify BSA adjustment calculation.
+
+        For 70 kg, 175 cm: BSA = 0.007184 * 175^0.725 * 70^0.425 ≈ 1.849 m²
+        CrCl_adj = CrCl_raw * (1.73 / 1.849)
+        """
+        raw = calc_crcl_cockcroft_gault(1.0, 50, 70.0, "M")
+        bsa = 0.007184 * (175.0 ** 0.725) * (70.0 ** 0.425)
+        expected_adj = raw * (1.73 / bsa)
+        result = calc_crcl_cockcroft_gault_bsa(1.0, 50, 70.0, "M", 175.0)
+        assert result == pytest.approx(expected_adj, rel=1e-6)
+
+    def test_small_person_bsa_increases(self):
+        """Small BSA (< 1.73) should increase normalized CrCl."""
+        raw = calc_crcl_cockcroft_gault(1.0, 50, 50.0, "M")
+        adjusted = calc_crcl_cockcroft_gault_bsa(1.0, 50, 50.0, "M", 155.0)
+        # BSA < 1.73 → multiplying by (1.73/BSA) > 1 → adjusted > raw
+        bsa = 0.007184 * (155.0 ** 0.725) * (50.0 ** 0.425)
+        assert bsa < 1.73
+        assert adjusted > raw
+
+    def test_invalid_height(self):
+        """Negative height should raise ValueError."""
+        with pytest.raises(ValueError, match="height_cm must be positive"):
+            calc_crcl_cockcroft_gault_bsa(1.0, 50, 70.0, "M", -170.0)
+
+    def test_zero_height(self):
+        """Zero height should raise ValueError."""
+        with pytest.raises(ValueError, match="height_cm must be positive"):
+            calc_crcl_cockcroft_gault_bsa(1.0, 50, 70.0, "M", 0.0)
+
+    def test_nan_height(self):
+        """NaN height should raise ValueError."""
+        with pytest.raises(ValueError, match="height_cm must be a finite number"):
+            calc_crcl_cockcroft_gault_bsa(1.0, 50, 70.0, "M", float("nan"))
+
+
+# ---------------------------------------------------------------------------
+# calc_crcl_cockcroft_gault — input validation
+# ---------------------------------------------------------------------------
+
+
+class TestCockcroftGaultValidation:
+    """Verify ValueError is raised for invalid inputs."""
+
+    def test_negative_creatinine(self):
+        with pytest.raises(ValueError, match="cr_mgdl must be positive"):
+            calc_crcl_cockcroft_gault(-1.0, 50, 70.0, "M")
+
+    def test_zero_creatinine(self):
+        with pytest.raises(ValueError, match="cr_mgdl must be positive"):
+            calc_crcl_cockcroft_gault(0.0, 50, 70.0, "M")
+
+    def test_nan_creatinine(self):
+        with pytest.raises(ValueError, match="cr_mgdl must be a finite number"):
+            calc_crcl_cockcroft_gault(float("nan"), 50, 70.0, "M")
+
+    def test_nan_age(self):
+        with pytest.raises(ValueError, match="age_years must be a finite number"):
+            calc_crcl_cockcroft_gault(1.0, float("nan"), 70.0, "M")
+
+    def test_age_below_18(self):
+        with pytest.raises(ValueError, match="age_years must be ≥ 18"):
+            calc_crcl_cockcroft_gault(1.0, 17, 70.0, "M")
+
+    def test_negative_weight(self):
+        with pytest.raises(ValueError, match="weight_kg must be positive"):
+            calc_crcl_cockcroft_gault(1.0, 50, -70.0, "M")
+
+    def test_zero_weight(self):
+        with pytest.raises(ValueError, match="weight_kg must be positive"):
+            calc_crcl_cockcroft_gault(1.0, 50, 0.0, "M")
+
+    def test_nan_weight(self):
+        with pytest.raises(ValueError, match="weight_kg must be a finite number"):
+            calc_crcl_cockcroft_gault(1.0, 50, float("nan"), "M")
+
+    def test_invalid_sex(self):
+        with pytest.raises(ValueError, match="Invalid sex string"):
+            calc_crcl_cockcroft_gault(1.0, 50, 70.0, "X")
