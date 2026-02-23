@@ -168,13 +168,13 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want the current KDIGO-recommended eGFR equation as the primary estimator.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_egfr_ckd_epi_2021(cr_mgdl, age_years, sex)` in `eGFR/models.py`
-- [ ] Formula: eGFR = 142 × min(SCr/κ, 1)^α × max(SCr/κ, 1)^-1.200 × 0.9938^Age × 1.012 [if female]
-- [ ] κ = 0.7 (F) / 0.9 (M); α = -0.241 (F) / -0.302 (M)
-- [ ] sex parameter accepts 'M'/'F' or 1/2 (NHANES coding)
-- [ ] Raises ValueError for invalid inputs (negative, NaN, age < 18)
-- [ ] Add docstring with reference to Inker et al. (2021) NEJM
-- [ ] Typecheck passes
+- [x] Add `calc_egfr_ckd_epi_2021(cr_mgdl, age_years, sex)` in `eGFR/models.py`
+- [x] Formula: eGFR = 142 × min(SCr/κ, 1)^α × max(SCr/κ, 1)^-1.200 × 0.9938^Age × 1.012 [if female]
+- [x] κ = 0.7 (F) / 0.9 (M); α = -0.241 (F) / -0.302 (M)
+- [x] sex parameter accepts 'M'/'F' or 1/2 (NHANES coding)
+- [x] Raises ValueError for invalid inputs (negative, NaN, age < 18)
+- [x] Add docstring with reference to Inker et al. (2021) NEJM
+- [x] Typecheck passes
 
 ---
 
