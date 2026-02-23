@@ -94,3 +94,19 @@
   - `value_counts()` returns a Series; use `.get(key, default)` for safe access
   - `list[str]` type hint works in Python 3.9+ (no need for `List[str]` from typing)
 ---
+
+## Iteration 7 - US-007: Create data sourcing notebook
+- Created `notebooks/01_data_sourcing.ipynb` with 5 sections: download, parse, clean, quality report, visualizations
+- Demonstrates full pipeline: `download_nhanes_kidney()` → `read_xpt()` → `clean_kidney_data()` → `generate_quality_report()`
+- Gracefully falls back to synthetic demo data when real XPT files are unavailable
+- 4 visualizations: creatinine histogram (overall + by sex), age/sex demographics, creatinine-vs-age scatter, CKD stage bar chart
+- Uses `matplotlib.use("Agg")` for headless execution compatibility
+- Notebook executes without errors (verified via nbconvert)
+- All 62 existing tests still pass
+- Files changed: notebooks/01_data_sourcing.ipynb, PRD.md, progress.txt
+- Learnings for future iterations:
+  - Downloaded XPT files from CDC may be HTML error pages (all 20905 bytes); always validate parsed data
+  - `matplotlib.use("Agg")` must come before `import matplotlib.pyplot` for headless environments
+  - `_calc_ckd_epi_2021()` from data.py can be imported for notebook CKD stage calculations
+  - Synthetic data with `np.random.default_rng()` + lognormal distribution produces realistic creatinine values
+---

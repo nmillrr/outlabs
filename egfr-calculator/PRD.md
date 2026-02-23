@@ -152,11 +152,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a notebook documenting the data pipeline so that the process is reproducible.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/01_data_sourcing.ipynb`
-- [ ] Notebook demonstrates: downloading, parsing, cleaning, quality report
-- [ ] Includes markdown documentation of each step
-- [ ] Visualizes creatinine distribution and age/sex demographics
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/01_data_sourcing.ipynb`
+- [x] Notebook demonstrates: downloading, parsing, cleaning, quality report
+- [x] Includes markdown documentation of each step
+- [x] Visualizes creatinine distribution and age/sex demographics
+- [x] Notebook executes without errors
 
 ---
 
