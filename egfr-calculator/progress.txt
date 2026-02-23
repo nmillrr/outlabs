@@ -135,3 +135,19 @@
   - PRD acceptance criteria checkboxes should be updated in the same iteration as the implementation
 ---
 
+## Iteration 10 - US-010 & US-011: Implement MDRD equation and tests
+- Added `calc_egfr_mdrd(cr_mgdl, age_years, sex, is_black=False)` in `eGFR/models.py`
+- IDMS-traceable 175 coefficient, sex factor (×0.742 female), race factor (×1.212 Black)
+- Input validation matching CKD-EPI patterns, warns when eGFR > 60
+- Docstring with Levey et al. (2006) reference
+- Added 22 MDRD tests in `tests/test_models.py`: known-value checks (50M/SCr=1.0, 50F/SCr=0.8, 70M/SCr=1.5), race coefficient, female factor, NHANES coding, warning tests, input validation
+- All 102 tests pass (22 new + 80 existing)
+- Files changed: eGFR/models.py, tests/test_models.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `_normalize_sex()` reused from CKD-EPI implementation as expected
+  - MDRD 50M/SCr=1.0 yields ~79.1 (vs CKD-EPI ~91.7), confirms MDRD underestimates at higher GFR
+  - `warnings.warn()` with `stacklevel=2` ensures warning points to caller, not inside the function
+  - `pytest.warns(UserWarning)` and `warnings.catch_warnings()` with `simplefilter("error")` are good patterns for testing warning presence/absence
+  - US-010 and US-011 bundled since tests were written alongside implementation (same pattern as US-008/US-009)
+---
+
