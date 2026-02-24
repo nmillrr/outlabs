@@ -239,3 +239,19 @@
   - `train_test_split` with `stratify=` fails if any stratum has < 2 samples — must merge tiny bins
   - PowerShell terminal output encoding can swallow pytest output; use subprocess + retcode to verify
 ---
+
+## Iteration 17 - US-017: Train Ridge regression baseline
+- Added `train_ridge(X_train, y_train, alpha=1.0)` in `eGFR/train.py`
+- Returns fitted `sklearn.linear_model.Ridge` model
+- Input validation: rejects empty arrays and mismatched row counts
+- Added `save_model(model, filepath)` using `joblib.dump()`
+- Creates parent directories if they don't exist, raises ValueError on empty filepath
+- Verified both functions work end-to-end: train → save → load → predict
+- All 135 tests pass, typecheck passes
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `joblib` is installed as a dependency of scikit-learn, no need to add to requirements.txt separately
+  - Lazy imports (`from sklearn.linear_model import Ridge` inside function body) keep top-level imports clean
+  - `save_model()` is generic — works for any joblib-serializable object (Ridge, RF, LightGBM, etc.)
+  - `np.asarray(..., dtype=float)` handles both DataFrame and ndarray inputs cleanly
+---

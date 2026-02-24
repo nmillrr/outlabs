@@ -288,10 +288,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a Ridge regression model as simple ML baseline.
 
 **Acceptance Criteria:**
-- [ ] Add `train_ridge(X_train, y_train, alpha=1.0)` in `eGFR/train.py`
-- [ ] Returns fitted Ridge model
-- [ ] Add function `save_model(model, filepath)` using joblib
-- [ ] Typecheck passes
+- [x] Add `train_ridge(X_train, y_train, alpha=1.0)` in `eGFR/train.py`
+- [x] Returns fitted Ridge model
+- [x] Add function `save_model(model, filepath)` using joblib
+- [x] Typecheck passes
 
 ---
 

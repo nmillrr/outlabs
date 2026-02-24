@@ -205,6 +205,82 @@ def stratified_split(
 
 
 # ---------------------------------------------------------------------------
+# Model training
+# ---------------------------------------------------------------------------
+
+
+def train_ridge(
+    X_train: Union[pd.DataFrame, np.ndarray],
+    y_train: Union[pd.Series, np.ndarray],
+    alpha: float = 1.0,
+) -> "Ridge":
+    """Train a Ridge regression model on the provided data.
+
+    Parameters
+    ----------
+    X_train : pd.DataFrame or np.ndarray
+        Training feature matrix.
+    y_train : pd.Series or np.ndarray
+        Training target values (eGFR).
+    alpha : float, default 1.0
+        Regularisation strength (L2 penalty).
+
+    Returns
+    -------
+    sklearn.linear_model.Ridge
+        Fitted Ridge regression model.
+
+    Raises
+    ------
+    ValueError
+        If *X_train* and *y_train* have incompatible shapes or are empty.
+    """
+    from sklearn.linear_model import Ridge
+
+    X_arr = np.asarray(X_train, dtype=float)
+    y_arr = np.asarray(y_train, dtype=float).ravel()
+
+    if X_arr.size == 0 or y_arr.size == 0:
+        raise ValueError("Training data must not be empty.")
+    if X_arr.shape[0] != y_arr.shape[0]:
+        raise ValueError(
+            f"X_train and y_train row counts differ "
+            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
+        )
+
+    model = Ridge(alpha=alpha)
+    model.fit(X_arr, y_arr)
+    return model
+
+
+def save_model(model: object, filepath: str) -> None:
+    """Persist a trained model to disk using joblib.
+
+    Creates parent directories if they do not already exist.
+
+    Parameters
+    ----------
+    model : object
+        Any fitted scikit-learn–compatible estimator.
+    filepath : str
+        Destination path (e.g. ``"models/ridge_v1.joblib"``).
+
+    Raises
+    ------
+    ValueError
+        If *filepath* is empty.
+    """
+    import os
+    import joblib
+
+    if not filepath:
+        raise ValueError("filepath must not be empty.")
+
+    os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
+    joblib.dump(model, filepath)
+
+
+# ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
 
