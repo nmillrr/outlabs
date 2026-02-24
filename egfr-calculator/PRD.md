@@ -245,12 +245,12 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a notebook comparing eGFR equations visually.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/02_estimator_comparison.ipynb`
-- [ ] Compare CKD-EPI 2021 vs MDRD vs Cockcroft-Gault on NHANES data
-- [ ] Generate scatter plots: CKD-EPI vs MDRD, CKD-EPI vs Cockcroft-Gault
-- [ ] Show CKD stage reclassification analysis between equations
-- [ ] Include markdown interpretation of disagreements
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/02_estimator_comparison.ipynb`
+- [x] Compare CKD-EPI 2021 vs MDRD vs Cockcroft-Gault on NHANES data
+- [x] Generate scatter plots: CKD-EPI vs MDRD, CKD-EPI vs Cockcroft-Gault
+- [x] Show CKD stage reclassification analysis between equations
+- [x] Include markdown interpretation of disagreements
+- [x] Notebook executes without errors
 
 ---
 
