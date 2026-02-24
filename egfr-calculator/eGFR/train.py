@@ -297,6 +297,83 @@ def train_random_forest(
     return model
 
 
+def train_lightgbm(
+    X_train: Union[pd.DataFrame, np.ndarray],
+    y_train: Union[pd.Series, np.ndarray],
+    X_val: Union[pd.DataFrame, np.ndarray],
+    y_val: Union[pd.Series, np.ndarray],
+) -> "LGBMRegressor":
+    """Train a LightGBM regression model with early stopping.
+
+    Uses ``early_stopping_rounds=20`` so that training halts when the
+    validation RMSE has not improved for 20 consecutive boosting rounds.
+
+    Parameters
+    ----------
+    X_train : pd.DataFrame or np.ndarray
+        Training feature matrix.
+    y_train : pd.Series or np.ndarray
+        Training target values (eGFR).
+    X_val : pd.DataFrame or np.ndarray
+        Validation feature matrix (used for early stopping).
+    y_val : pd.Series or np.ndarray
+        Validation target values.
+
+    Returns
+    -------
+    lightgbm.LGBMRegressor
+        Fitted LightGBM regression model.
+
+    Raises
+    ------
+    ValueError
+        If any input arrays are empty or have incompatible shapes.
+    """
+    from lightgbm import LGBMRegressor
+
+    X_tr = np.asarray(X_train, dtype=float)
+    y_tr = np.asarray(y_train, dtype=float).ravel()
+    X_v = np.asarray(X_val, dtype=float)
+    y_v = np.asarray(y_val, dtype=float).ravel()
+
+    if X_tr.size == 0 or y_tr.size == 0:
+        raise ValueError("Training data must not be empty.")
+    if X_v.size == 0 or y_v.size == 0:
+        raise ValueError("Validation data must not be empty.")
+    if X_tr.shape[0] != y_tr.shape[0]:
+        raise ValueError(
+            f"X_train and y_train row counts differ "
+            f"({X_tr.shape[0]} vs {y_tr.shape[0]})."
+        )
+    if X_v.shape[0] != y_v.shape[0]:
+        raise ValueError(
+            f"X_val and y_val row counts differ "
+            f"({X_v.shape[0]} vs {y_v.shape[0]})."
+        )
+
+    model = LGBMRegressor(
+        n_estimators=500,
+        learning_rate=0.05,
+        random_state=42,
+        verbosity=-1,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        model.fit(
+            X_tr, y_tr,
+            eval_set=[(X_v, y_v)],
+            eval_metric="rmse",
+            callbacks=[
+                __import__("lightgbm").early_stopping(
+                    stopping_rounds=20, verbose=False
+                ),
+            ],
+        )
+
+    return model
+
+
 def save_model(model: object, filepath: str) -> None:
     """Persist a trained model to disk using joblib.
 

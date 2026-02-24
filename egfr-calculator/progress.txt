@@ -268,3 +268,20 @@
   - `save_model()` from iteration 17 works for RF models as well (joblib-generic)
   - Lazy import pattern keeps top-level imports clean and avoids unnecessary loading
 ---
+
+## Iteration 19 - US-019: Train LightGBM model
+- Added `train_lightgbm(X_train, y_train, X_val, y_val)` in `eGFR/train.py`
+- Uses `LGBMRegressor` with `n_estimators=500`, `learning_rate=0.05`, `random_state=42`
+- Early stopping via `lightgbm.early_stopping(stopping_rounds=20, verbose=False)` callback
+- `verbosity=-1` suppresses LightGBM internal logging
+- Input validation for all 4 arrays: empty check + shape mismatch check
+- Suppresses UserWarnings during fit with `warnings.catch_warnings()` context manager
+- Functional test: model trains, returns `LGBMRegressor`, produces predictions
+- All 135 existing tests pass
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - LightGBM early stopping now uses `callbacks=[lightgbm.early_stopping(...)]` instead of deprecated `early_stopping_rounds` param
+  - `verbosity=-1` on LGBMRegressor hides per-round training output
+  - `__import__("lightgbm").early_stopping(...)` avoids a second import line while keeping the lazy import pattern
+  - `save_model()` from iteration 17 works for LightGBM models as well (joblib-generic)
+---
