@@ -1,0 +1,22 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\bigwh\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\bigwh\OneDrive\Documents\GitHub\outlabs\egfr-calculator
+plugins: anyio-4.6.2.post1, cov-7.0.0
+collecting ... collected 11 items
+
+tests/test_train.py::TestStratifiedSplitBasic::test_returns_four_outputs PASSED [  9%]
+tests/test_train.py::TestStratifiedSplitBasic::test_default_split_ratio PASSED [ 18%]
+tests/test_train.py::TestStratifiedSplitBasic::test_custom_test_size PASSED [ 27%]
+tests/test_train.py::TestStratifiedSplitBasic::test_x_y_lengths_match PASSED [ 36%]
+tests/test_train.py::TestStratifiedSplitBasic::test_no_index_overlap PASSED [ 45%]
+tests/test_train.py::TestStratifiedSplitBasic::test_feature_columns_present PASSED [ 54%]
+tests/test_train.py::TestReproducibility::test_same_seed_same_split PASSED [ 63%]
+tests/test_train.py::TestReproducibility::test_different_seed_different_split PASSED [ 72%]
+tests/test_train.py::TestStratification::test_bins_represented_in_both_splits PASSED [ 81%]
+tests/test_train.py::TestEdgeCases::test_empty_dataframe_raises PASSED   [ 90%]
+tests/test_train.py::TestEdgeCases::test_missing_columns_raises PASSED   [100%]
+
+============================= 11 passed in 1.07s ==============================
+
+---STDERR---

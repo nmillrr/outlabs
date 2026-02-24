@@ -1,0 +1,168 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\bigwh\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\bigwh\OneDrive\Documents\GitHub\outlabs\egfr-calculator
+plugins: anyio-4.6.2.post1, cov-7.0.0
+collecting ... collected 135 items
+
+tests/test_data.py::TestReadXpt::test_reads_valid_xpt PASSED             [  0%]
+tests/test_data.py::TestReadXpt::test_values_match PASSED                [  1%]
+tests/test_data.py::TestReadXpt::test_returns_dataframe_type PASSED      [  2%]
+tests/test_data.py::TestReadXpt::test_missing_file_raises_file_not_found PASSED [  2%]
+tests/test_data.py::TestReadXpt::test_corrupt_file_raises_value_error PASSED [  3%]
+tests/test_data.py::TestReadXpt::test_read_sas_exception_wrapped PASSED  [  4%]
+tests/test_data.py::TestCleanKidneyData::test_returns_dataframe PASSED   [  5%]
+tests/test_data.py::TestCleanKidneyData::test_output_columns PASSED      [  5%]
+tests/test_data.py::TestCleanKidneyData::test_merges_on_seqn PASSED      [  6%]
+tests/test_data.py::TestCleanKidneyData::test_inner_join_drops_non_matching PASSED [  7%]
+tests/test_data.py::TestCleanKidneyData::test_column_values_correct PASSED [  8%]
+tests/test_data.py::TestCleanKidneyData::test_removes_low_creatinine PASSED [  8%]
+tests/test_data.py::TestCleanKidneyData::test_removes_high_creatinine PASSED [  9%]
+tests/test_data.py::TestCleanKidneyData::test_removes_minors PASSED      [ 10%]
+tests/test_data.py::TestCleanKidneyData::test_outlier_warning_issued PASSED [ 11%]
+tests/test_data.py::TestCleanKidneyData::test_keeps_boundary_creatinine PASSED [ 11%]
+tests/test_data.py::TestCleanKidneyData::test_idms_correction_applied PASSED [ 12%]
+tests/test_data.py::TestCleanKidneyData::test_idms_correction_not_applied_by_default PASSED [ 13%]
+tests/test_data.py::TestCleanKidneyData::test_drops_nan_in_core_columns PASSED [ 14%]
+tests/test_data.py::TestCleanKidneyData::test_index_reset_after_cleaning PASSED [ 14%]
+tests/test_data.py::TestCleanKidneyData::test_cystatin_merge PASSED      [ 15%]
+tests/test_data.py::TestCleanKidneyData::test_no_cystatin_column_without_df PASSED [ 16%]
+tests/test_data.py::TestCleanKidneyData::test_missing_biopro_column_raises PASSED [ 17%]
+tests/test_data.py::TestCleanKidneyData::test_missing_demo_column_raises PASSED [ 17%]
+tests/test_data.py::TestCleanKidneyData::test_missing_bmx_column_raises PASSED [ 18%]
+tests/test_data.py::TestCleanKidneyData::test_missing_cystatin_column_raises PASSED [ 19%]
+tests/test_data.py::TestGenerateQualityReport::test_returns_string PASSED [ 20%]
+tests/test_data.py::TestGenerateQualityReport::test_saves_file PASSED    [ 20%]
+tests/test_data.py::TestGenerateQualityReport::test_creates_parent_dirs PASSED [ 21%]
+tests/test_data.py::TestGenerateQualityReport::test_record_count PASSED  [ 22%]
+tests/test_data.py::TestGenerateQualityReport::test_descriptive_stats_present PASSED [ 22%]
+tests/test_data.py::TestGenerateQualityReport::test_descriptive_stats_values PASSED [ 23%]
+tests/test_data.py::TestGenerateQualityReport::test_ckd_stage_distribution_present PASSED [ 24%]
+tests/test_data.py::TestGenerateQualityReport::test_sex_distribution_present PASSED [ 25%]
+tests/test_data.py::TestGenerateQualityReport::test_sex_counts_correct PASSED [ 25%]
+tests/test_data.py::TestGenerateQualityReport::test_cystatin_c_included_when_present PASSED [ 26%]
+tests/test_data.py::TestGenerateQualityReport::test_cystatin_c_absent_when_not_present PASSED [ 27%]
+tests/test_data.py::TestGenerateQualityReport::test_missing_column_raises PASSED [ 28%]
+tests/test_data.py::TestGenerateQualityReport::test_report_saved_matches_returned PASSED [ 28%]
+tests/test_models.py::TestNormalizeSex::test_string_m PASSED             [ 29%]
+tests/test_models.py::TestNormalizeSex::test_string_f PASSED             [ 30%]
+tests/test_models.py::TestNormalizeSex::test_string_male PASSED          [ 31%]
+tests/test_models.py::TestNormalizeSex::test_string_female PASSED        [ 31%]
+tests/test_models.py::TestNormalizeSex::test_int_1 PASSED                [ 32%]
+tests/test_models.py::TestNormalizeSex::test_int_2 PASSED                [ 33%]
+tests/test_models.py::TestNormalizeSex::test_invalid_string PASSED       [ 34%]
+tests/test_models.py::TestNormalizeSex::test_invalid_int PASSED          [ 34%]
+tests/test_models.py::TestNormalizeSex::test_invalid_type PASSED         [ 35%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_50yo_male_scr_1_0 PASSED [ 36%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_50yo_female_scr_0_8 PASSED [ 37%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_70yo_male_scr_1_5 PASSED [ 37%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_nhanes_coding PASSED [ 38%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_low_creatinine_female PASSED [ 39%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_high_creatinine_male PASSED [ 40%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_young_adult PASSED [ 40%]
+tests/test_models.py::TestCKDEPI2021KnownValues::test_female_factor PASSED [ 41%]
+tests/test_models.py::TestCKDEPI2021Validation::test_negative_creatinine PASSED [ 42%]
+tests/test_models.py::TestCKDEPI2021Validation::test_zero_creatinine PASSED [ 42%]
+tests/test_models.py::TestCKDEPI2021Validation::test_nan_creatinine PASSED [ 43%]
+tests/test_models.py::TestCKDEPI2021Validation::test_nan_age PASSED      [ 44%]
+tests/test_models.py::TestCKDEPI2021Validation::test_age_below_18 PASSED [ 45%]
+tests/test_models.py::TestCKDEPI2021Validation::test_invalid_sex_string PASSED [ 45%]
+tests/test_models.py::TestCKDEPI2021Validation::test_invalid_sex_int PASSED [ 46%]
+tests/test_models.py::TestMDRDKnownValues::test_50yo_male_scr_1_0 PASSED [ 47%]
+tests/test_models.py::TestMDRDKnownValues::test_50yo_female_scr_1_0 PASSED [ 48%]
+tests/test_models.py::TestMDRDKnownValues::test_70yo_male_scr_1_5 PASSED [ 48%]
+tests/test_models.py::TestMDRDKnownValues::test_race_coefficient PASSED  [ 49%]
+tests/test_models.py::TestMDRDKnownValues::test_nhanes_coding PASSED     [ 50%]
+tests/test_models.py::TestMDRDKnownValues::test_high_creatinine_low_egfr PASSED [ 51%]
+tests/test_models.py::TestMDRDKnownValues::test_age_effect PASSED        [ 51%]
+tests/test_models.py::TestMDRDWarning::test_warning_issued_above_60 PASSED [ 52%]
+tests/test_models.py::TestMDRDWarning::test_no_warning_below_60 PASSED   [ 53%]
+tests/test_models.py::TestMDRDValidation::test_negative_creatinine PASSED [ 54%]
+tests/test_models.py::TestMDRDValidation::test_zero_creatinine PASSED    [ 54%]
+tests/test_models.py::TestMDRDValidation::test_nan_creatinine PASSED     [ 55%]
+tests/test_models.py::TestMDRDValidation::test_nan_age PASSED            [ 56%]
+tests/test_models.py::TestMDRDValidation::test_age_below_18 PASSED       [ 57%]
+tests/test_models.py::TestMDRDValidation::test_invalid_sex PASSED        [ 57%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_70yo_70kg_male_scr_1_0 PASSED [ 58%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_50yo_80kg_male_scr_1_2 PASSED [ 59%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_50yo_60kg_female_scr_0_8 PASSED [ 60%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_female_factor PASSED [ 60%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_nhanes_coding PASSED [ 61%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_returns_mL_min PASSED [ 62%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_age_effect PASSED [ 62%]
+tests/test_models.py::TestCockcroftGaultKnownValues::test_weight_effect PASSED [ 63%]
+tests/test_models.py::TestCockcroftGaultValidation::test_negative_creatinine PASSED [ 64%]
+tests/test_models.py::TestCockcroftGaultValidation::test_zero_creatinine PASSED [ 65%]
+tests/test_models.py::TestCockcroftGaultValidation::test_nan_creatinine PASSED [ 65%]
+tests/test_models.py::TestCockcroftGaultValidation::test_nan_age PASSED  [ 66%]
+tests/test_models.py::TestCockcroftGaultValidation::test_age_below_18 PASSED [ 67%]
+tests/test_models.py::TestCockcroftGaultValidation::test_negative_weight PASSED [ 68%]
+tests/test_models.py::TestCockcroftGaultValidation::test_zero_weight PASSED [ 68%]
+tests/test_models.py::TestCockcroftGaultValidation::test_nan_weight PASSED [ 69%]
+tests/test_models.py::TestCockcroftGaultValidation::test_invalid_sex PASSED [ 70%]
+tests/test_models.py::TestCockcroftGaultBSA::test_bsa_adjustment PASSED  [ 71%]
+tests/test_models.py::TestCockcroftGaultBSA::test_at_standard_bsa PASSED [ 71%]
+tests/test_models.py::TestCockcroftGaultBSA::test_invalid_height_negative PASSED [ 72%]
+tests/test_models.py::TestCockcroftGaultBSA::test_invalid_height_zero PASSED [ 73%]
+tests/test_models.py::TestCockcroftGaultBSA::test_invalid_height_nan PASSED [ 74%]
+tests/test_models.py::TestCockcroftGaultBSA::test_propagates_base_validation PASSED [ 74%]
+tests/test_train.py::TestStratifiedSplitBasic::test_returns_four_outputs PASSED [ 75%]
+tests/test_train.py::TestStratifiedSplitBasic::test_default_split_ratio PASSED [ 76%]
+tests/test_train.py::TestStratifiedSplitBasic::test_custom_test_size PASSED [ 77%]
+tests/test_train.py::TestStratifiedSplitBasic::test_x_y_lengths_match PASSED [ 77%]
+tests/test_train.py::TestStratifiedSplitBasic::test_no_index_overlap PASSED [ 78%]
+tests/test_train.py::TestStratifiedSplitBasic::test_feature_columns_present PASSED [ 79%]
+tests/test_train.py::TestReproducibility::test_same_seed_same_split PASSED [ 80%]
+tests/test_train.py::TestReproducibility::test_different_seed_different_split PASSED [ 80%]
+tests/test_train.py::TestStratification::test_bins_represented_in_both_splits PASSED [ 81%]
+tests/test_train.py::TestEdgeCases::test_empty_dataframe_raises PASSED   [ 82%]
+tests/test_train.py::TestEdgeCases::test_missing_columns_raises PASSED   [ 82%]
+tests/test_utils.py::TestCreatinineConversions::test_mgdl_to_umoll_typical PASSED [ 83%]
+tests/test_utils.py::TestCreatinineConversions::test_mgdl_to_umoll_high PASSED [ 84%]
+tests/test_utils.py::TestCreatinineConversions::test_mgdl_to_umoll_zero PASSED [ 85%]
+tests/test_utils.py::TestCreatinineConversions::test_umoll_to_mgdl_typical PASSED [ 85%]
+tests/test_utils.py::TestCreatinineConversions::test_umoll_to_mgdl_high PASSED [ 86%]
+tests/test_utils.py::TestCreatinineConversions::test_roundtrip_mgdl PASSED [ 87%]
+tests/test_utils.py::TestCreatinineConversions::test_roundtrip_umoll PASSED [ 88%]
+tests/test_utils.py::TestCKDStageClassification::test_g1 PASSED          [ 88%]
+tests/test_utils.py::TestCKDStageClassification::test_g2 PASSED          [ 89%]
+tests/test_utils.py::TestCKDStageClassification::test_g3a PASSED         [ 90%]
+tests/test_utils.py::TestCKDStageClassification::test_g3b PASSED         [ 91%]
+tests/test_utils.py::TestCKDStageClassification::test_g4 PASSED          [ 91%]
+tests/test_utils.py::TestCKDStageClassification::test_g5 PASSED          [ 92%]
+tests/test_utils.py::TestCKDStageClassification::test_boundary_90 PASSED [ 93%]
+tests/test_utils.py::TestCKDStageClassification::test_boundary_just_below_90 PASSED [ 94%]
+tests/test_utils.py::TestWeightConversions::test_lbs_to_kg PASSED        [ 94%]
+tests/test_utils.py::TestWeightConversions::test_kg_to_lbs PASSED        [ 95%]
+tests/test_utils.py::TestWeightConversions::test_lbs_to_kg_zero PASSED   [ 96%]
+tests/test_utils.py::TestWeightConversions::test_roundtrip_weight PASSED [ 97%]
+tests/test_utils.py::TestHeightConversions::test_inches_to_cm PASSED     [ 97%]
+tests/test_utils.py::TestHeightConversions::test_cm_to_inches PASSED     [ 98%]
+tests/test_utils.py::TestHeightConversions::test_inches_to_cm_zero PASSED [ 99%]
+tests/test_utils.py::TestHeightConversions::test_roundtrip_height PASSED [100%]
+
+============================== warnings summary ===============================
+tests/test_data.py::TestCleanKidneyData::test_drops_nan_in_core_columns
+  C:\Users\bigwh\OneDrive\Documents\GitHub\outlabs\egfr-calculator\eGFR\data.py:363: UserWarning: Removed 1 rows as physiologic outliers (creatinine outside 0.2–15 mg/dL or age < 18).
+    warnings.warn(
+
+tests/test_models.py::TestMDRDKnownValues::test_50yo_male_scr_1_0
+  C:\Users\bigwh\OneDrive\Documents\GitHub\outlabs\egfr-calculator\tests\test_models.py:184: UserWarning: MDRD eGFR is 79.1 mL/min/1.73 m² (>60). MDRD is less accurate at higher GFR; consider CKD-EPI 2021.
+    result = calc_egfr_mdrd(1.0, 50, "M")
+
+tests/test_models.py::TestMDRDKnownValues::test_nhanes_coding
+  C:\Users\bigwh\OneDrive\Documents\GitHub\outlabs\egfr-calculator\tests\test_models.py:209: UserWarning: MDRD eGFR is 79.1 mL/min/1.73 m² (>60). MDRD is less accurate at higher GFR; consider CKD-EPI 2021.
+    male_result = calc_egfr_mdrd(1.0, 50, 1)
+
+tests/test_models.py::TestMDRDKnownValues::test_age_effect
+  C:\Users\bigwh\OneDrive\Documents\GitHub\outlabs\egfr-calculator\tests\test_models.py:220: UserWarning: MDRD eGFR is 95.3 mL/min/1.73 m² (>60). MDRD is less accurate at higher GFR; consider CKD-EPI 2021.
+    young = calc_egfr_mdrd(1.0, 20, "M")
+
+tests/test_models.py::TestMDRDKnownValues::test_age_effect
+  C:\Users\bigwh\OneDrive\Documents\GitHub\outlabs\egfr-calculator\tests\test_models.py:221: UserWarning: MDRD eGFR is 71.9 mL/min/1.73 m² (>60). MDRD is less accurate at higher GFR; consider CKD-EPI 2021.
+    old = calc_egfr_mdrd(1.0, 80, "M")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 135 passed, 5 warnings in 1.24s =======================
+
+---STDERR---
