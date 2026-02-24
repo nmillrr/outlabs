@@ -220,12 +220,12 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want CrCl estimation for drug dosing applications.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_crcl_cockcroft_gault(cr_mgdl, age_years, weight_kg, sex)` in `eGFR/models.py`
-- [ ] Formula: CrCl = [(140 - Age) × Weight / (72 × SCr)] × 0.85 [if female]
-- [ ] Returns creatinine clearance in mL/min (NOT mL/min/1.73m²)
-- [ ] Add optional BSA-adjusted variant: `calc_crcl_cockcroft_gault_bsa(... , height_cm)`
-- [ ] Add docstring with reference to Cockcroft & Gault (1976)
-- [ ] Typecheck passes
+- [x] Add `calc_crcl_cockcroft_gault(cr_mgdl, age_years, weight_kg, sex)` in `eGFR/models.py`
+- [x] Formula: CrCl = [(140 - Age) × Weight / (72 × SCr)] × 0.85 [if female]
+- [x] Returns creatinine clearance in mL/min (NOT mL/min/1.73m²)
+- [x] Add optional BSA-adjusted variant: `calc_crcl_cockcroft_gault_bsa(... , height_cm)`
+- [x] Add docstring with reference to Cockcroft & Gault (1976)
+- [x] Typecheck passes
 
 ---
 
