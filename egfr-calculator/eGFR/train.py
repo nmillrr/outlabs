@@ -253,6 +253,50 @@ def train_ridge(
     return model
 
 
+def train_random_forest(
+    X_train: Union[pd.DataFrame, np.ndarray],
+    y_train: Union[pd.Series, np.ndarray],
+    n_estimators: int = 200,
+) -> "RandomForestRegressor":
+    """Train a Random Forest regression model on the provided data.
+
+    Parameters
+    ----------
+    X_train : pd.DataFrame or np.ndarray
+        Training feature matrix.
+    y_train : pd.Series or np.ndarray
+        Training target values (eGFR).
+    n_estimators : int, default 200
+        Number of trees in the forest.
+
+    Returns
+    -------
+    sklearn.ensemble.RandomForestRegressor
+        Fitted Random Forest regression model.
+
+    Raises
+    ------
+    ValueError
+        If *X_train* and *y_train* have incompatible shapes or are empty.
+    """
+    from sklearn.ensemble import RandomForestRegressor
+
+    X_arr = np.asarray(X_train, dtype=float)
+    y_arr = np.asarray(y_train, dtype=float).ravel()
+
+    if X_arr.size == 0 or y_arr.size == 0:
+        raise ValueError("Training data must not be empty.")
+    if X_arr.shape[0] != y_arr.shape[0]:
+        raise ValueError(
+            f"X_train and y_train row counts differ "
+            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
+        )
+
+    model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
+    model.fit(X_arr, y_arr)
+    return model
+
+
 def save_model(model: object, filepath: str) -> None:
     """Persist a trained model to disk using joblib.
 

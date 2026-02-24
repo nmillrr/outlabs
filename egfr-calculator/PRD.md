@@ -299,9 +299,9 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a Random Forest model for nonlinear patterns.
 
 **Acceptance Criteria:**
-- [ ] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `eGFR/train.py`
-- [ ] Returns fitted RandomForestRegressor
-- [ ] Typecheck passes
+- [x] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `eGFR/train.py`
+- [x] Returns fitted RandomForestRegressor
+- [x] Typecheck passes
 
 ---
 

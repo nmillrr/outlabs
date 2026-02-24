@@ -255,3 +255,16 @@
   - `save_model()` is generic — works for any joblib-serializable object (Ridge, RF, LightGBM, etc.)
   - `np.asarray(..., dtype=float)` handles both DataFrame and ndarray inputs cleanly
 ---
+
+## Iteration 18 - US-018: Train Random Forest model
+- Added `train_random_forest(X_train, y_train, n_estimators=200)` in `eGFR/train.py`
+- Returns fitted `sklearn.ensemble.RandomForestRegressor`
+- Follows same pattern as `train_ridge`: lazy import, np.asarray conversion, empty/shape validation
+- Uses `random_state=42` for reproducibility
+- All 135 existing tests pass, typecheck passes
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `RandomForestRegressor` is in `sklearn.ensemble`, not `sklearn.linear_model`
+  - `save_model()` from iteration 17 works for RF models as well (joblib-generic)
+  - Lazy import pattern keeps top-level imports clean and avoids unnecessary loading
+---
