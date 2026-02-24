@@ -208,11 +208,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want unit tests validating MDRD against published examples.
 
 **Acceptance Criteria:**
-- [ ] Add test in `tests/test_models.py` for MDRD
-- [ ] Test known reference values from NKF calculator
-- [ ] Test warning is issued when eGFR > 60
-- [ ] Test `is_black` race coefficient application
-- [ ] Tests pass
+- [x] Add test in `tests/test_models.py` for MDRD
+- [x] Test known reference values from NKF calculator
+- [x] Test warning is issued when eGFR > 60
+- [x] Test `is_black` race coefficient application
+- [x] Tests pass
 
 ---
 

@@ -151,3 +151,11 @@
   - `_normalize_sex()` reuse confirmed — same helper works for all equation functions
 ---
 
+## Iteration 11 - US-011: Test MDRD against known values
+- Tests were already implemented in iteration 10 alongside the MDRD equation
+- 16 tests in `tests/test_models.py`: known-value checks, warning tests, race coefficient, and input validation
+- Only change needed: mark US-011 acceptance criteria as [x] in PRD.md
+- Files changed: PRD.md
+- Learnings for future iterations:
+  - US-011 tests were bundled with US-010 — same pattern as US-008/US-009
+---
