@@ -13,6 +13,7 @@ Each function accepts standard clinical inputs and returns estimated GFR
 from __future__ import annotations
 
 import math
+import warnings
 from typing import Union
 
 
@@ -123,4 +124,96 @@ def calc_egfr_ckd_epi_2021(
         * (0.9938 ** age_years)
         * female_factor
     )
+    return egfr
+
+
+def calc_egfr_mdrd(
+    cr_mgdl: float,
+    age_years: float,
+    sex: Union[str, int],
+    is_black: bool = False,
+) -> float:
+    """Calculate eGFR using the MDRD 4-variable equation (IDMS-traceable).
+
+    Implements the re-expressed MDRD equation for use with IDMS-standardised
+    serum creatinine (175 coefficient).
+
+    Formula
+    -------
+    eGFR = 175 × SCr^(−1.154) × Age^(−0.203) × 0.742 [if female]
+           × 1.212 [if Black]
+
+    .. warning::
+       The MDRD equation is less accurate when eGFR > 60 mL/min/1.73 m².
+       CKD-EPI 2021 is recommended for clinical use.  The race coefficient
+       (``is_black``) is retained for backward compatibility but its use is
+       discouraged by KDIGO 2021 guidelines.
+
+    Parameters
+    ----------
+    cr_mgdl : float
+        Serum creatinine in mg/dL (IDMS-traceable).  Must be > 0 and finite.
+    age_years : float
+        Patient age in years.  Must be ≥ 18 and finite.
+    sex : str or int
+        Patient sex.  Accepts 'M'/'F' strings or 1/2 (NHANES coding).
+    is_black : bool, optional
+        Whether to apply the Black race coefficient (×1.212).
+        Default is ``False``.  *Deprecated per KDIGO 2021.*
+
+    Returns
+    -------
+    float
+        Estimated GFR in mL/min/1.73 m².
+
+    Warns
+    -----
+    UserWarning
+        When computed eGFR > 60 (MDRD is less accurate above this threshold).
+
+    Raises
+    ------
+    ValueError
+        If any input is invalid (negative creatinine, NaN, age < 18, etc.).
+
+    References
+    ----------
+    Levey AS, Coresh J, Greene T, et al. Using Standardized Serum Creatinine
+    Values in the Modification of Diet in Renal Disease Study Equation for
+    Estimating Glomerular Filtration Rate. *Ann Intern Med*.
+    2006;145(4):247-254. doi:10.7326/0003-4819-145-4-200608150-00004
+    """
+    # -- Input validation --
+    if not isinstance(cr_mgdl, (int, float)) or math.isnan(cr_mgdl):
+        raise ValueError(f"cr_mgdl must be a finite number, got {cr_mgdl!r}")
+    if cr_mgdl <= 0:
+        raise ValueError(f"cr_mgdl must be positive, got {cr_mgdl}")
+
+    if not isinstance(age_years, (int, float)) or math.isnan(age_years):
+        raise ValueError(f"age_years must be a finite number, got {age_years!r}")
+    if age_years < 18:
+        raise ValueError(f"age_years must be ≥ 18, got {age_years}")
+
+    sex_norm = _normalize_sex(sex)
+
+    # -- Equation --
+    female_factor = 0.742 if sex_norm == "F" else 1.0
+    race_factor = 1.212 if is_black else 1.0
+
+    egfr = (
+        175.0
+        * (cr_mgdl ** -1.154)
+        * (age_years ** -0.203)
+        * female_factor
+        * race_factor
+    )
+
+    if egfr > 60:
+        warnings.warn(
+            f"MDRD eGFR is {egfr:.1f} mL/min/1.73 m² (>60). "
+            "MDRD is less accurate at higher GFR; consider CKD-EPI 2021.",
+            UserWarning,
+            stacklevel=2,
+        )
+
     return egfr

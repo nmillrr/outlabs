@@ -3,10 +3,11 @@ Tests for eGFR mechanistic equation models.
 """
 
 import math
+import warnings
 
 import pytest
 
-from eGFR.models import calc_egfr_ckd_epi_2021, _normalize_sex
+from eGFR.models import calc_egfr_ckd_epi_2021, calc_egfr_mdrd, _normalize_sex
 
 
 # ---------------------------------------------------------------------------
@@ -152,3 +153,125 @@ class TestCKDEPI2021Validation:
     def test_invalid_sex_int(self):
         with pytest.raises(ValueError, match="Invalid sex code"):
             calc_egfr_ckd_epi_2021(1.0, 50, 0)
+
+
+# ---------------------------------------------------------------------------
+# calc_egfr_mdrd — known-value tests
+# ---------------------------------------------------------------------------
+
+
+class TestMDRDKnownValues:
+    """Verify MDRD against expected values.
+
+    Expected values computed analytically from:
+      eGFR = 175 × SCr^(−1.154) × Age^(−0.203) × 0.742 [if female]
+             × 1.212 [if Black]
+
+    Reference: Levey et al., Ann Intern Med 2006; 145:247-254.
+    """
+
+    def test_50yo_male_scr_1_0(self):
+        """50 M, SCr=1.0 → eGFR ≈ 79.
+
+        Manual: 175 × 1.0^−1.154 × 50^−0.203 ≈ 79.1
+        """
+        result = calc_egfr_mdrd(1.0, 50, "M")
+        assert result == pytest.approx(79.1, abs=2.0)
+
+    def test_50yo_female_scr_1_0(self):
+        """50 F, SCr=1.0 → ~58.7 (×0.742 female factor)."""
+        result = calc_egfr_mdrd(1.0, 50, "F")
+        assert result == pytest.approx(79.1 * 0.742, abs=2.0)
+
+    def test_70yo_male_scr_1_5(self):
+        """70 M, SCr=1.5 → eGFR ≈ 45.
+
+        Manual: 175 × 1.5^−1.154 × 70^−0.203
+              = 175 × 0.6351 × 0.4024 ≈ 44.7
+        """
+        result = calc_egfr_mdrd(1.5, 70, "M")
+        assert result == pytest.approx(44.7, abs=2.0)
+
+    def test_race_coefficient(self):
+        """is_black=True multiplies result by 1.212."""
+        without = calc_egfr_mdrd(1.5, 70, "M", is_black=False)
+        with_black = calc_egfr_mdrd(1.5, 70, "M", is_black=True)
+        assert with_black == pytest.approx(without * 1.212, rel=1e-6)
+
+    def test_nhanes_coding(self):
+        """NHANES sex coding (1=male, 2=female) works."""
+        male_result = calc_egfr_mdrd(1.0, 50, 1)
+        female_result = calc_egfr_mdrd(1.0, 50, 2)
+        assert female_result == pytest.approx(male_result * 0.742, rel=1e-6)
+
+    def test_high_creatinine_low_egfr(self):
+        """Very high creatinine → very low eGFR (no warning)."""
+        result = calc_egfr_mdrd(5.0, 60, "M")
+        assert result < 30
+
+    def test_age_effect(self):
+        """Older patients get lower eGFR at same creatinine."""
+        young = calc_egfr_mdrd(1.0, 20, "M")
+        old = calc_egfr_mdrd(1.0, 80, "M")
+        assert young > old
+
+
+# ---------------------------------------------------------------------------
+# calc_egfr_mdrd — warning for eGFR > 60
+# ---------------------------------------------------------------------------
+
+
+class TestMDRDWarning:
+    """Verify UserWarning is issued when eGFR > 60."""
+
+    def test_warning_issued_above_60(self):
+        """Low creatinine in a young male → eGFR > 60 → warning."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = calc_egfr_mdrd(0.8, 30, "M")
+            assert result > 60
+            assert len(w) == 1
+            assert "MDRD is less accurate" in str(w[0].message)
+            assert issubclass(w[0].category, UserWarning)
+
+    def test_no_warning_below_60(self):
+        """High creatinine → eGFR ≤ 60 → no warning."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = calc_egfr_mdrd(2.0, 60, "M")
+            assert result <= 60
+            assert len(w) == 0
+
+
+# ---------------------------------------------------------------------------
+# calc_egfr_mdrd — input validation
+# ---------------------------------------------------------------------------
+
+
+class TestMDRDValidation:
+    """Verify ValueError is raised for invalid inputs (same pattern as CKD-EPI)."""
+
+    def test_negative_creatinine(self):
+        with pytest.raises(ValueError, match="cr_mgdl must be positive"):
+            calc_egfr_mdrd(-1.0, 50, "M")
+
+    def test_zero_creatinine(self):
+        with pytest.raises(ValueError, match="cr_mgdl must be positive"):
+            calc_egfr_mdrd(0.0, 50, "M")
+
+    def test_nan_creatinine(self):
+        with pytest.raises(ValueError, match="cr_mgdl must be a finite number"):
+            calc_egfr_mdrd(float("nan"), 50, "M")
+
+    def test_nan_age(self):
+        with pytest.raises(ValueError, match="age_years must be a finite number"):
+            calc_egfr_mdrd(1.0, float("nan"), "M")
+
+    def test_age_below_18(self):
+        with pytest.raises(ValueError, match="age_years must be ≥ 18"):
+            calc_egfr_mdrd(1.0, 17, "M")
+
+    def test_invalid_sex(self):
+        with pytest.raises(ValueError, match="Invalid sex string"):
+            calc_egfr_mdrd(1.0, 50, "X")
+

@@ -195,12 +195,12 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want the MDRD equation for backward compatibility with older lab systems.
 
 **Acceptance Criteria:**
-- [ ] Add `calc_egfr_mdrd(cr_mgdl, age_years, sex, is_black=False)` in `eGFR/models.py`
-- [ ] Formula: eGFR = 175 × SCr^-1.154 × Age^-0.203 × 0.742 [if female] × 1.212 [if Black]
-- [ ] Uses IDMS-traceable creatinine (175 coefficient, not 186)
-- [ ] Warns when eGFR > 60 (MDRD less accurate at higher GFR)
-- [ ] Add docstring with reference to Levey et al. (2006)
-- [ ] Typecheck passes
+- [x] Add `calc_egfr_mdrd(cr_mgdl, age_years, sex, is_black=False)` in `eGFR/models.py`
+- [x] Formula: eGFR = 175 × SCr^-1.154 × Age^-0.203 × 0.742 [if female] × 1.212 [if Black]
+- [x] Uses IDMS-traceable creatinine (175 coefficient, not 186)
+- [x] Warns when eGFR > 60 (MDRD less accurate at higher GFR)
+- [x] Add docstring with reference to Levey et al. (2006)
+- [x] Typecheck passes
 
 ---
 
