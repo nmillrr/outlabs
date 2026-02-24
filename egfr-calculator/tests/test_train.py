@@ -1,10 +1,10 @@
-"""Tests for eGFR/train.py — stratified_split function."""
+"""Tests for eGFR/train.py — stratified_split and cross_validate_model."""
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from eGFR.train import stratified_split
+from eGFR.train import stratified_split, cross_validate_model
 
 
 # ---------------------------------------------------------------------------
@@ -146,3 +146,66 @@ class TestEdgeCases:
         df = pd.DataFrame({"cr_mgdl": [1.0], "age_years": [50]})
         with pytest.raises(ValueError, match="Missing required columns"):
             stratified_split(df)
+
+
+# ---------------------------------------------------------------------------
+# cross_validate_model tests
+# ---------------------------------------------------------------------------
+
+class TestCrossValidateModel:
+    """Tests for cross_validate_model."""
+
+    @staticmethod
+    def _make_ridge():
+        from sklearn.linear_model import Ridge
+        return Ridge(alpha=1.0)
+
+    @staticmethod
+    def _make_data(n=100, seed=0):
+        rng = np.random.default_rng(seed)
+        X = rng.standard_normal((n, 3))
+        y = X @ np.array([2.0, -1.0, 0.5]) + rng.normal(0, 0.1, n)
+        return X, y
+
+    def test_returns_expected_keys(self):
+        X, y = self._make_data()
+        result = cross_validate_model(self._make_ridge(), X, y, n_splits=5)
+        assert set(result.keys()) == {"RMSE_mean", "RMSE_std", "MAE_mean", "MAE_std"}
+
+    def test_values_are_float(self):
+        X, y = self._make_data()
+        result = cross_validate_model(self._make_ridge(), X, y, n_splits=5)
+        for v in result.values():
+            assert isinstance(v, float)
+
+    def test_values_non_negative(self):
+        X, y = self._make_data()
+        result = cross_validate_model(self._make_ridge(), X, y, n_splits=5)
+        for v in result.values():
+            assert v >= 0.0
+
+    def test_rmse_ge_mae(self):
+        """RMSE is always >= MAE for the same predictions."""
+        X, y = self._make_data()
+        result = cross_validate_model(self._make_ridge(), X, y, n_splits=5)
+        assert result["RMSE_mean"] >= result["MAE_mean"]
+
+    def test_custom_n_splits(self):
+        X, y = self._make_data(50)
+        result = cross_validate_model(self._make_ridge(), X, y, n_splits=3)
+        assert "RMSE_mean" in result
+
+    def test_empty_data_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            cross_validate_model(self._make_ridge(), np.array([]), np.array([]))
+
+    def test_shape_mismatch_raises(self):
+        X = np.ones((10, 3))
+        y = np.ones(5)
+        with pytest.raises(ValueError, match="row counts differ"):
+            cross_validate_model(self._make_ridge(), X, y)
+
+    def test_n_splits_too_small_raises(self):
+        X, y = self._make_data(20)
+        with pytest.raises(ValueError, match="n_splits must be >= 2"):
+            cross_validate_model(self._make_ridge(), X, y, n_splits=1)

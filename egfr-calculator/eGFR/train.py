@@ -374,6 +374,84 @@ def train_lightgbm(
     return model
 
 
+def cross_validate_model(
+    model,
+    X: Union[pd.DataFrame, np.ndarray],
+    y: Union[pd.Series, np.ndarray],
+    n_splits: int = 10,
+) -> dict:
+    """Evaluate a model using K-fold cross-validation.
+
+    Performs *n_splits*-fold cross-validation and returns aggregate RMSE and
+    MAE statistics across the folds.
+
+    Parameters
+    ----------
+    model : sklearn-compatible estimator
+        An unfitted (or fitted) estimator that implements ``fit`` and
+        ``predict``.  The estimator is cloned for each fold so that the
+        original object is not mutated.
+    X : pd.DataFrame or np.ndarray
+        Feature matrix.
+    y : pd.Series or np.ndarray
+        Target values (eGFR).
+    n_splits : int, default 10
+        Number of cross-validation folds.
+
+    Returns
+    -------
+    dict
+        Keys: ``RMSE_mean``, ``RMSE_std``, ``MAE_mean``, ``MAE_std``.
+
+    Raises
+    ------
+    ValueError
+        If *X* and *y* have incompatible shapes, are empty, or
+        *n_splits* < 2.
+    """
+    from sklearn.base import clone
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+    X_arr = np.asarray(X, dtype=float)
+    y_arr = np.asarray(y, dtype=float).ravel()
+
+    if X_arr.size == 0 or y_arr.size == 0:
+        raise ValueError("Input data must not be empty.")
+    if X_arr.shape[0] != y_arr.shape[0]:
+        raise ValueError(
+            f"X and y row counts differ "
+            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
+        )
+    if n_splits < 2:
+        raise ValueError(f"n_splits must be >= 2, got {n_splits}.")
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    rmse_scores: list[float] = []
+    mae_scores: list[float] = []
+
+    for train_idx, test_idx in kf.split(X_arr):
+        X_train_fold, X_test_fold = X_arr[train_idx], X_arr[test_idx]
+        y_train_fold, y_test_fold = y_arr[train_idx], y_arr[test_idx]
+
+        fold_model = clone(model)
+        fold_model.fit(X_train_fold, y_train_fold)
+        y_pred = fold_model.predict(X_test_fold)
+
+        rmse = float(np.sqrt(mean_squared_error(y_test_fold, y_pred)))
+        mae = float(mean_absolute_error(y_test_fold, y_pred))
+        rmse_scores.append(rmse)
+        mae_scores.append(mae)
+
+    return {
+        "RMSE_mean": float(np.mean(rmse_scores)),
+        "RMSE_std": float(np.std(rmse_scores)),
+        "MAE_mean": float(np.mean(mae_scores)),
+        "MAE_std": float(np.std(mae_scores)),
+    }
+
+
 def save_model(model: object, filepath: str) -> None:
     """Persist a trained model to disk using joblib.
 
