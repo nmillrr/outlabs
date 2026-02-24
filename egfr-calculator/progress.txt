@@ -187,3 +187,38 @@
 - Learnings for future iterations:
   - US-013 tests were bundled with US-012 — same pattern as US-008/US-009 and US-010/US-011
 ---
+
+## Iteration 14 - US-014: Create estimator comparison notebook
+- Created `notebooks/02_estimator_comparison.ipynb` with 9 code cells and 6 markdown sections
+- Compares CKD-EPI 2021 vs MDRD vs Cockcroft-Gault on synthetic NHANES-like data (falls back from real XPT gracefully)
+- Scatter plots: CKD-EPI vs MDRD, CKD-EPI vs Cockcroft-Gault with identity lines and CKD threshold markers
+- CKD stage reclassification matrices (crosstab + heatmap visualisation) for both comparisons
+- Distribution overlay histogram of all three estimators with CKD stage boundary annotations
+- Detailed clinical interpretation: CKD-EPI vs MDRD agreement, CrCl vs eGFR distinction, drug dosing implications
+- Notebook executes without errors (verified via nbconvert: 9 code cells, 0 error outputs)
+- All 124 existing tests still pass
+- Files changed: notebooks/02_estimator_comparison.ipynb, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `python -m nbconvert` works on this machine; `python -m jupyter nbconvert` does not (jupyter entry point issue)
+  - Suppress MDRD warnings with `warnings.simplefilter("ignore", UserWarning)` during batch computation
+  - `pd.crosstab` + `.reindex()` is a clean pattern for reclassification matrices with guaranteed stage ordering
+  - Notebook follows same synthetic-data fallback pattern as notebook 01
+---
+
+## Iteration 15 - US-015: Create feature engineering module
+- Added `create_features(df)` in `eGFR/train.py` returning `(X, feature_names)` tuple
+- 4 feature groups: base clinical (6), optional cystatin C (2), mechanistic estimators (3), derived (3)
+- Base: cr_mgdl, age_years, sex_numeric (0=M, 1=F), weight_kg, height_cm, bmi
+- Cystatin C (optional): cystatin_c_mgL, cr_cys_ratio — only added if column exists in input
+- Estimators: egfr_ckd_epi_2021, egfr_mdrd, crcl_cockcroft_gault — wrapped in _safe_* helpers to return NaN on invalid rows
+- Derived: inv_creatinine (1/cr), log_creatinine (ln(cr)), age_cr_interaction (age×cr)
+- Input validation: raises ValueError if required columns missing
+- 12 features without cystatin, 14 with cystatin
+- All 124 existing tests pass, typecheck passes
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `_safe_*` wrapper pattern prevents single bad rows from crashing feature engineering
+  - `_sex_to_numeric()` maps NHANES 1/2 → 0.0/1.0 (different from _normalize_sex which maps to 'M'/'F')
+  - Suppress MDRD warnings in `_safe_mdrd` with `warnings.catch_warnings()` context manager
+  - BMI computed as weight_kg / (height_cm/100)^2
+---

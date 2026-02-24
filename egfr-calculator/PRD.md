@@ -262,13 +262,14 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want feature engineering functions for ML training.
 
 **Acceptance Criteria:**
-- [ ] Add `create_features(df)` function in `eGFR/train.py`
-- [ ] Creates features: cr_mgdl, age_years, sex_numeric, weight_kg, height_cm, bmi
-- [ ] Adds cystatin C features if available: cystatin_c_mgL, cr_cys_ratio
-- [ ] Adds all mechanistic estimator predictions as features (CKD-EPI, MDRD, Cockcroft-Gault)
-- [ ] Adds derived features: 1/creatinine, log(creatinine), age×creatinine interaction
-- [ ] Returns feature matrix X and column names
-- [ ] Typecheck passes
+- [x] Add `create_features(df)` function in `eGFR/train.py`
+- [x] Creates features: cr_mgdl, age_years, sex_numeric, weight_kg, height_cm, bmi
+- [x] Adds cystatin C features if available: cystatin_c_mgL, cr_cys_ratio
+- [x] Adds all mechanistic estimator predictions as features (CKD-EPI, MDRD, Cockcroft-Gault)
+- [x] Adds derived features: 1/creatinine, log(creatinine), age×creatinine interaction
+- [x] Returns feature matrix X and column names
+- [x] Typecheck passes
+
 
 ---
 
