@@ -233,11 +233,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want unit tests validating Cockcroft-Gault.
 
 **Acceptance Criteria:**
-- [ ] Add test in `tests/test_models.py` for Cockcroft-Gault
-- [ ] Test 70-year-old 70 kg male, SCr=1.0 → CrCl ≈ 68 mL/min
-- [ ] Test BSA-adjusted variant
-- [ ] Test invalid input handling
-- [ ] Tests pass
+- [x] Add test in `tests/test_models.py` for Cockcroft-Gault
+- [x] Test 70-year-old 70 kg male, SCr=1.0 → CrCl ≈ 68 mL/min
+- [x] Test BSA-adjusted variant
+- [x] Test invalid input handling
+- [x] Tests pass
 
 ---
 
