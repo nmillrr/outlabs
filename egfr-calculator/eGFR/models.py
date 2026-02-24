@@ -13,6 +13,7 @@ Each function accepts standard clinical inputs and returns estimated GFR
 from __future__ import annotations
 
 import math
+import warnings
 from typing import Union
 
 
@@ -132,19 +133,21 @@ def calc_egfr_mdrd(
     sex: Union[str, int],
     is_black: bool = False,
 ) -> float:
-    """Calculate eGFR using the 4-variable MDRD equation (IDMS-traceable).
+    """Calculate eGFR using the MDRD 4-variable equation (IDMS-traceable).
 
-    Implements the re-expressed MDRD Study equation for use with
-    IDMS-standardized creatinine assays (175 coefficient).
+    Implements the re-expressed MDRD equation for use with IDMS-standardised
+    serum creatinine (175 coefficient).
 
     Formula
     -------
-    eGFR = 175 × SCr^(−1.154) × Age^(−0.203)
-           × 0.742 [if female] × 1.212 [if Black]
+    eGFR = 175 × SCr^(−1.154) × Age^(−0.203) × 0.742 [if female]
+           × 1.212 [if Black]
 
     .. warning::
-        MDRD is less accurate for eGFR > 60 mL/min/1.73 m².  A
-        ``UserWarning`` is issued when the result exceeds this threshold.
+       The MDRD equation is less accurate when eGFR > 60 mL/min/1.73 m².
+       CKD-EPI 2021 is recommended for clinical use.  The race coefficient
+       (``is_black``) is retained for backward compatibility but its use is
+       discouraged by KDIGO 2021 guidelines.
 
     Parameters
     ----------
@@ -153,20 +156,20 @@ def calc_egfr_mdrd(
     age_years : float
         Patient age in years.  Must be ≥ 18 and finite.
     sex : str or int
-        Patient sex.  Accepts 'M'/'F' strings or 1/2 (NHANES coding where
-        1 = male, 2 = female).
+        Patient sex.  Accepts 'M'/'F' strings or 1/2 (NHANES coding).
     is_black : bool, optional
-        Whether patient identifies as Black / African-American for the race
-        coefficient (×1.212).  Default is ``False``.
-
-        .. deprecated::
-            The race coefficient is retained for backward compatibility with
-            older lab systems.  CKD-EPI 2021 (race-free) is preferred.
+        Whether to apply the Black race coefficient (×1.212).
+        Default is ``False``.  *Deprecated per KDIGO 2021.*
 
     Returns
     -------
     float
         Estimated GFR in mL/min/1.73 m².
+
+    Warns
+    -----
+    UserWarning
+        When computed eGFR > 60 (MDRD is less accurate above this threshold).
 
     Raises
     ------
@@ -177,11 +180,9 @@ def calc_egfr_mdrd(
     ----------
     Levey AS, Coresh J, Greene T, et al. Using Standardized Serum Creatinine
     Values in the Modification of Diet in Renal Disease Study Equation for
-    Estimating Glomerular Filtration Rate. *Ann Intern Med*. 2006;145(4):
-    247-254. doi:10.7326/0003-4819-145-4-200608150-00004
+    Estimating Glomerular Filtration Rate. *Ann Intern Med*.
+    2006;145(4):247-254. doi:10.7326/0003-4819-145-4-200608150-00004
     """
-    import warnings
-
     # -- Input validation --
     if not isinstance(cr_mgdl, (int, float)) or math.isnan(cr_mgdl):
         raise ValueError(f"cr_mgdl must be a finite number, got {cr_mgdl!r}")
@@ -209,8 +210,8 @@ def calc_egfr_mdrd(
 
     if egfr > 60:
         warnings.warn(
-            f"MDRD is less accurate for eGFR > 60 mL/min/1.73 m² "
-            f"(result: {egfr:.1f}). Consider CKD-EPI 2021.",
+            f"MDRD eGFR is {egfr:.1f} mL/min/1.73 m² (>60). "
+            "MDRD is less accurate at higher GFR; consider CKD-EPI 2021.",
             UserWarning,
             stacklevel=2,
         )
@@ -227,12 +228,16 @@ def calc_crcl_cockcroft_gault(
     """Calculate creatinine clearance using the Cockcroft-Gault equation.
 
     Estimates creatinine clearance (CrCl) from serum creatinine, age, weight,
-    and sex.  CrCl is returned in **mL/min** (NOT mL/min/1.73 m²), which is
-    the unit required by most FDA drug-dosing labels.
+    and sex.  Returns **CrCl in mL/min** (NOT normalised to body surface area).
 
     Formula
     -------
     CrCl = [(140 − Age) × Weight / (72 × SCr)] × 0.85 [if female]
+
+    .. note::
+       Cockcroft-Gault returns creatinine clearance (mL/min), which is *not*
+       the same as eGFR (mL/min/1.73 m²).  Many FDA drug labels reference CrCl
+       for dose adjustment; use this function for drug-dosing applications.
 
     Parameters
     ----------
@@ -241,7 +246,7 @@ def calc_crcl_cockcroft_gault(
     age_years : float
         Patient age in years.  Must be ≥ 18 and finite.
     weight_kg : float
-        Patient body weight in kilograms.  Must be > 0 and finite.
+        Body weight in kilograms.  Must be > 0 and finite.
     sex : str or int
         Patient sex.  Accepts 'M'/'F' strings or 1/2 (NHANES coding where
         1 = male, 2 = female).
@@ -249,7 +254,7 @@ def calc_crcl_cockcroft_gault(
     Returns
     -------
     float
-        Estimated creatinine clearance in **mL/min**.
+        Creatinine clearance in mL/min.
 
     Raises
     ------
@@ -295,13 +300,14 @@ def calc_crcl_cockcroft_gault_bsa(
 ) -> float:
     """Calculate BSA-adjusted creatinine clearance using Cockcroft-Gault.
 
-    Computes CrCl via the standard Cockcroft-Gault equation, then normalizes
-    to 1.73 m² body surface area using the Du Bois formula.
+    Computes CrCl via the Cockcroft-Gault equation and then normalises to
+    1.73 m² body surface area using the DuBois formula.
 
-    BSA Normalization
-    -----------------
-    BSA (m²) = 0.007184 × Height(cm)^0.725 × Weight(kg)^0.425   (Du Bois)
-    CrCl_adj = CrCl × (1.73 / BSA)
+    Formula
+    -------
+    CrCl_adjusted = CrCl × (1.73 / BSA)
+
+    where BSA (DuBois) = 0.007184 × Height_cm^0.725 × Weight_kg^0.425
 
     Parameters
     ----------
@@ -310,16 +316,16 @@ def calc_crcl_cockcroft_gault_bsa(
     age_years : float
         Patient age in years.  Must be ≥ 18 and finite.
     weight_kg : float
-        Patient body weight in kilograms.  Must be > 0 and finite.
+        Body weight in kilograms.  Must be > 0 and finite.
     sex : str or int
         Patient sex.  Accepts 'M'/'F' strings or 1/2 (NHANES coding).
     height_cm : float
-        Patient height in centimeters.  Must be > 0 and finite.
+        Height in centimetres.  Must be > 0 and finite.
 
     Returns
     -------
     float
-        BSA-adjusted creatinine clearance in mL/min/1.73 m².
+        CrCl normalised to mL/min/1.73 m².
 
     Raises
     ------
@@ -329,9 +335,9 @@ def calc_crcl_cockcroft_gault_bsa(
     References
     ----------
     Cockcroft DW, Gault MH. *Nephron*. 1976;16(1):31-41.
-    Du Bois D, Du Bois EF. *Arch Intern Med*. 1916;17(6):863-871.
+    DuBois D, DuBois EF. *Arch Intern Med*. 1916;17:863-871.
     """
-    # Validate height (other params validated inside calc_crcl_cockcroft_gault)
+    # height_cm validation (other params validated by calc_crcl_cockcroft_gault)
     if not isinstance(height_cm, (int, float)) or math.isnan(height_cm):
         raise ValueError(f"height_cm must be a finite number, got {height_cm!r}")
     if height_cm <= 0:
@@ -339,7 +345,7 @@ def calc_crcl_cockcroft_gault_bsa(
 
     crcl = calc_crcl_cockcroft_gault(cr_mgdl, age_years, weight_kg, sex)
 
-    # Du Bois BSA
+    # DuBois BSA (m²)
     bsa = 0.007184 * (height_cm ** 0.725) * (weight_kg ** 0.425)
 
     return crcl * (1.73 / bsa)

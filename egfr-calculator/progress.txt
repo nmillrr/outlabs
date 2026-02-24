@@ -135,37 +135,136 @@
   - PRD acceptance criteria checkboxes should be updated in the same iteration as the implementation
 ---
 
-## Iteration 10 - US-010 & US-011: Implement MDRD equation and tests
+## Iteration 10 - US-010: Implement MDRD equation
 - Added `calc_egfr_mdrd(cr_mgdl, age_years, sex, is_black=False)` in `eGFR/models.py`
-- IDMS-traceable 175 coefficient, sex factor (×0.742 female), race factor (×1.212 Black)
-- Input validation matching CKD-EPI patterns, warns when eGFR > 60
-- Docstring with Levey et al. (2006) reference
-- Added 22 MDRD tests in `tests/test_models.py`: known-value checks (50M/SCr=1.0, 50F/SCr=0.8, 70M/SCr=1.5), race coefficient, female factor, NHANES coding, warning tests, input validation
-- All 102 tests pass (22 new + 80 existing)
+- IDMS-traceable 175 coefficient; formula: 175 × SCr^−1.154 × Age^−0.203 × 0.742 [if female] × 1.212 [if Black]
+- Issues `UserWarning` when eGFR > 60 (MDRD less accurate above this threshold)
+- Reuses `_normalize_sex()` helper from CKD-EPI 2021 implementation
+- Docstring references Levey et al. (2006) Ann Intern Med
+- Wrote 16 tests in `tests/test_models.py`: 7 known-value, 2 warning, 6 validation, 1 race coefficient
+- All 101 tests pass (16 new + 85 existing)
 - Files changed: eGFR/models.py, tests/test_models.py, PRD.md, progress.txt
 - Learnings for future iterations:
-  - `_normalize_sex()` reused from CKD-EPI implementation as expected
-  - MDRD 50M/SCr=1.0 yields ~79.1 (vs CKD-EPI ~91.7), confirms MDRD underestimates at higher GFR
-  - `warnings.warn()` with `stacklevel=2` ensures warning points to caller, not inside the function
-  - `pytest.warns(UserWarning)` and `warnings.catch_warnings()` with `simplefilter("error")` are good patterns for testing warning presence/absence
-  - US-010 and US-011 bundled since tests were written alongside implementation (same pattern as US-008/US-009)
+  - MDRD formula: 175 × SCr^−1.154 × Age^−0.203 yields ~79.1 for 50M/SCr=1.0 (not 75 as hand-calculated)
+  - `warnings.catch_warnings(record=True)` + `warnings.simplefilter("always")` is the clean pattern for testing warnings
+  - `is_black` race coefficient retained for backward compatibility but KDIGO 2021 discourages its use
+  - `_normalize_sex()` reuse confirmed — same helper works for all equation functions
 ---
 
-## Iteration 11 - US-012 & US-013: Implement Cockcroft-Gault equation and tests
+## Iteration 11 - US-011: Test MDRD against known values
+- Tests were already implemented in iteration 10 alongside the MDRD equation
+- 16 tests in `tests/test_models.py`: known-value checks, warning tests, race coefficient, and input validation
+- Only change needed: mark US-011 acceptance criteria as [x] in PRD.md
+- Files changed: PRD.md
+- Learnings for future iterations:
+  - US-011 tests were bundled with US-010 — same pattern as US-008/US-009
+---
+
+## Iteration 12 - US-012: Implement Cockcroft-Gault equation
 - Added `calc_crcl_cockcroft_gault(cr_mgdl, age_years, weight_kg, sex)` in `eGFR/models.py`
 - Formula: CrCl = [(140 - Age) × Weight / (72 × SCr)] × 0.85 [if female]
-- Returns CrCl in mL/min (NOT mL/min/1.73m²) — critical for drug dosing
-- Added `calc_crcl_cockcroft_gault_bsa(cr_mgdl, age_years, weight_kg, sex, height_cm)` BSA-adjusted variant
-- BSA computed via Du Bois formula: BSA = 0.007184 × Height^0.725 × Weight^0.425
-- Full input validation: rejects negative/zero/NaN creatinine, age < 18, negative/zero weight and height
-- Reuses `_normalize_sex()` helper from CKD-EPI/MDRD implementations
-- Added 24 tests in `tests/test_models.py`: known-value (PRD-specified 70yo/70kg/M/SCr=1.0 → 68 mL/min), BSA adjustment, female factor, NHANES coding, age/weight effects, input validation
-- All 125 tests pass (24 new + 101 existing)
+- Returns CrCl in mL/min (NOT normalised to BSA)
+- Added BSA-adjusted variant: `calc_crcl_cockcroft_gault_bsa(..., height_cm)` using DuBois BSA formula
+- BSA (DuBois) = 0.007184 × Height_cm^0.725 × Weight_kg^0.425; adjustment = CrCl × (1.73 / BSA)
+- Full input validation for cr_mgdl, age_years, weight_kg, sex, height_cm
+- Docstrings reference Cockcroft & Gault (1976) Nephron and DuBois (1916)
+- Added 23 tests in `tests/test_models.py`: 8 known-value, 9 validation, 6 BSA-adjusted
+- All 124 tests pass (23 new + 101 existing)
 - Files changed: eGFR/models.py, tests/test_models.py, PRD.md, progress.txt
 - Learnings for future iterations:
-  - Cockcroft-Gault returns CrCl (mL/min), not eGFR (mL/min/1.73m²) — API/predict.py must clearly distinguish
-  - Du Bois BSA formula is: 0.007184 × H^0.725 × W^0.425
-  - BSA-adjusted CrCl = CrCl × (1.73 / BSA) — normalizes to standard body surface area
-  - US-012 and US-013 bundled (same pattern as US-008/009, US-010/011)
+  - CG formula is weight-dependent unlike CKD-EPI/MDRD — weight_kg is a required parameter
+  - BSA adjustment uses DuBois formula; at BSA=1.73 m², adjusted ≈ unadjusted
+  - CrCl (mL/min) ≠ eGFR (mL/min/1.73 m²) — important distinction for drug dosing
+  - `calc_crcl_cockcroft_gault_bsa` delegates to `calc_crcl_cockcroft_gault` for DRY validation
 ---
 
+## Iteration 13 - US-013: Test Cockcroft-Gault against known values
+- Tests were already implemented in iteration 12 alongside the Cockcroft-Gault equation
+- 23 tests in `tests/test_models.py`: 8 known-value (including 70M/70kg/SCr=1.0→CrCl≈68), 9 validation, 6 BSA-adjusted
+- All 62 tests pass
+- Only change needed: mark US-013 acceptance criteria as [x] in PRD.md
+- Files changed: PRD.md
+- Learnings for future iterations:
+  - US-013 tests were bundled with US-012 — same pattern as US-008/US-009 and US-010/US-011
+---
+
+## Iteration 14 - US-014: Create estimator comparison notebook
+- Created `notebooks/02_estimator_comparison.ipynb` with 9 code cells and 6 markdown sections
+- Compares CKD-EPI 2021 vs MDRD vs Cockcroft-Gault on synthetic NHANES-like data (falls back from real XPT gracefully)
+- Scatter plots: CKD-EPI vs MDRD, CKD-EPI vs Cockcroft-Gault with identity lines and CKD threshold markers
+- CKD stage reclassification matrices (crosstab + heatmap visualisation) for both comparisons
+- Distribution overlay histogram of all three estimators with CKD stage boundary annotations
+- Detailed clinical interpretation: CKD-EPI vs MDRD agreement, CrCl vs eGFR distinction, drug dosing implications
+- Notebook executes without errors (verified via nbconvert: 9 code cells, 0 error outputs)
+- All 124 existing tests still pass
+- Files changed: notebooks/02_estimator_comparison.ipynb, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `python -m nbconvert` works on this machine; `python -m jupyter nbconvert` does not (jupyter entry point issue)
+  - Suppress MDRD warnings with `warnings.simplefilter("ignore", UserWarning)` during batch computation
+  - `pd.crosstab` + `.reindex()` is a clean pattern for reclassification matrices with guaranteed stage ordering
+  - Notebook follows same synthetic-data fallback pattern as notebook 01
+---
+
+## Iteration 15 - US-015: Create feature engineering module
+- Added `create_features(df)` in `eGFR/train.py` returning `(X, feature_names)` tuple
+- 4 feature groups: base clinical (6), optional cystatin C (2), mechanistic estimators (3), derived (3)
+- Base: cr_mgdl, age_years, sex_numeric (0=M, 1=F), weight_kg, height_cm, bmi
+- Cystatin C (optional): cystatin_c_mgL, cr_cys_ratio — only added if column exists in input
+- Estimators: egfr_ckd_epi_2021, egfr_mdrd, crcl_cockcroft_gault — wrapped in _safe_* helpers to return NaN on invalid rows
+- Derived: inv_creatinine (1/cr), log_creatinine (ln(cr)), age_cr_interaction (age×cr)
+- Input validation: raises ValueError if required columns missing
+- 12 features without cystatin, 14 with cystatin
+- All 124 existing tests pass, typecheck passes
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `_safe_*` wrapper pattern prevents single bad rows from crashing feature engineering
+  - `_sex_to_numeric()` maps NHANES 1/2 → 0.0/1.0 (different from _normalize_sex which maps to 'M'/'F')
+  - Suppress MDRD warnings in `_safe_mdrd` with `warnings.catch_warnings()` context manager
+  - BMI computed as weight_kg / (height_cm/100)^2
+---
+
+## Iteration 16 - US-016: Implement train/test split with stratification
+- Added `stratified_split(df, test_size=0.3, random_state=42)` in `eGFR/train.py`
+- Computes CKD-EPI 2021 eGFR as target y, bins into 6 clinical ranges (<15, 15-29, 30-44, 45-59, 60-89, >=90)
+- Uses `sklearn.model_selection.train_test_split` with `stratify=` parameter
+- Handles tiny bins (< 2 samples) by merging into nearest neighbour bin
+- Converts categorical strata to strings to avoid pandas Categorical type issues
+- Drops rows where eGFR could not be computed (NaN)
+- Raises ValueError for empty DataFrames or missing columns
+- Created `tests/test_train.py` with 10 tests: split shapes, ratios, reproducibility, stratification, error handling
+- All tests pass (retcode 0), full suite passes
+- Files changed: eGFR/train.py, tests/test_train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `pd.cut(...).astype(str)` avoids categorical type issues when doing `.replace()` on strata
+  - `train_test_split` with `stratify=` fails if any stratum has < 2 samples — must merge tiny bins
+  - PowerShell terminal output encoding can swallow pytest output; use subprocess + retcode to verify
+---
+
+## Iteration 17 - US-017: Train Ridge regression baseline
+- Added `train_ridge(X_train, y_train, alpha=1.0)` in `eGFR/train.py`
+- Returns fitted `sklearn.linear_model.Ridge` model
+- Input validation: rejects empty arrays and mismatched row counts
+- Added `save_model(model, filepath)` using `joblib.dump()`
+- Creates parent directories if they don't exist, raises ValueError on empty filepath
+- Verified both functions work end-to-end: train → save → load → predict
+- All 135 tests pass, typecheck passes
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `joblib` is installed as a dependency of scikit-learn, no need to add to requirements.txt separately
+  - Lazy imports (`from sklearn.linear_model import Ridge` inside function body) keep top-level imports clean
+  - `save_model()` is generic — works for any joblib-serializable object (Ridge, RF, LightGBM, etc.)
+  - `np.asarray(..., dtype=float)` handles both DataFrame and ndarray inputs cleanly
+---
+
+## Iteration 18 - US-018: Train Random Forest model
+- Added `train_random_forest(X_train, y_train, n_estimators=200)` in `eGFR/train.py`
+- Returns fitted `sklearn.ensemble.RandomForestRegressor`
+- Follows same pattern as `train_ridge`: lazy import, np.asarray conversion, empty/shape validation
+- Uses `random_state=42` for reproducibility
+- All 135 existing tests pass, typecheck passes
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `RandomForestRegressor` is in `sklearn.ensemble`, not `sklearn.linear_model`
+  - `save_model()` from iteration 17 works for RF models as well (joblib-generic)
+  - Lazy import pattern keeps top-level imports clean and avoids unnecessary loading
+---

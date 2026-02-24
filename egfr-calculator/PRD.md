@@ -245,12 +245,12 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a notebook comparing eGFR equations visually.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/02_estimator_comparison.ipynb`
-- [ ] Compare CKD-EPI 2021 vs MDRD vs Cockcroft-Gault on NHANES data
-- [ ] Generate scatter plots: CKD-EPI vs MDRD, CKD-EPI vs Cockcroft-Gault
-- [ ] Show CKD stage reclassification analysis between equations
-- [ ] Include markdown interpretation of disagreements
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/02_estimator_comparison.ipynb`
+- [x] Compare CKD-EPI 2021 vs MDRD vs Cockcroft-Gault on NHANES data
+- [x] Generate scatter plots: CKD-EPI vs MDRD, CKD-EPI vs Cockcroft-Gault
+- [x] Show CKD stage reclassification analysis between equations
+- [x] Include markdown interpretation of disagreements
+- [x] Notebook executes without errors
 
 ---
 
@@ -262,13 +262,14 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want feature engineering functions for ML training.
 
 **Acceptance Criteria:**
-- [ ] Add `create_features(df)` function in `eGFR/train.py`
-- [ ] Creates features: cr_mgdl, age_years, sex_numeric, weight_kg, height_cm, bmi
-- [ ] Adds cystatin C features if available: cystatin_c_mgL, cr_cys_ratio
-- [ ] Adds all mechanistic estimator predictions as features (CKD-EPI, MDRD, Cockcroft-Gault)
-- [ ] Adds derived features: 1/creatinine, log(creatinine), age×creatinine interaction
-- [ ] Returns feature matrix X and column names
-- [ ] Typecheck passes
+- [x] Add `create_features(df)` function in `eGFR/train.py`
+- [x] Creates features: cr_mgdl, age_years, sex_numeric, weight_kg, height_cm, bmi
+- [x] Adds cystatin C features if available: cystatin_c_mgL, cr_cys_ratio
+- [x] Adds all mechanistic estimator predictions as features (CKD-EPI, MDRD, Cockcroft-Gault)
+- [x] Adds derived features: 1/creatinine, log(creatinine), age×creatinine interaction
+- [x] Returns feature matrix X and column names
+- [x] Typecheck passes
+
 
 ---
 
@@ -276,10 +277,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want stratified splitting so that CKD stages are balanced.
 
 **Acceptance Criteria:**
-- [ ] Add `stratified_split(df, test_size=0.3, random_state=42)` in `eGFR/train.py`
-- [ ] Stratifies by eGFR ranges (>90, 60-89, 45-59, 30-44, 15-29, <15 mL/min/1.73m²)
-- [ ] Returns X_train, X_test, y_train, y_test
-- [ ] Typecheck passes
+- [x] Add `stratified_split(df, test_size=0.3, random_state=42)` in `eGFR/train.py`
+- [x] Stratifies by eGFR ranges (>90, 60-89, 45-59, 30-44, 15-29, <15 mL/min/1.73m²)
+- [x] Returns X_train, X_test, y_train, y_test
+- [x] Typecheck passes
 
 ---
 
@@ -287,10 +288,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a Ridge regression model as simple ML baseline.
 
 **Acceptance Criteria:**
-- [ ] Add `train_ridge(X_train, y_train, alpha=1.0)` in `eGFR/train.py`
-- [ ] Returns fitted Ridge model
-- [ ] Add function `save_model(model, filepath)` using joblib
-- [ ] Typecheck passes
+- [x] Add `train_ridge(X_train, y_train, alpha=1.0)` in `eGFR/train.py`
+- [x] Returns fitted Ridge model
+- [x] Add function `save_model(model, filepath)` using joblib
+- [x] Typecheck passes
 
 ---
 
@@ -298,9 +299,9 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a Random Forest model for nonlinear patterns.
 
 **Acceptance Criteria:**
-- [ ] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `eGFR/train.py`
-- [ ] Returns fitted RandomForestRegressor
-- [ ] Typecheck passes
+- [x] Add `train_random_forest(X_train, y_train, n_estimators=200)` in `eGFR/train.py`
+- [x] Returns fitted RandomForestRegressor
+- [x] Typecheck passes
 
 ---
 
