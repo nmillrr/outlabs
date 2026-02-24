@@ -268,3 +268,19 @@
   - `save_model()` from iteration 17 works for RF models as well (joblib-generic)
   - Lazy import pattern keeps top-level imports clean and avoids unnecessary loading
 ---
+
+## Iteration 19 - US-019: Train LightGBM model
+- Added `train_lightgbm(X_train, y_train, X_val, y_val)` in `eGFR/train.py`
+- Uses `lightgbm.LGBMRegressor` with `n_estimators=200`, `random_state=42`, `verbosity=-1`
+- When X_val/y_val provided: early stopping with 20 rounds monitoring RMSE via `lightgbm.early_stopping()` callback
+- Without validation data: trains for full 200 rounds
+- Same input validation pattern as Ridge/RF: np.asarray, empty check, shape check
+- Verified end-to-end: both with and without validation data
+- All 135 existing tests pass, typecheck passes
+- Files changed: eGFR/train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `lightgbm.early_stopping(stopping_rounds=20, verbose=False)` is passed via `callbacks` kwarg in `.fit()`
+  - `verbosity=-1` suppresses LightGBM training output
+  - `eval_set` takes a list of tuples: `[(X_val, y_val)]`
+  - `save_model()` from iteration 17 works for LGBMRegressor as well (joblib-generic)
+---

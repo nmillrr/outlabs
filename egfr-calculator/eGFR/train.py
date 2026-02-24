@@ -297,6 +297,72 @@ def train_random_forest(
     return model
 
 
+def train_lightgbm(
+    X_train: Union[pd.DataFrame, np.ndarray],
+    y_train: Union[pd.Series, np.ndarray],
+    X_val: Union[pd.DataFrame, np.ndarray, None] = None,
+    y_val: Union[pd.Series, np.ndarray, None] = None,
+) -> "LGBMRegressor":
+    """Train a LightGBM regression model with optional early stopping.
+
+    When validation data (*X_val*, *y_val*) is provided the model uses early
+    stopping with a patience of 20 rounds, monitoring RMSE on the validation
+    set.  Without validation data the model trains for the full 200 rounds.
+
+    Parameters
+    ----------
+    X_train : pd.DataFrame or np.ndarray
+        Training feature matrix.
+    y_train : pd.Series or np.ndarray
+        Training target values (eGFR).
+    X_val : pd.DataFrame, np.ndarray, or None, default None
+        Optional validation feature matrix for early stopping.
+    y_val : pd.Series, np.ndarray, or None, default None
+        Optional validation target values for early stopping.
+
+    Returns
+    -------
+    lightgbm.LGBMRegressor
+        Fitted LightGBM regression model.
+
+    Raises
+    ------
+    ValueError
+        If *X_train* and *y_train* have incompatible shapes or are empty.
+    """
+    from lightgbm import LGBMRegressor
+
+    X_arr = np.asarray(X_train, dtype=float)
+    y_arr = np.asarray(y_train, dtype=float).ravel()
+
+    if X_arr.size == 0 or y_arr.size == 0:
+        raise ValueError("Training data must not be empty.")
+    if X_arr.shape[0] != y_arr.shape[0]:
+        raise ValueError(
+            f"X_train and y_train row counts differ "
+            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
+        )
+
+    model = LGBMRegressor(
+        n_estimators=200,
+        random_state=42,
+        verbosity=-1,
+    )
+
+    fit_kwargs: dict = {}
+    if X_val is not None and y_val is not None:
+        X_val_arr = np.asarray(X_val, dtype=float)
+        y_val_arr = np.asarray(y_val, dtype=float).ravel()
+        fit_kwargs["eval_set"] = [(X_val_arr, y_val_arr)]
+        fit_kwargs["eval_metric"] = "rmse"
+        fit_kwargs["callbacks"] = [
+            __import__("lightgbm").early_stopping(stopping_rounds=20, verbose=False),
+        ]
+
+    model.fit(X_arr, y_arr, **fit_kwargs)
+    return model
+
+
 def save_model(model: object, filepath: str) -> None:
     """Persist a trained model to disk using joblib.
 
