@@ -277,10 +277,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want stratified splitting so that CKD stages are balanced.
 
 **Acceptance Criteria:**
-- [ ] Add `stratified_split(df, test_size=0.3, random_state=42)` in `eGFR/train.py`
-- [ ] Stratifies by eGFR ranges (>90, 60-89, 45-59, 30-44, 15-29, <15 mL/min/1.73m²)
-- [ ] Returns X_train, X_test, y_train, y_test
-- [ ] Typecheck passes
+- [x] Add `stratified_split(df, test_size=0.3, random_state=42)` in `eGFR/train.py`
+- [x] Stratifies by eGFR ranges (>90, 60-89, 45-59, 30-44, 15-29, <15 mL/min/1.73m²)
+- [x] Returns X_train, X_test, y_train, y_test
+- [x] Typecheck passes
 
 ---
 

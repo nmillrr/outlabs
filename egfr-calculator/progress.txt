@@ -222,3 +222,20 @@
   - Suppress MDRD warnings in `_safe_mdrd` with `warnings.catch_warnings()` context manager
   - BMI computed as weight_kg / (height_cm/100)^2
 ---
+
+## Iteration 16 - US-016: Implement train/test split with stratification
+- Added `stratified_split(df, test_size=0.3, random_state=42)` in `eGFR/train.py`
+- Computes CKD-EPI 2021 eGFR as target y, bins into 6 clinical ranges (<15, 15-29, 30-44, 45-59, 60-89, >=90)
+- Uses `sklearn.model_selection.train_test_split` with `stratify=` parameter
+- Handles tiny bins (< 2 samples) by merging into nearest neighbour bin
+- Converts categorical strata to strings to avoid pandas Categorical type issues
+- Drops rows where eGFR could not be computed (NaN)
+- Raises ValueError for empty DataFrames or missing columns
+- Created `tests/test_train.py` with 10 tests: split shapes, ratios, reproducibility, stratification, error handling
+- All tests pass (retcode 0), full suite passes
+- Files changed: eGFR/train.py, tests/test_train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `pd.cut(...).astype(str)` avoids categorical type issues when doing `.replace()` on strata
+  - `train_test_split` with `stratify=` fails if any stratum has < 2 samples — must merge tiny bins
+  - PowerShell terminal output encoding can swallow pytest output; use subprocess + retcode to verify
+---
