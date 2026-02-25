@@ -369,3 +369,36 @@
   - Zero reference values cause division-by-zero — must reject explicitly
   - P10 ≤ P30 invariant is a useful sanity check in tests
 ---
+
+## Iteration 24 - US-024: Create comprehensive evaluation function
+- Added `evaluate_model(y_true, y_pred, model_name)` in `eGFR/evaluate.py`
+- Returns dict: model_name, rmse, mae, bias, r_pearson, p30, p10, ba_stats, ckd_stage_agreement
+- Reuses existing `bland_altman_stats`, `p30_accuracy`, `p10_accuracy` from same module
+- CKD stage concordance computed via `egfr_to_ckd_stage()` from `eGFR/utils.py`
+- Pearson r returns NaN for single-element arrays; P30/P10 return NaN if reference has zeros
+- Input validation: empty, shape mismatch, NaN (fail-fast before sub-functions)
+- Added 14 tests in `tests/test_evaluate.py`: return structure (4), known values (4), CKD stage agreement (2), errors (3), single-element edge case (1)
+- All 181 tests pass (14 new + 167 existing)
+- Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `np.corrcoef` returns NaN for single-element arrays — handle gracefully
+  - `evaluate_model` gracefully handles zero references by returning NaN for P30/P10 instead of raising
+  - CKD stage concordance uses vectorized numpy string comparison for efficiency
+  - Lazy import of `egfr_to_ckd_stage` avoids circular imports
+---
+
+## Iteration 25 - US-025: Implement CKD-stage stratified evaluation
+- Added `evaluate_by_ckd_stage(y_true, y_pred, egfr_values)` in `eGFR/evaluate.py`
+- Stratifies by G1 (≥90), G2 (60–89), G3a (45–59), G3b (30–44), G4 (15–29), G5 (<15)
+- Returns dict keyed by stage name, each with: n, rmse, mae, bias, p30
+- Skips empty stages (no key in result), handles zero-reference gracefully (p30=NaN)
+- Uses `_CKD_STAGES` module-level constant for stage boundaries
+- Added 19 tests in `tests/test_evaluate.py`: 4 return-structure, 4 known-value, 7 boundary/edge-case, 4 error-handling
+- All 200 tests pass (19 new + 181 existing)
+- Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `_CKD_STAGES` list of (name, lower, upper) tuples makes stage iteration clean and extensible
+  - G1 upper bound is `float("inf")` so `< inf` always passes for >= 90
+  - Stage boundaries use `[lower, upper)` half-open intervals matching KDIGO convention
+  - P30 per-stage is computed inline (avoids calling `p30_accuracy` helper to skip empty-check overhead)
+---

@@ -380,10 +380,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want to evaluate models by CKD stage.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_by_ckd_stage(y_true, y_pred, egfr_values)` in `eGFR/evaluate.py`
-- [ ] Stratifies by: G1 (≥90), G2 (60-89), G3a (45-59), G3b (30-44), G4 (15-29), G5 (<15)
-- [ ] Returns metrics dict for each stage
-- [ ] Typecheck passes
+- [x] Add `evaluate_by_ckd_stage(y_true, y_pred, egfr_values)` in `eGFR/evaluate.py`
+- [x] Stratifies by: G1 (≥90), G2 (60-89), G3a (45-59), G3b (30-44), G4 (15-29), G5 (<15)
+- [x] Returns metrics dict for each stage
+- [x] Typecheck passes
 
 ---
 

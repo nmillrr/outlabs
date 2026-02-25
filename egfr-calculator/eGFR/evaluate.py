@@ -245,3 +245,101 @@ def evaluate_model(y_true, y_pred, model_name: str) -> dict:
         "ba_stats": ba,
         "ckd_stage_agreement": ckd_stage_agreement,
     }
+
+
+# ── CKD-stage boundaries (mL/min/1.73 m²) ─────────────────────────────
+_CKD_STAGES = [
+    ("G1", 90, float("inf")),
+    ("G2", 60, 90),
+    ("G3a", 45, 60),
+    ("G3b", 30, 45),
+    ("G4", 15, 30),
+    ("G5", 0, 15),
+]
+
+
+def evaluate_by_ckd_stage(y_true, y_pred, egfr_values):
+    """Evaluate model performance stratified by CKD stage.
+
+    Patients are assigned to stages based on *egfr_values* (typically the
+    reference eGFR), and per-stage metrics are computed for each non-empty
+    stage.
+
+    CKD stages follow KDIGO 2012 guidelines:
+        G1  ≥ 90,  G2  60–89,  G3a  45–59,  G3b  30–44,
+        G4  15–29,  G5  < 15 mL/min/1.73 m².
+
+    Parameters
+    ----------
+    y_true : array-like
+        Reference (measured) GFR values.
+    y_pred : array-like
+        Predicted (estimated) GFR values.
+    egfr_values : array-like
+        eGFR values used for stage assignment (may be the same as *y_true*).
+
+    Returns
+    -------
+    dict[str, dict]
+        Outer keys are stage names (e.g. ``"G1"``, ``"G3a"``).
+        Each inner dict contains:
+            n : int – sample count
+            rmse : float
+            mae : float
+            bias : float (mean of y_pred − y_true)
+            p30 : float or nan (percentage within ±30 %)
+
+    Raises
+    ------
+    ValueError
+        If inputs are empty, contain NaN, or have mismatched lengths.
+    """
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    egfr_values = np.asarray(egfr_values, dtype=float)
+
+    # ── input validation ─────────────────────────────────────────────
+    if y_true.size == 0 or y_pred.size == 0 or egfr_values.size == 0:
+        raise ValueError("Input arrays must not be empty.")
+    if y_true.shape != y_pred.shape or y_true.shape != egfr_values.shape:
+        raise ValueError(
+            f"Shape mismatch: y_true {y_true.shape}, y_pred {y_pred.shape}, "
+            f"egfr_values {egfr_values.shape}."
+        )
+    if (np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred))
+            or np.any(np.isnan(egfr_values))):
+        raise ValueError("Input arrays must not contain NaN values.")
+
+    results: dict = {}
+
+    for stage_name, lower, upper in _CKD_STAGES:
+        mask = (egfr_values >= lower) & (egfr_values < upper)
+        # G1 upper bound is inf, so the < inf check always passes for ≥ 90
+        n = int(mask.sum())
+        if n == 0:
+            continue
+
+        yt = y_true[mask]
+        yp = y_pred[mask]
+        residuals = yp - yt
+
+        rmse = float(np.sqrt(np.mean(residuals ** 2)))
+        mae = float(np.mean(np.abs(residuals)))
+        bias = float(np.mean(residuals))
+
+        # P30 (skip if any reference value is zero)
+        if np.any(yt == 0):
+            _p30 = float("nan")
+        else:
+            pct_err = np.abs(residuals) / np.abs(yt) * 100.0
+            _p30 = float(np.sum(pct_err <= 30.0) / n * 100.0)
+
+        results[stage_name] = {
+            "n": n,
+            "rmse": rmse,
+            "mae": mae,
+            "bias": bias,
+            "p30": _p30,
+        }
+
+    return results

@@ -5,7 +5,11 @@ import math
 import numpy as np
 import pytest
 
-from eGFR.evaluate import bland_altman_stats, p30_accuracy, p10_accuracy, evaluate_model
+from eGFR.evaluate import (
+    bland_altman_stats, p30_accuracy, p10_accuracy, evaluate_model,
+    evaluate_by_ckd_stage,
+)
+
 
 
 # ── Known-value tests ───────────────────────────────────────────────────
@@ -354,3 +358,145 @@ class TestEvaluateModelErrors:
     def test_nan_values(self):
         with pytest.raises(ValueError, match="NaN"):
             evaluate_model([90.0, float("nan")], [90.0, 88.0], "nan_test")
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# evaluate_by_ckd_stage — CKD-Stage Stratified Evaluation
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestEvaluateByCKDStageReturnStructure:
+    """Verify return dict has the expected structure."""
+
+    def test_returns_dict(self):
+        y = [95.0, 65.0, 50.0, 35.0, 20.0, 10.0]
+        result = evaluate_by_ckd_stage(y, y, y)
+        assert isinstance(result, dict)
+
+    def test_stage_keys_present(self):
+        """All 6 stages represented in data should appear."""
+        y_true = [95.0, 65.0, 50.0, 35.0, 20.0, 10.0]
+        result = evaluate_by_ckd_stage(y_true, y_true, y_true)
+        assert set(result.keys()) == {"G1", "G2", "G3a", "G3b", "G4", "G5"}
+
+    def test_inner_dict_keys(self):
+        result = evaluate_by_ckd_stage([95.0], [93.0], [95.0])
+        inner = result["G1"]
+        assert set(inner.keys()) == {"n", "rmse", "mae", "bias", "p30"}
+
+    def test_n_is_int(self):
+        result = evaluate_by_ckd_stage([95.0, 100.0], [93.0, 98.0], [95.0, 100.0])
+        assert isinstance(result["G1"]["n"], int)
+
+
+class TestEvaluateByCKDStageKnownValues:
+    """Verify metrics within each stage."""
+
+    def test_perfect_predictions_all_stages(self):
+        y_true = [95.0, 65.0, 50.0, 35.0, 20.0, 10.0]
+        result = evaluate_by_ckd_stage(y_true, y_true, y_true)
+        for stage, metrics in result.items():
+            assert metrics["rmse"] == pytest.approx(0.0), f"{stage} RMSE"
+            assert metrics["mae"] == pytest.approx(0.0), f"{stage} MAE"
+            assert metrics["bias"] == pytest.approx(0.0), f"{stage} bias"
+            assert metrics["p30"] == pytest.approx(100.0), f"{stage} P30"
+
+    def test_g1_metrics(self):
+        """G1 (≥90): two samples, constant +5 bias."""
+        y_true = [95.0, 100.0]
+        y_pred = [100.0, 105.0]
+        egfr = [95.0, 100.0]
+        result = evaluate_by_ckd_stage(y_true, y_pred, egfr)
+        g1 = result["G1"]
+        assert g1["n"] == 2
+        assert g1["bias"] == pytest.approx(5.0)
+        assert g1["mae"] == pytest.approx(5.0)
+        assert g1["rmse"] == pytest.approx(5.0)
+
+    def test_sample_count_per_stage(self):
+        """Verify correct sample allocation."""
+        # 3 in G1 (≥90), 2 in G2 (60-89)
+        egfr = [95.0, 100.0, 110.0, 65.0, 80.0]
+        y = egfr  # perfect predictions
+        result = evaluate_by_ckd_stage(y, y, egfr)
+        assert result["G1"]["n"] == 3
+        assert result["G2"]["n"] == 2
+
+    def test_p30_within_stage(self):
+        """50% P30 within G2 stage."""
+        # G2: 65 and 70
+        y_true = [65.0, 70.0]
+        # pred 80 → 23% off (within 30%), pred 120 → 71% off (outside 30%)
+        y_pred = [80.0, 120.0]
+        egfr = [65.0, 70.0]
+        result = evaluate_by_ckd_stage(y_true, y_pred, egfr)
+        assert result["G2"]["p30"] == pytest.approx(50.0)
+
+
+class TestEvaluateByCKDStageEdgeCases:
+    """Edge cases for stage stratification."""
+
+    def test_single_stage_only(self):
+        """All data in G1 → only G1 key returned."""
+        y = [95.0, 100.0, 110.0]
+        result = evaluate_by_ckd_stage(y, y, y)
+        assert set(result.keys()) == {"G1"}
+
+    def test_empty_stages_omitted(self):
+        """Stages with no data should not appear."""
+        # Only G1 and G5
+        y_true = [95.0, 10.0]
+        y_pred = [93.0, 12.0]
+        egfr = [95.0, 10.0]
+        result = evaluate_by_ckd_stage(y_true, y_pred, egfr)
+        assert "G2" not in result
+        assert "G3a" not in result
+        assert "G3b" not in result
+        assert "G4" not in result
+
+    def test_boundary_value_90(self):
+        """eGFR = 90.0 should be classified as G1 (≥90)."""
+        result = evaluate_by_ckd_stage([90.0], [90.0], [90.0])
+        assert "G1" in result
+        assert "G2" not in result
+
+    def test_boundary_value_60(self):
+        """eGFR = 60.0 should be classified as G2 (60–89)."""
+        result = evaluate_by_ckd_stage([60.0], [60.0], [60.0])
+        assert "G2" in result
+        assert "G3a" not in result
+
+    def test_boundary_value_45(self):
+        """eGFR = 45.0 should be classified as G3a (45–59)."""
+        result = evaluate_by_ckd_stage([45.0], [45.0], [45.0])
+        assert "G3a" in result
+
+    def test_boundary_value_30(self):
+        """eGFR = 30.0 should be classified as G3b (30–44)."""
+        result = evaluate_by_ckd_stage([30.0], [30.0], [30.0])
+        assert "G3b" in result
+
+    def test_boundary_value_15(self):
+        """eGFR = 15.0 should be classified as G4 (15–29)."""
+        result = evaluate_by_ckd_stage([15.0], [15.0], [15.0])
+        assert "G4" in result
+
+
+class TestEvaluateByCKDStageErrors:
+    """Verify error handling."""
+
+    def test_empty_arrays(self):
+        with pytest.raises(ValueError, match="empty"):
+            evaluate_by_ckd_stage([], [], [])
+
+    def test_shape_mismatch(self):
+        with pytest.raises(ValueError, match="[Ss]hape"):
+            evaluate_by_ckd_stage([90.0, 60.0], [88.0], [90.0, 60.0])
+
+    def test_nan_in_y_true(self):
+        with pytest.raises(ValueError, match="NaN"):
+            evaluate_by_ckd_stage([float("nan")], [90.0], [90.0])
+
+    def test_nan_in_egfr_values(self):
+        with pytest.raises(ValueError, match="NaN"):
+            evaluate_by_ckd_stage([90.0], [90.0], [float("nan")])
