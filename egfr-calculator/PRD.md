@@ -320,9 +320,9 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want 10-fold CV to evaluate models consistently.
 
 **Acceptance Criteria:**
-- [x] Add `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
-- [x] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
-- [x] Typecheck passes
+- [ ] Add `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
+- [ ] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
+- [ ] Typecheck passes
 
 ---
 
@@ -346,10 +346,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want Bland-Altman statistics for agreement analysis.
 
 **Acceptance Criteria:**
-- [ ] Add `bland_altman_stats(y_true, y_pred)` in `eGFR/evaluate.py`
-- [ ] Returns dict: mean_bias, std_diff, loa_lower, loa_upper
-- [ ] Add unit test with known values
-- [ ] Tests pass
+- [x] Add `bland_altman_stats(y_true, y_pred)` in `eGFR/evaluate.py`
+- [x] Returns dict: mean_bias, std_diff, loa_lower, loa_upper
+- [x] Add unit test with known values
+- [x] Tests pass
 
 ---
 
