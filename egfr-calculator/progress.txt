@@ -321,3 +321,51 @@
   - nbconvert may exit with code 1 from deprecation warnings even when all cells execute successfully
   - Notebook follows same synthetic-data fallback pattern as notebooks 01 and 02
 ---
+
+## Iteration 20 - US-020: Implement cross-validation wrapper
+- Added `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
+- Uses `sklearn.model_selection.KFold` with shuffle=True, random_state=42 for reproducibility
+- Clones the model via `sklearn.base.clone` for each fold so original estimator is untouched
+- Returns dict: RMSE_mean, RMSE_std, MAE_mean, MAE_std
+- Input validation: empty arrays, shape mismatch, n_splits > n_samples
+- Added 8 tests in `tests/test_train.py`: return keys, value types, RMSE≥MAE invariant, custom splits, error handling, model unchanged after CV
+- All 143 tests pass (8 new + 135 existing)
+- Files changed: eGFR/train.py, tests/test_train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `sklearn.base.clone` creates an unfitted copy — safe for CV without side-effects on the original
+  - `KFold(shuffle=True, random_state=42)` ensures deterministic folds
+  - `mean_squared_error()**0.5` gives RMSE (sklearn doesn't have a direct RMSE metric in older versions)
+  - Lazy imports inside function body continue to work well for keeping top-level clean
+---
+
+## Iteration 22 - US-022: Implement Bland-Altman analysis
+- Added `bland_altman_stats(y_true, y_pred)` in `eGFR/evaluate.py`
+- Returns dict: mean_bias, std_diff, loa_lower, loa_upper (95% limits of agreement)
+- Difference convention: y_pred − y_true (positive = overestimation)
+- Uses sample std (ddof=1) for limits of agreement: mean ± 1.96 × std
+- Input validation: empty arrays, shape mismatch, NaN values
+- Created `tests/test_evaluate.py` with 15 tests: 5 known-value, 3 return-type, 3 input-handling, 4 error-handling
+- All 150 tests pass (15 new + 135 existing)
+- Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `np.std(ddof=1)` gives sample std (Bessel's correction); ddof=0 gives population std
+  - Single-element arrays produce NaN for std with ddof=1 — numpy RuntimeWarning, not an error
+  - Bland-Altman convention: differences = pred − true; LOA = bias ± 1.96 × std
+  - `tests/test_evaluate.py` now exists — future evaluate.py tests should append to this file
+---
+
+## Iteration 23 - US-023: Implement P30 accuracy metric
+- Added `p30_accuracy(y_true, y_pred)` and `p10_accuracy(y_true, y_pred)` in `eGFR/evaluate.py`
+- Shared `_pn_accuracy(y_true, y_pred, threshold)` helper handles validation and computation
+- P30: percentage within ±30% of reference (KDIGO standard, target ≥ 85%)
+- P10: stricter ±10% threshold for precision evaluation
+- Input validation: empty arrays, shape mismatch, NaN, zero reference values
+- Added 18 tests in `tests/test_evaluate.py`: known-value (P30 & P10), boundary cases, error handling, input types
+- Also marked US-020 complete in PRD (was implemented but checkboxes not updated)
+- All 168 tests pass (18 new + 150 existing)
+- Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `_pn_accuracy` pattern with threshold parameter keeps P30/P10 DRY
+  - Zero reference values cause division-by-zero — must reject explicitly
+  - P10 ≤ P30 invariant is a useful sanity check in tests
+---

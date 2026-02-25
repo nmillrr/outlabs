@@ -1,11 +1,11 @@
-"""Tests for eGFR/evaluate.py — Bland-Altman analysis."""
+"""Tests for eGFR/evaluate.py — Bland-Altman analysis, P30/P10 accuracy."""
 
 import math
 
 import numpy as np
 import pytest
 
-from eGFR.evaluate import bland_altman_stats
+from eGFR.evaluate import bland_altman_stats, p30_accuracy, p10_accuracy
 
 
 # ── Known-value tests ───────────────────────────────────────────────────
@@ -138,3 +138,111 @@ class TestBlandAltmanErrors:
     def test_nan_in_y_pred(self):
         with pytest.raises(ValueError, match="NaN"):
             bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P30 / P10 Accuracy
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestP30KnownValues:
+    """Verify P30 accuracy against hand-calculated values."""
+
+    def test_perfect_predictions(self):
+        """All predictions exact → P30 = 100 %."""
+        y_true = [60.0, 90.0, 120.0]
+        assert p30_accuracy(y_true, y_true) == pytest.approx(100.0)
+
+    def test_all_within_30pct(self):
+        """All predictions within ±30 % → P30 = 100 %."""
+        y_true = [100.0, 100.0, 100.0]
+        y_pred = [80.0, 120.0, 130.0]  # -20%, +20%, +30%
+        assert p30_accuracy(y_true, y_pred) == pytest.approx(100.0)
+
+    def test_some_outside_30pct(self):
+        """2 of 4 within ±30 % → P30 = 50 %."""
+        y_true = [100.0, 100.0, 100.0, 100.0]
+        y_pred = [110.0, 130.0, 140.0, 150.0]  # 10%, 30%, 40%, 50%
+        # 110 (10% off) ✓, 130 (30% off) ✓, 140 (40% off) ✗, 150 (50% off) ✗
+        assert p30_accuracy(y_true, y_pred) == pytest.approx(50.0)
+
+    def test_boundary_exactly_30pct(self):
+        """Exactly ±30 % should be counted as within."""
+        y_true = [100.0]
+        y_pred_over = [130.0]  # exactly +30%
+        y_pred_under = [70.0]  # exactly -30%
+        assert p30_accuracy(y_true, y_pred_over) == pytest.approx(100.0)
+        assert p30_accuracy(y_true, y_pred_under) == pytest.approx(100.0)
+
+    def test_none_within_30pct(self):
+        """All predictions far off → P30 = 0 %."""
+        y_true = [100.0, 100.0]
+        y_pred = [200.0, 10.0]
+        assert p30_accuracy(y_true, y_pred) == pytest.approx(0.0)
+
+
+class TestP10KnownValues:
+    """Verify P10 accuracy against hand-calculated values."""
+
+    def test_perfect_predictions(self):
+        assert p10_accuracy([60.0, 90.0], [60.0, 90.0]) == pytest.approx(100.0)
+
+    def test_some_within_10pct(self):
+        """1 of 3 within ±10 % → P10 ≈ 33.33 %."""
+        y_true = [100.0, 100.0, 100.0]
+        y_pred = [105.0, 115.0, 140.0]  # 5%, 15%, 40%
+        assert p10_accuracy(y_true, y_pred) == pytest.approx(100.0 / 3, abs=0.1)
+
+    def test_boundary_exactly_10pct(self):
+        y_true = [100.0]
+        y_pred = [110.0]  # exactly +10%
+        assert p10_accuracy(y_true, y_pred) == pytest.approx(100.0)
+
+    def test_p10_stricter_than_p30(self):
+        """P10 should always be ≤ P30 for the same data."""
+        y_true = [100.0, 80.0, 60.0, 120.0, 90.0]
+        y_pred = [95.0, 85.0, 55.0, 150.0, 100.0]
+        assert p10_accuracy(y_true, y_pred) <= p30_accuracy(y_true, y_pred)
+
+
+class TestPnAccuracyErrors:
+    """Verify error handling for P30/P10."""
+
+    def test_empty_arrays_p30(self):
+        with pytest.raises(ValueError, match="empty"):
+            p30_accuracy([], [])
+
+    def test_empty_arrays_p10(self):
+        with pytest.raises(ValueError, match="empty"):
+            p10_accuracy([], [])
+
+    def test_shape_mismatch_p30(self):
+        with pytest.raises(ValueError, match="[Ss]hape"):
+            p30_accuracy([1, 2, 3], [1, 2])
+
+    def test_nan_values_p30(self):
+        with pytest.raises(ValueError, match="NaN"):
+            p30_accuracy([1.0, float("nan")], [1.0, 2.0])
+
+    def test_nan_values_p10(self):
+        with pytest.raises(ValueError, match="NaN"):
+            p10_accuracy([1.0, 2.0], [1.0, float("nan")])
+
+    def test_zero_reference_p30(self):
+        with pytest.raises(ValueError, match="zero"):
+            p30_accuracy([0.0, 100.0], [10.0, 110.0])
+
+    def test_zero_reference_p10(self):
+        with pytest.raises(ValueError, match="zero"):
+            p10_accuracy([0.0, 100.0], [10.0, 110.0])
+
+
+class TestPnAccuracyInputTypes:
+    """Verify accepts various input types."""
+
+    def test_accepts_lists(self):
+        assert isinstance(p30_accuracy([100.0], [100.0]), float)
+
+    def test_accepts_numpy(self):
+        result = p30_accuracy(np.array([100.0, 80.0]), np.array([100.0, 80.0]))
+        assert result == pytest.approx(100.0)

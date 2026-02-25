@@ -320,9 +320,9 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want 10-fold CV to evaluate models consistently.
 
 **Acceptance Criteria:**
-- [ ] Add `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
-- [ ] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
-- [ ] Typecheck passes
+- [x] Add `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
+- [x] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
+- [x] Typecheck passes
 
 ---
 
@@ -357,11 +357,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want P30 (% within ±30% of measured GFR) as the standard eGFR accuracy metric.
 
 **Acceptance Criteria:**
-- [ ] Add `p30_accuracy(y_true, y_pred)` in `eGFR/evaluate.py`
-- [ ] Returns percentage of predictions within ±30% of reference
-- [ ] Add `p10_accuracy(y_true, y_pred)` for stricter ±10% threshold
-- [ ] Add unit tests verifying both metrics
-- [ ] Tests pass
+- [x] Add `p30_accuracy(y_true, y_pred)` in `eGFR/evaluate.py`
+- [x] Returns percentage of predictions within ±30% of reference
+- [x] Add `p10_accuracy(y_true, y_pred)` for stricter ±10% threshold
+- [x] Add unit tests verifying both metrics
+- [x] Tests pass
 
 ---
 
