@@ -16,8 +16,14 @@ def bland_altman_stats(y_true, y_pred):
     """Compute Bland-Altman agreement statistics.
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     The Bland-Altman method assesses agreement between two measurement
     methods by analysing the differences between paired observations.
+=======
+    Calculates the mean bias (mean of differences), standard deviation of
+    differences, and 95% limits of agreement (LoA) between two sets of
+    measurements.
+>>>>>>> Stashed changes
 =======
     Calculates the mean bias (mean of differences), standard deviation of
     differences, and 95% limits of agreement (LoA) between two sets of
@@ -28,9 +34,15 @@ def bland_altman_stats(y_true, y_pred):
     ----------
     y_true : array-like
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         Reference (measured) values.
     y_pred : array-like
         Predicted (estimated) values.
+=======
+        Reference / true values (e.g. measured GFR).
+    y_pred : array-like
+        Predicted / estimated values (e.g. eGFR).
+>>>>>>> Stashed changes
 =======
         Reference / true values (e.g. measured GFR).
     y_pred : array-like
@@ -40,6 +52,7 @@ def bland_altman_stats(y_true, y_pred):
     Returns
     -------
     dict
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         mean_bias : float
             Mean difference (y_pred − y_true).  Positive ⇒ overestimation.
@@ -52,6 +65,9 @@ def bland_altman_stats(y_true, y_pred):
 =======
         Keys: ``mean_bias``, ``std_diff``, ``loa_lower``, ``loa_upper``.
 >>>>>>> Stashed changes
+=======
+        Keys: ``mean_bias``, ``std_diff``, ``loa_lower``, ``loa_upper``.
+>>>>>>> Stashed changes
 
     Raises
     ------
@@ -61,8 +77,13 @@ def bland_altman_stats(y_true, y_pred):
     References
     ----------
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     Bland JM, Altman DG. Statistical methods for assessing agreement
     between two methods of clinical measurement. Lancet. 1986;1(8476):307-10.
+=======
+    Bland JM, Altman DG. Statistical methods for assessing agreement between
+    two methods of clinical measurement. Lancet. 1986;1(8476):307-310.
+>>>>>>> Stashed changes
 =======
     Bland JM, Altman DG. Statistical methods for assessing agreement between
     two methods of clinical measurement. Lancet. 1986;1(8476):307-310.
@@ -81,9 +102,15 @@ def bland_altman_stats(y_true, y_pred):
         raise ValueError("Input arrays must not contain NaN values.")
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     differences = y_pred - y_true
     mean_bias = float(np.mean(differences))
     std_diff = float(np.std(differences, ddof=1))
+=======
+    diff = y_true - y_pred
+    mean_bias = float(np.mean(diff))
+    std_diff = float(np.std(diff, ddof=1))
+>>>>>>> Stashed changes
 =======
     diff = y_true - y_pred
     mean_bias = float(np.mean(diff))
@@ -98,6 +125,7 @@ def bland_altman_stats(y_true, y_pred):
         "loa_lower": loa_lower,
         "loa_upper": loa_upper,
     }
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
 
@@ -182,5 +210,7 @@ def p10_accuracy(y_true, y_pred) -> float:
         contain zero reference values.
     """
     return _pn_accuracy(y_true, y_pred, threshold=10.0)
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

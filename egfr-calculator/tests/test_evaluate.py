@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 """Tests for eGFR/evaluate.py — Bland-Altman analysis, P30/P10 accuracy."""
 
 import math
@@ -134,6 +135,8 @@ class TestBlandAltmanErrors:
 
     def test_nan_in_y_true(self):
 =======
+=======
+>>>>>>> Stashed changes
 """Tests for eGFR/evaluate.py — Bland-Altman analysis."""
 
 import numpy as np
@@ -244,11 +247,15 @@ class TestBlandAltmanStatsErrors:
 
     def test_nan_in_y_true(self):
         """NaN in y_true should raise ValueError."""
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         with pytest.raises(ValueError, match="NaN"):
             bland_altman_stats([1, float("nan"), 3], [1, 2, 3])
 
     def test_nan_in_y_pred(self):
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         with pytest.raises(ValueError, match="NaN"):
             bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
@@ -360,6 +367,11 @@ class TestPnAccuracyInputTypes:
     def test_accepts_numpy(self):
         result = p30_accuracy(np.array([100.0, 80.0]), np.array([100.0, 80.0]))
         assert result == pytest.approx(100.0)
+=======
+        """NaN in y_pred should raise ValueError."""
+        with pytest.raises(ValueError, match="NaN"):
+            bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
+>>>>>>> Stashed changes
 =======
         """NaN in y_pred should raise ValueError."""
         with pytest.raises(ValueError, match="NaN"):

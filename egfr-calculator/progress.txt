@@ -323,6 +323,7 @@
 ---
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 ## Iteration 20 - US-020: Implement cross-validation wrapper
 - Added `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
 - Uses `sklearn.model_selection.KFold` with shuffle=True, random_state=42 for reproducibility
@@ -370,6 +371,8 @@
   - Zero reference values cause division-by-zero — must reject explicitly
   - P10 ≤ P30 invariant is a useful sanity check in tests
 =======
+=======
+>>>>>>> Stashed changes
 ## Iteration 22 - US-022: Implement Bland-Altman analysis
 - Added `bland_altman_stats(y_true, y_pred)` in `eGFR/evaluate.py`
 - Computes mean bias (mean of differences), std of differences (ddof=1), and 95% limits of agreement (±1.96*SD)
@@ -384,5 +387,8 @@
   - 95% LoA = mean_bias ± 1.96 * std_diff — classic Bland-Altman formula
   - `tests/test_evaluate.py` created for the first time; future US-023–US-026 tests go here
   - PowerShell terminal output encoding still garbled; use subprocess wrapper to reliably capture pytest output
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 ---
