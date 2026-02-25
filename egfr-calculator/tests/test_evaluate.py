@@ -1,11 +1,11 @@
-"""Tests for eGFR/evaluate.py — Bland-Altman analysis, P30/P10 accuracy."""
+"""Tests for eGFR/evaluate.py — Bland-Altman, P30/P10, evaluate_model."""
 
 import math
 
 import numpy as np
 import pytest
 
-from eGFR.evaluate import bland_altman_stats, p30_accuracy, p10_accuracy
+from eGFR.evaluate import bland_altman_stats, p30_accuracy, p10_accuracy, evaluate_model
 
 
 # ── Known-value tests ───────────────────────────────────────────────────
@@ -246,3 +246,111 @@ class TestPnAccuracyInputTypes:
     def test_accepts_numpy(self):
         result = p30_accuracy(np.array([100.0, 80.0]), np.array([100.0, 80.0]))
         assert result == pytest.approx(100.0)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# evaluate_model — Comprehensive Evaluation
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestEvaluateModelReturnStructure:
+    """Verify return dict has the expected keys and types."""
+
+    def test_required_keys(self):
+        y_true = [90.0, 60.0, 30.0, 15.0]
+        y_pred = [88.0, 62.0, 28.0, 14.0]
+        result = evaluate_model(y_true, y_pred, "test_model")
+        expected_keys = {
+            "model_name", "rmse", "mae", "bias", "r_pearson",
+            "p30", "p10", "ba_stats", "ckd_stage_agreement",
+        }
+        assert set(result.keys()) == expected_keys
+
+    def test_model_name_passthrough(self):
+        result = evaluate_model([90.0, 60.0], [88.0, 62.0], "CKD-EPI 2021")
+        assert result["model_name"] == "CKD-EPI 2021"
+
+    def test_numeric_values_are_float(self):
+        result = evaluate_model([90.0, 60.0, 30.0], [88.0, 62.0, 28.0], "m")
+        for key in ("rmse", "mae", "bias", "r_pearson", "p30", "p10", "ckd_stage_agreement"):
+            assert isinstance(result[key], float), f"{key} should be float"
+
+    def test_ba_stats_is_dict(self):
+        result = evaluate_model([90.0, 60.0, 30.0], [88.0, 62.0, 28.0], "m")
+        assert isinstance(result["ba_stats"], dict)
+        assert "mean_bias" in result["ba_stats"]
+
+
+class TestEvaluateModelKnownValues:
+    """Verify metric values against hand-calculated expectations."""
+
+    def test_perfect_predictions(self):
+        y = [90.0, 60.0, 30.0, 15.0]
+        result = evaluate_model(y, y, "perfect")
+        assert result["rmse"] == pytest.approx(0.0)
+        assert result["mae"] == pytest.approx(0.0)
+        assert result["bias"] == pytest.approx(0.0)
+        assert result["p30"] == pytest.approx(100.0)
+        assert result["p10"] == pytest.approx(100.0)
+        assert result["ckd_stage_agreement"] == pytest.approx(100.0)
+
+    def test_constant_bias(self):
+        """Constant +5 offset → RMSE = MAE = bias = 5."""
+        y_true = [90.0, 80.0, 70.0, 60.0]
+        y_pred = [95.0, 85.0, 75.0, 65.0]
+        result = evaluate_model(y_true, y_pred, "bias_test")
+        assert result["rmse"] == pytest.approx(5.0)
+        assert result["mae"] == pytest.approx(5.0)
+        assert result["bias"] == pytest.approx(5.0)
+
+    def test_pearson_perfect_correlation(self):
+        """Perfectly linearly related predictions → r ≈ 1.0."""
+        y_true = [30.0, 60.0, 90.0, 120.0]
+        y_pred = [35.0, 65.0, 95.0, 125.0]  # y_pred = y_true + 5
+        result = evaluate_model(y_true, y_pred, "corr_test")
+        assert result["r_pearson"] == pytest.approx(1.0, abs=1e-10)
+
+    def test_pearson_nan_for_single_element(self):
+        """Single observation → r is undefined (NaN)."""
+        result = evaluate_model([90.0], [92.0], "single")
+        assert math.isnan(result["r_pearson"])
+
+
+class TestEvaluateModelCKDStageAgreement:
+    """Verify CKD-stage concordance metric."""
+
+    def test_all_same_stage(self):
+        """Predictions within the same CKD stage → 100 % agreement."""
+        y_true = [95.0, 100.0, 110.0]  # all G1 (≥90)
+        y_pred = [92.0, 105.0, 115.0]  # all G1
+        result = evaluate_model(y_true, y_pred, "same_stage")
+        assert result["ckd_stage_agreement"] == pytest.approx(100.0)
+
+    def test_stage_disagreement(self):
+        """50 % concordance when half cross a stage boundary."""
+        # 95→95 (G1→G1 ✓), 55→55 (G3a→G3a ✓), 62→58 (G2→G3a ✗), 28→28 (G3b→G3b ✓)
+        # Wait, let me be precise about boundaries:
+        # 95 is G1, 55 is G3a, 62 is G2, 58 is G3a, 28 is G3b
+        y_true = [95.0, 55.0, 62.0, 28.0]
+        y_pred = [95.0, 55.0, 58.0, 28.0]
+        # stage_true: G1, G3a, G2, G3b
+        # stage_pred: G1, G3a, G3a, G3b
+        # concordant: G1, G3a, G3b → 3/4 = 75%
+        result = evaluate_model(y_true, y_pred, "mixed")
+        assert result["ckd_stage_agreement"] == pytest.approx(75.0)
+
+
+class TestEvaluateModelErrors:
+    """Verify error handling."""
+
+    def test_empty_arrays(self):
+        with pytest.raises(ValueError, match="empty"):
+            evaluate_model([], [], "empty")
+
+    def test_shape_mismatch(self):
+        with pytest.raises(ValueError, match="[Ss]hape"):
+            evaluate_model([1, 2, 3], [1, 2], "mismatch")
+
+    def test_nan_values(self):
+        with pytest.raises(ValueError, match="NaN"):
+            evaluate_model([90.0, float("nan")], [90.0, 88.0], "nan_test")

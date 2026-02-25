@@ -369,10 +369,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a single function returning all eGFR-relevant metrics.
 
 **Acceptance Criteria:**
-- [ ] Add `evaluate_model(y_true, y_pred, model_name)` in `eGFR/evaluate.py`
-- [ ] Returns dict: rmse, mae, bias, r_pearson, p30, p10, ba_stats, ckd_stage_agreement
-- [ ] ckd_stage_agreement = percentage of concordant CKD stage classifications
-- [ ] Typecheck passes
+- [x] Add `evaluate_model(y_true, y_pred, model_name)` in `eGFR/evaluate.py`
+- [x] Returns dict: rmse, mae, bias, r_pearson, p30, p10, ba_stats, ckd_stage_agreement
+- [x] ckd_stage_agreement = percentage of concordant CKD stage classifications
+- [x] Typecheck passes
 
 ---
 
