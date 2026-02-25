@@ -285,3 +285,39 @@
   - `__import__("lightgbm").early_stopping(...)` avoids a second import line while keeping the lazy import pattern
   - `save_model()` from iteration 17 works for LightGBM models as well (joblib-generic)
 ---
+
+## Iteration 20 - US-020: Implement cross-validation wrapper
+- Added `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
+- Uses `sklearn.model_selection.KFold` with `shuffle=True, random_state=42`
+- Clones model per fold via `sklearn.base.clone` to avoid mutating the original
+- Returns dict: `RMSE_mean`, `RMSE_std`, `MAE_mean`, `MAE_std`
+- Input validation: empty data, shape mismatch, n_splits < 2
+- Added 8 tests in `tests/test_train.py`: output keys, types, non-negative, RMSE≥MAE, custom n_splits, error handling
+- All 143 tests pass (8 new + 135 existing)
+- Files changed: eGFR/train.py, tests/test_train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `sklearn.base.clone` creates a fresh unfitted copy of an estimator — essential for clean CV folds
+  - `KFold(shuffle=True, random_state=42)` ensures reproducible fold splits
+  - RMSE = sqrt(MSE) via `np.sqrt(mean_squared_error(...))`
+  - Lazy imports inside function body keep module-level imports clean
+---
+
+## Iteration 21 - US-021: Create model training notebook
+- Created `notebooks/03_model_training.ipynb` with 8 code cells and 6 markdown sections
+- Loads NHANES data from data/raw/ with graceful fallback to synthetic dataset (2000 samples)
+- try/except around `read_xpt()` handles corrupt XPT files (HTML error pages on disk)
+- Feature engineering via `create_features()`, stratified split via `stratified_split()`
+- Trains Ridge, Random Forest (200 trees), LightGBM (early stopping, 500 max rounds)
+- 10-fold cross-validation comparison table for all 3 models
+- Selects best model by lowest CV RMSE, saves to `models/best_model.joblib`
+- Saves all individual models to `models/` (ridge.joblib, random_forest.joblib, lightgbm.joblib)
+- Test-set scatter plot (predicted vs actual) saved to `models/best_model_scatter.png`
+- Notebook executes without errors (verified via nbconvert: 8 code cells, 0 error outputs)
+- All 143 existing tests still pass
+- Files changed: notebooks/03_model_training.ipynb, PRD.md, progress.txt
+- Learnings for future iterations:
+  - Corrupt XPT files on disk (HTML error pages) cause `read_xpt()` to raise ValueError — always wrap in try/except
+  - `LGBMRegressor` can be cloned by `sklearn.base.clone` for CV without early stopping callbacks
+  - nbconvert may exit with code 1 from deprecation warnings even when all cells execute successfully
+  - Notebook follows same synthetic-data fallback pattern as notebooks 01 and 02
+---
