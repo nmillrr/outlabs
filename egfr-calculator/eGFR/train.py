@@ -391,6 +391,88 @@ def save_model(model: object, filepath: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Cross-validation
+# ---------------------------------------------------------------------------
+
+
+def cross_validate_model(
+    model,
+    X: Union[pd.DataFrame, np.ndarray],
+    y: Union[pd.Series, np.ndarray],
+    n_splits: int = 10,
+) -> dict:
+    """Evaluate a model using *n*-fold cross-validation.
+
+    The model is cloned for each fold using ``sklearn.base.clone`` so that
+    the original estimator is not modified.
+
+    Parameters
+    ----------
+    model : sklearn-compatible estimator
+        An *unfitted* estimator instance (e.g. ``Ridge()``,
+        ``RandomForestRegressor()``).  The estimator is cloned for each fold.
+    X : pd.DataFrame or np.ndarray
+        Feature matrix.
+    y : pd.Series or np.ndarray
+        Target values (eGFR).
+    n_splits : int, default 10
+        Number of cross-validation folds.
+
+    Returns
+    -------
+    dict
+        ``{'RMSE_mean', 'RMSE_std', 'MAE_mean', 'MAE_std'}`` computed
+        across folds.
+
+    Raises
+    ------
+    ValueError
+        If *X* and *y* have incompatible shapes, are empty, or *n_splits*
+        exceeds the number of samples.
+    """
+    from sklearn.base import clone
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+    X_arr = np.asarray(X, dtype=float)
+    y_arr = np.asarray(y, dtype=float).ravel()
+
+    if X_arr.size == 0 or y_arr.size == 0:
+        raise ValueError("X and y must not be empty.")
+    if X_arr.shape[0] != y_arr.shape[0]:
+        raise ValueError(
+            f"X and y row counts differ "
+            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
+        )
+    if n_splits > X_arr.shape[0]:
+        raise ValueError(
+            f"n_splits ({n_splits}) cannot exceed number of samples "
+            f"({X_arr.shape[0]})."
+        )
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    rmse_scores: list[float] = []
+    mae_scores: list[float] = []
+
+    for train_idx, test_idx in kf.split(X_arr):
+        fold_model = clone(model)
+        fold_model.fit(X_arr[train_idx], y_arr[train_idx])
+        y_pred = fold_model.predict(X_arr[test_idx])
+
+        rmse = float(mean_squared_error(y_arr[test_idx], y_pred) ** 0.5)
+        mae = float(mean_absolute_error(y_arr[test_idx], y_pred))
+        rmse_scores.append(rmse)
+        mae_scores.append(mae)
+
+    return {
+        "RMSE_mean": float(np.mean(rmse_scores)),
+        "RMSE_std": float(np.std(rmse_scores)),
+        "MAE_mean": float(np.mean(mae_scores)),
+        "MAE_std": float(np.std(mae_scores)),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
 

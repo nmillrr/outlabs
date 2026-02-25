@@ -320,9 +320,9 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want 10-fold CV to evaluate models consistently.
 
 **Acceptance Criteria:**
-- [ ] Add `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
-- [ ] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
-- [ ] Typecheck passes
+- [x] Add `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
+- [x] Returns dict with RMSE_mean, RMSE_std, MAE_mean, MAE_std
+- [x] Typecheck passes
 
 ---
 

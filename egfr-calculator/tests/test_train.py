@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from eGFR.train import stratified_split
+from eGFR.train import stratified_split, cross_validate_model
 
 
 # ---------------------------------------------------------------------------
@@ -146,3 +146,75 @@ class TestEdgeCases:
         df = pd.DataFrame({"cr_mgdl": [1.0], "age_years": [50]})
         with pytest.raises(ValueError, match="Missing required columns"):
             stratified_split(df)
+
+
+# ---------------------------------------------------------------------------
+# cross_validate_model tests
+# ---------------------------------------------------------------------------
+
+class TestCrossValidateModel:
+    """Tests for the cross_validate_model wrapper."""
+
+    @staticmethod
+    def _make_data(n=50, seed=42):
+        """Simple synthetic regression data for CV testing."""
+        rng = np.random.default_rng(seed)
+        X = rng.standard_normal((n, 3))
+        y = X[:, 0] * 2.0 + X[:, 1] * 0.5 + rng.standard_normal(n) * 0.1
+        return X, y
+
+    def test_returns_expected_keys(self):
+        from sklearn.linear_model import Ridge
+        X, y = self._make_data()
+        result = cross_validate_model(Ridge(), X, y, n_splits=3)
+        expected_keys = {"RMSE_mean", "RMSE_std", "MAE_mean", "MAE_std"}
+        assert set(result.keys()) == expected_keys
+
+    def test_values_are_nonnegative_floats(self):
+        from sklearn.linear_model import Ridge
+        X, y = self._make_data()
+        result = cross_validate_model(Ridge(), X, y, n_splits=3)
+        for key, val in result.items():
+            assert isinstance(val, float), f"{key} is not float"
+            assert val >= 0.0, f"{key} is negative"
+
+    def test_rmse_ge_mae(self):
+        """RMSE should always be >= MAE."""
+        from sklearn.linear_model import Ridge
+        X, y = self._make_data()
+        result = cross_validate_model(Ridge(), X, y, n_splits=5)
+        assert result["RMSE_mean"] >= result["MAE_mean"]
+
+    def test_custom_n_splits(self):
+        from sklearn.linear_model import Ridge
+        X, y = self._make_data(n=20)
+        result = cross_validate_model(Ridge(), X, y, n_splits=4)
+        assert "RMSE_mean" in result
+
+    def test_empty_data_raises(self):
+        from sklearn.linear_model import Ridge
+        with pytest.raises(ValueError, match="empty"):
+            cross_validate_model(Ridge(), np.array([]).reshape(0, 1), np.array([]))
+
+    def test_shape_mismatch_raises(self):
+        from sklearn.linear_model import Ridge
+        X = np.ones((10, 2))
+        y = np.ones(5)
+        with pytest.raises(ValueError, match="row counts differ"):
+            cross_validate_model(Ridge(), X, y)
+
+    def test_n_splits_exceeds_samples_raises(self):
+        from sklearn.linear_model import Ridge
+        X, y = self._make_data(n=5)
+        with pytest.raises(ValueError, match="n_splits.*cannot exceed"):
+            cross_validate_model(Ridge(), X, y, n_splits=10)
+
+    def test_original_model_unchanged(self):
+        """The original model should not be fitted after CV."""
+        from sklearn.linear_model import Ridge
+        model = Ridge()
+        X, y = self._make_data()
+        cross_validate_model(model, X, y, n_splits=3)
+        # An unfitted Ridge has no coef_ attribute
+        assert not hasattr(model, "coef_")
+
