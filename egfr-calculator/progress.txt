@@ -322,6 +322,7 @@
   - Notebook follows same synthetic-data fallback pattern as notebooks 01 and 02
 ---
 
+<<<<<<< Updated upstream
 ## Iteration 20 - US-020: Implement cross-validation wrapper
 - Added `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
 - Uses `sklearn.model_selection.KFold` with shuffle=True, random_state=42 for reproducibility
@@ -368,4 +369,20 @@
   - `_pn_accuracy` pattern with threshold parameter keeps P30/P10 DRY
   - Zero reference values cause division-by-zero — must reject explicitly
   - P10 ≤ P30 invariant is a useful sanity check in tests
+=======
+## Iteration 22 - US-022: Implement Bland-Altman analysis
+- Added `bland_altman_stats(y_true, y_pred)` in `eGFR/evaluate.py`
+- Computes mean bias (mean of differences), std of differences (ddof=1), and 95% limits of agreement (±1.96*SD)
+- Returns dict with keys: mean_bias, std_diff, loa_lower, loa_upper
+- Input validation: empty arrays, shape mismatch, NaN values
+- Docstring references Bland & Altman (1986) Lancet
+- Created `tests/test_evaluate.py` with 13 tests: perfect agreement, constant bias, known values, negative bias, key presence, LoA symmetry, single pair, numpy input, and 4 error-handling tests
+- All 155 tests pass (12 new + 143 existing)
+- Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `np.std(ddof=1)` gives sample standard deviation (Bessel's correction) — standard for Bland-Altman
+  - 95% LoA = mean_bias ± 1.96 * std_diff — classic Bland-Altman formula
+  - `tests/test_evaluate.py` created for the first time; future US-023–US-026 tests go here
+  - PowerShell terminal output encoding still garbled; use subprocess wrapper to reliably capture pytest output
+>>>>>>> Stashed changes
 ---

@@ -15,19 +15,32 @@ import numpy as np
 def bland_altman_stats(y_true, y_pred):
     """Compute Bland-Altman agreement statistics.
 
+<<<<<<< Updated upstream
     The Bland-Altman method assesses agreement between two measurement
     methods by analysing the differences between paired observations.
+=======
+    Calculates the mean bias (mean of differences), standard deviation of
+    differences, and 95% limits of agreement (LoA) between two sets of
+    measurements.
+>>>>>>> Stashed changes
 
     Parameters
     ----------
     y_true : array-like
+<<<<<<< Updated upstream
         Reference (measured) values.
     y_pred : array-like
         Predicted (estimated) values.
+=======
+        Reference / true values (e.g. measured GFR).
+    y_pred : array-like
+        Predicted / estimated values (e.g. eGFR).
+>>>>>>> Stashed changes
 
     Returns
     -------
     dict
+<<<<<<< Updated upstream
         mean_bias : float
             Mean difference (y_pred − y_true).  Positive ⇒ overestimation.
         std_diff : float
@@ -36,6 +49,9 @@ def bland_altman_stats(y_true, y_pred):
             Lower 95 % limit of agreement (mean_bias − 1.96 × std_diff).
         loa_upper : float
             Upper 95 % limit of agreement (mean_bias + 1.96 × std_diff).
+=======
+        Keys: ``mean_bias``, ``std_diff``, ``loa_lower``, ``loa_upper``.
+>>>>>>> Stashed changes
 
     Raises
     ------
@@ -44,8 +60,13 @@ def bland_altman_stats(y_true, y_pred):
 
     References
     ----------
+<<<<<<< Updated upstream
     Bland JM, Altman DG. Statistical methods for assessing agreement
     between two methods of clinical measurement. Lancet. 1986;1(8476):307-10.
+=======
+    Bland JM, Altman DG. Statistical methods for assessing agreement between
+    two methods of clinical measurement. Lancet. 1986;1(8476):307-310.
+>>>>>>> Stashed changes
     """
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
@@ -59,9 +80,15 @@ def bland_altman_stats(y_true, y_pred):
     if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
         raise ValueError("Input arrays must not contain NaN values.")
 
+<<<<<<< Updated upstream
     differences = y_pred - y_true
     mean_bias = float(np.mean(differences))
     std_diff = float(np.std(differences, ddof=1))
+=======
+    diff = y_true - y_pred
+    mean_bias = float(np.mean(diff))
+    std_diff = float(np.std(diff, ddof=1))
+>>>>>>> Stashed changes
     loa_lower = mean_bias - 1.96 * std_diff
     loa_upper = mean_bias + 1.96 * std_diff
 
@@ -71,6 +98,7 @@ def bland_altman_stats(y_true, y_pred):
         "loa_lower": loa_lower,
         "loa_upper": loa_upper,
     }
+<<<<<<< Updated upstream
 
 
 def _pn_accuracy(y_true, y_pred, threshold: float) -> float:
@@ -154,3 +182,5 @@ def p10_accuracy(y_true, y_pred) -> float:
         contain zero reference values.
     """
     return _pn_accuracy(y_true, y_pred, threshold=10.0)
+=======
+>>>>>>> Stashed changes

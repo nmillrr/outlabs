@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 """Tests for eGFR/evaluate.py — Bland-Altman analysis, P30/P10 accuracy."""
 
 import math
@@ -132,10 +133,123 @@ class TestBlandAltmanErrors:
             bland_altman_stats([1, 2, 3], [1, 2])
 
     def test_nan_in_y_true(self):
+=======
+"""Tests for eGFR/evaluate.py — Bland-Altman analysis."""
+
+import numpy as np
+import pytest
+from pytest import approx
+
+from eGFR.evaluate import bland_altman_stats
+
+
+# ---- bland_altman_stats — happy path ----------------------------------
+
+
+class TestBlandAltmanStats:
+    """Tests for bland_altman_stats()."""
+
+    def test_perfect_agreement(self):
+        """When y_true == y_pred, bias and std should be zero."""
+        vals = [60.0, 70.0, 80.0, 90.0]
+        result = bland_altman_stats(vals, vals)
+        assert result["mean_bias"] == approx(0.0, abs=1e-10)
+        assert result["std_diff"] == approx(0.0, abs=1e-10)
+        assert result["loa_lower"] == approx(0.0, abs=1e-10)
+        assert result["loa_upper"] == approx(0.0, abs=1e-10)
+
+    def test_constant_bias(self):
+        """Constant offset should give that offset as mean_bias, zero std."""
+        y_true = [100.0, 110.0, 120.0, 130.0]
+        y_pred = [95.0, 105.0, 115.0, 125.0]
+        # diff = [5, 5, 5, 5]
+        result = bland_altman_stats(y_true, y_pred)
+        assert result["mean_bias"] == approx(5.0)
+        assert result["std_diff"] == approx(0.0, abs=1e-10)
+        assert result["loa_lower"] == approx(5.0, abs=1e-10)
+        assert result["loa_upper"] == approx(5.0, abs=1e-10)
+
+    def test_known_values(self):
+        """Hand-calculated example with simple numbers."""
+        y_true = np.array([10.0, 20.0, 30.0, 40.0, 50.0])
+        y_pred = np.array([12.0, 18.0, 33.0, 37.0, 50.0])
+        # diff = [-2, 2, -3, 3, 0]
+        # mean_bias = 0.0
+        # std_diff = sqrt( (4+4+9+9+0) / 4 ) = sqrt(26/4) = sqrt(6.5) ≈ 2.5495
+        diff = y_true - y_pred
+        expected_bias = float(np.mean(diff))
+        expected_std = float(np.std(diff, ddof=1))
+        expected_loa_lo = expected_bias - 1.96 * expected_std
+        expected_loa_hi = expected_bias + 1.96 * expected_std
+
+        result = bland_altman_stats(y_true, y_pred)
+        assert result["mean_bias"] == approx(expected_bias)
+        assert result["std_diff"] == approx(expected_std)
+        assert result["loa_lower"] == approx(expected_loa_lo)
+        assert result["loa_upper"] == approx(expected_loa_hi)
+
+    def test_negative_bias(self):
+        """When pred > true consistently, bias is negative."""
+        y_true = [50.0, 60.0, 70.0]
+        y_pred = [55.0, 65.0, 75.0]
+        result = bland_altman_stats(y_true, y_pred)
+        assert result["mean_bias"] == approx(-5.0)
+
+    def test_returns_all_keys(self):
+        """Result dict should contain exactly the 4 expected keys."""
+        result = bland_altman_stats([1, 2, 3], [1, 2, 3])
+        assert set(result.keys()) == {"mean_bias", "std_diff", "loa_lower", "loa_upper"}
+
+    def test_loa_symmetry(self):
+        """Limits of agreement should be symmetric around mean_bias."""
+        y_true = [10, 20, 30, 40, 50]
+        y_pred = [11, 19, 31, 39, 51]
+        result = bland_altman_stats(y_true, y_pred)
+        mid = (result["loa_lower"] + result["loa_upper"]) / 2
+        assert mid == approx(result["mean_bias"])
+
+    def test_single_pair(self):
+        """Single observation: std is NaN (ddof=1), but mean_bias works.
+        Implementation uses ddof=1 so with n=1 std_diff will be nan.
+        We accept this as correct statistical behaviour.
+        """
+        # With a single observation, std(ddof=1) = nan.
+        # We just verify it doesn't crash.
+        result = bland_altman_stats([100.0], [90.0])
+        assert result["mean_bias"] == approx(10.0)
+
+    def test_numpy_array_input(self):
+        """Should handle numpy arrays as inputs."""
+        y_true = np.array([60, 70, 80, 90, 100], dtype=float)
+        y_pred = np.array([62, 68, 82, 88, 102], dtype=float)
+        result = bland_altman_stats(y_true, y_pred)
+        assert isinstance(result["mean_bias"], float)
+
+
+# ---- bland_altman_stats — error handling ------------------------------
+
+
+class TestBlandAltmanStatsErrors:
+    """Test input validation for bland_altman_stats()."""
+
+    def test_empty_arrays(self):
+        """Empty input should raise ValueError."""
+        with pytest.raises(ValueError, match="empty"):
+            bland_altman_stats([], [])
+
+    def test_mismatched_lengths(self):
+        """Different length arrays should raise ValueError."""
+        with pytest.raises(ValueError, match="Shape mismatch"):
+            bland_altman_stats([1, 2, 3], [1, 2])
+
+    def test_nan_in_y_true(self):
+        """NaN in y_true should raise ValueError."""
+>>>>>>> Stashed changes
         with pytest.raises(ValueError, match="NaN"):
             bland_altman_stats([1, float("nan"), 3], [1, 2, 3])
 
     def test_nan_in_y_pred(self):
+<<<<<<< Updated upstream
         with pytest.raises(ValueError, match="NaN"):
             bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
 
@@ -246,3 +360,8 @@ class TestPnAccuracyInputTypes:
     def test_accepts_numpy(self):
         result = p30_accuracy(np.array([100.0, 80.0]), np.array([100.0, 80.0]))
         assert result == pytest.approx(100.0)
+=======
+        """NaN in y_pred should raise ValueError."""
+        with pytest.raises(ValueError, match="NaN"):
+            bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
+>>>>>>> Stashed changes
