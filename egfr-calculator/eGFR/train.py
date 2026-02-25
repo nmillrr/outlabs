@@ -300,14 +300,13 @@ def train_random_forest(
 def train_lightgbm(
     X_train: Union[pd.DataFrame, np.ndarray],
     y_train: Union[pd.Series, np.ndarray],
-    X_val: Union[pd.DataFrame, np.ndarray, None] = None,
-    y_val: Union[pd.Series, np.ndarray, None] = None,
+    X_val: Union[pd.DataFrame, np.ndarray],
+    y_val: Union[pd.Series, np.ndarray],
 ) -> "LGBMRegressor":
-    """Train a LightGBM regression model with optional early stopping.
+    """Train a LightGBM regression model with early stopping.
 
-    When validation data (*X_val*, *y_val*) is provided the model uses early
-    stopping with a patience of 20 rounds, monitoring RMSE on the validation
-    set.  Without validation data the model trains for the full 200 rounds.
+    Uses ``early_stopping_rounds=20`` so that training halts when the
+    validation RMSE has not improved for 20 consecutive boosting rounds.
 
     Parameters
     ----------
@@ -315,10 +314,10 @@ def train_lightgbm(
         Training feature matrix.
     y_train : pd.Series or np.ndarray
         Training target values (eGFR).
-    X_val : pd.DataFrame, np.ndarray, or None, default None
-        Optional validation feature matrix for early stopping.
-    y_val : pd.Series, np.ndarray, or None, default None
-        Optional validation target values for early stopping.
+    X_val : pd.DataFrame or np.ndarray
+        Validation feature matrix (used for early stopping).
+    y_val : pd.Series or np.ndarray
+        Validation target values.
 
     Returns
     -------
@@ -328,39 +327,129 @@ def train_lightgbm(
     Raises
     ------
     ValueError
-        If *X_train* and *y_train* have incompatible shapes or are empty.
+        If any input arrays are empty or have incompatible shapes.
     """
     from lightgbm import LGBMRegressor
 
-    X_arr = np.asarray(X_train, dtype=float)
-    y_arr = np.asarray(y_train, dtype=float).ravel()
+    X_tr = np.asarray(X_train, dtype=float)
+    y_tr = np.asarray(y_train, dtype=float).ravel()
+    X_v = np.asarray(X_val, dtype=float)
+    y_v = np.asarray(y_val, dtype=float).ravel()
 
-    if X_arr.size == 0 or y_arr.size == 0:
+    if X_tr.size == 0 or y_tr.size == 0:
         raise ValueError("Training data must not be empty.")
-    if X_arr.shape[0] != y_arr.shape[0]:
+    if X_v.size == 0 or y_v.size == 0:
+        raise ValueError("Validation data must not be empty.")
+    if X_tr.shape[0] != y_tr.shape[0]:
         raise ValueError(
             f"X_train and y_train row counts differ "
-            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
+            f"({X_tr.shape[0]} vs {y_tr.shape[0]})."
+        )
+    if X_v.shape[0] != y_v.shape[0]:
+        raise ValueError(
+            f"X_val and y_val row counts differ "
+            f"({X_v.shape[0]} vs {y_v.shape[0]})."
         )
 
     model = LGBMRegressor(
-        n_estimators=200,
+        n_estimators=500,
+        learning_rate=0.05,
         random_state=42,
         verbosity=-1,
     )
 
-    fit_kwargs: dict = {}
-    if X_val is not None and y_val is not None:
-        X_val_arr = np.asarray(X_val, dtype=float)
-        y_val_arr = np.asarray(y_val, dtype=float).ravel()
-        fit_kwargs["eval_set"] = [(X_val_arr, y_val_arr)]
-        fit_kwargs["eval_metric"] = "rmse"
-        fit_kwargs["callbacks"] = [
-            __import__("lightgbm").early_stopping(stopping_rounds=20, verbose=False),
-        ]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        model.fit(
+            X_tr, y_tr,
+            eval_set=[(X_v, y_v)],
+            eval_metric="rmse",
+            callbacks=[
+                __import__("lightgbm").early_stopping(
+                    stopping_rounds=20, verbose=False
+                ),
+            ],
+        )
 
-    model.fit(X_arr, y_arr, **fit_kwargs)
     return model
+
+
+def cross_validate_model(
+    model,
+    X: Union[pd.DataFrame, np.ndarray],
+    y: Union[pd.Series, np.ndarray],
+    n_splits: int = 10,
+) -> dict:
+    """Evaluate a model using K-fold cross-validation.
+
+    Performs *n_splits*-fold cross-validation and returns aggregate RMSE and
+    MAE statistics across the folds.
+
+    Parameters
+    ----------
+    model : sklearn-compatible estimator
+        An unfitted (or fitted) estimator that implements ``fit`` and
+        ``predict``.  The estimator is cloned for each fold so that the
+        original object is not mutated.
+    X : pd.DataFrame or np.ndarray
+        Feature matrix.
+    y : pd.Series or np.ndarray
+        Target values (eGFR).
+    n_splits : int, default 10
+        Number of cross-validation folds.
+
+    Returns
+    -------
+    dict
+        Keys: ``RMSE_mean``, ``RMSE_std``, ``MAE_mean``, ``MAE_std``.
+
+    Raises
+    ------
+    ValueError
+        If *X* and *y* have incompatible shapes, are empty, or
+        *n_splits* < 2.
+    """
+    from sklearn.base import clone
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+    X_arr = np.asarray(X, dtype=float)
+    y_arr = np.asarray(y, dtype=float).ravel()
+
+    if X_arr.size == 0 or y_arr.size == 0:
+        raise ValueError("Input data must not be empty.")
+    if X_arr.shape[0] != y_arr.shape[0]:
+        raise ValueError(
+            f"X and y row counts differ "
+            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
+        )
+    if n_splits < 2:
+        raise ValueError(f"n_splits must be >= 2, got {n_splits}.")
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    rmse_scores: list[float] = []
+    mae_scores: list[float] = []
+
+    for train_idx, test_idx in kf.split(X_arr):
+        X_train_fold, X_test_fold = X_arr[train_idx], X_arr[test_idx]
+        y_train_fold, y_test_fold = y_arr[train_idx], y_arr[test_idx]
+
+        fold_model = clone(model)
+        fold_model.fit(X_train_fold, y_train_fold)
+        y_pred = fold_model.predict(X_test_fold)
+
+        rmse = float(np.sqrt(mean_squared_error(y_test_fold, y_pred)))
+        mae = float(mean_absolute_error(y_test_fold, y_pred))
+        rmse_scores.append(rmse)
+        mae_scores.append(mae)
+
+    return {
+        "RMSE_mean": float(np.mean(rmse_scores)),
+        "RMSE_std": float(np.std(rmse_scores)),
+        "MAE_mean": float(np.mean(mae_scores)),
+        "MAE_std": float(np.std(mae_scores)),
+    }
 
 
 def save_model(model: object, filepath: str) -> None:
@@ -388,88 +477,6 @@ def save_model(model: object, filepath: str) -> None:
 
     os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
     joblib.dump(model, filepath)
-
-
-# ---------------------------------------------------------------------------
-# Cross-validation
-# ---------------------------------------------------------------------------
-
-
-def cross_validate_model(
-    model,
-    X: Union[pd.DataFrame, np.ndarray],
-    y: Union[pd.Series, np.ndarray],
-    n_splits: int = 10,
-) -> dict:
-    """Evaluate a model using *n*-fold cross-validation.
-
-    The model is cloned for each fold using ``sklearn.base.clone`` so that
-    the original estimator is not modified.
-
-    Parameters
-    ----------
-    model : sklearn-compatible estimator
-        An *unfitted* estimator instance (e.g. ``Ridge()``,
-        ``RandomForestRegressor()``).  The estimator is cloned for each fold.
-    X : pd.DataFrame or np.ndarray
-        Feature matrix.
-    y : pd.Series or np.ndarray
-        Target values (eGFR).
-    n_splits : int, default 10
-        Number of cross-validation folds.
-
-    Returns
-    -------
-    dict
-        ``{'RMSE_mean', 'RMSE_std', 'MAE_mean', 'MAE_std'}`` computed
-        across folds.
-
-    Raises
-    ------
-    ValueError
-        If *X* and *y* have incompatible shapes, are empty, or *n_splits*
-        exceeds the number of samples.
-    """
-    from sklearn.base import clone
-    from sklearn.model_selection import KFold
-    from sklearn.metrics import mean_squared_error, mean_absolute_error
-
-    X_arr = np.asarray(X, dtype=float)
-    y_arr = np.asarray(y, dtype=float).ravel()
-
-    if X_arr.size == 0 or y_arr.size == 0:
-        raise ValueError("X and y must not be empty.")
-    if X_arr.shape[0] != y_arr.shape[0]:
-        raise ValueError(
-            f"X and y row counts differ "
-            f"({X_arr.shape[0]} vs {y_arr.shape[0]})."
-        )
-    if n_splits > X_arr.shape[0]:
-        raise ValueError(
-            f"n_splits ({n_splits}) cannot exceed number of samples "
-            f"({X_arr.shape[0]})."
-        )
-
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-    rmse_scores: list[float] = []
-    mae_scores: list[float] = []
-
-    for train_idx, test_idx in kf.split(X_arr):
-        fold_model = clone(model)
-        fold_model.fit(X_arr[train_idx], y_arr[train_idx])
-        y_pred = fold_model.predict(X_arr[test_idx])
-
-        rmse = float(mean_squared_error(y_arr[test_idx], y_pred) ** 0.5)
-        mae = float(mean_absolute_error(y_arr[test_idx], y_pred))
-        rmse_scores.append(rmse)
-        mae_scores.append(mae)
-
-    return {
-        "RMSE_mean": float(np.mean(rmse_scores)),
-        "RMSE_std": float(np.std(rmse_scores)),
-        "MAE_mean": float(np.mean(mae_scores)),
-        "MAE_std": float(np.std(mae_scores)),
-    }
 
 
 # ---------------------------------------------------------------------------

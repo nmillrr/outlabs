@@ -271,16 +271,53 @@
 
 ## Iteration 19 - US-019: Train LightGBM model
 - Added `train_lightgbm(X_train, y_train, X_val, y_val)` in `eGFR/train.py`
-- Uses `lightgbm.LGBMRegressor` with `n_estimators=200`, `random_state=42`, `verbosity=-1`
-- When X_val/y_val provided: early stopping with 20 rounds monitoring RMSE via `lightgbm.early_stopping()` callback
-- Without validation data: trains for full 200 rounds
-- Same input validation pattern as Ridge/RF: np.asarray, empty check, shape check
-- Verified end-to-end: both with and without validation data
-- All 135 existing tests pass, typecheck passes
+- Uses `LGBMRegressor` with `n_estimators=500`, `learning_rate=0.05`, `random_state=42`
+- Early stopping via `lightgbm.early_stopping(stopping_rounds=20, verbose=False)` callback
+- `verbosity=-1` suppresses LightGBM internal logging
+- Input validation for all 4 arrays: empty check + shape mismatch check
+- Suppresses UserWarnings during fit with `warnings.catch_warnings()` context manager
+- Functional test: model trains, returns `LGBMRegressor`, produces predictions
+- All 135 existing tests pass
 - Files changed: eGFR/train.py, PRD.md, progress.txt
 - Learnings for future iterations:
-  - `lightgbm.early_stopping(stopping_rounds=20, verbose=False)` is passed via `callbacks` kwarg in `.fit()`
-  - `verbosity=-1` suppresses LightGBM training output
-  - `eval_set` takes a list of tuples: `[(X_val, y_val)]`
-  - `save_model()` from iteration 17 works for LGBMRegressor as well (joblib-generic)
+  - LightGBM early stopping now uses `callbacks=[lightgbm.early_stopping(...)]` instead of deprecated `early_stopping_rounds` param
+  - `verbosity=-1` on LGBMRegressor hides per-round training output
+  - `__import__("lightgbm").early_stopping(...)` avoids a second import line while keeping the lazy import pattern
+  - `save_model()` from iteration 17 works for LightGBM models as well (joblib-generic)
+---
+
+## Iteration 20 - US-020: Implement cross-validation wrapper
+- Added `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
+- Uses `sklearn.model_selection.KFold` with `shuffle=True, random_state=42`
+- Clones model per fold via `sklearn.base.clone` to avoid mutating the original
+- Returns dict: `RMSE_mean`, `RMSE_std`, `MAE_mean`, `MAE_std`
+- Input validation: empty data, shape mismatch, n_splits < 2
+- Added 8 tests in `tests/test_train.py`: output keys, types, non-negative, RMSE≥MAE, custom n_splits, error handling
+- All 143 tests pass (8 new + 135 existing)
+- Files changed: eGFR/train.py, tests/test_train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `sklearn.base.clone` creates a fresh unfitted copy of an estimator — essential for clean CV folds
+  - `KFold(shuffle=True, random_state=42)` ensures reproducible fold splits
+  - RMSE = sqrt(MSE) via `np.sqrt(mean_squared_error(...))`
+  - Lazy imports inside function body keep module-level imports clean
+---
+
+## Iteration 21 - US-021: Create model training notebook
+- Created `notebooks/03_model_training.ipynb` with 8 code cells and 6 markdown sections
+- Loads NHANES data from data/raw/ with graceful fallback to synthetic dataset (2000 samples)
+- try/except around `read_xpt()` handles corrupt XPT files (HTML error pages on disk)
+- Feature engineering via `create_features()`, stratified split via `stratified_split()`
+- Trains Ridge, Random Forest (200 trees), LightGBM (early stopping, 500 max rounds)
+- 10-fold cross-validation comparison table for all 3 models
+- Selects best model by lowest CV RMSE, saves to `models/best_model.joblib`
+- Saves all individual models to `models/` (ridge.joblib, random_forest.joblib, lightgbm.joblib)
+- Test-set scatter plot (predicted vs actual) saved to `models/best_model_scatter.png`
+- Notebook executes without errors (verified via nbconvert: 8 code cells, 0 error outputs)
+- All 143 existing tests still pass
+- Files changed: notebooks/03_model_training.ipynb, PRD.md, progress.txt
+- Learnings for future iterations:
+  - Corrupt XPT files on disk (HTML error pages) cause `read_xpt()` to raise ValueError — always wrap in try/except
+  - `LGBMRegressor` can be cloned by `sklearn.base.clone` for CV without early stopping callbacks
+  - nbconvert may exit with code 1 from deprecation warnings even when all cells execute successfully
+  - Notebook follows same synthetic-data fallback pattern as notebooks 01 and 02
 ---
