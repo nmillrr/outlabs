@@ -343,3 +343,71 @@ def evaluate_by_ckd_stage(y_true, y_pred, egfr_values):
         }
 
     return results
+
+
+def bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap: int = 2000,
+                 ci: float = 95.0, random_state: int = 42):
+    """Compute bootstrap confidence intervals for any evaluation metric.
+
+    Resamples *y_true* and *y_pred* with replacement *n_bootstrap* times,
+    computes *metric_func* on each resample, and returns the percentile-based
+    confidence interval.
+
+    Parameters
+    ----------
+    y_true : array-like
+        Reference (measured) values.
+    y_pred : array-like
+        Predicted (estimated) values.
+    metric_func : callable
+        A function ``metric_func(y_true, y_pred) -> float``.
+    n_bootstrap : int, optional
+        Number of bootstrap resamples (default 2000).
+    ci : float, optional
+        Confidence level in percent (default 95.0).
+    random_state : int, optional
+        Seed for reproducibility (default 42).
+
+    Returns
+    -------
+    tuple[float, float, float]
+        ``(lower, upper, mean)`` where *lower* and *upper* are the CI bounds
+        and *mean* is the mean of the bootstrap distribution.
+
+    Raises
+    ------
+    ValueError
+        If inputs are empty, contain NaN, have mismatched lengths,
+        *n_bootstrap* < 1, or *ci* is not in (0, 100).
+    """
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+
+    # ── input validation ─────────────────────────────────────────────
+    if y_true.size == 0 or y_pred.size == 0:
+        raise ValueError("Input arrays must not be empty.")
+    if y_true.shape != y_pred.shape:
+        raise ValueError(
+            f"Shape mismatch: y_true {y_true.shape} vs y_pred {y_pred.shape}."
+        )
+    if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
+        raise ValueError("Input arrays must not contain NaN values.")
+    if n_bootstrap < 1:
+        raise ValueError("n_bootstrap must be >= 1.")
+    if not (0 < ci < 100):
+        raise ValueError("ci must be between 0 and 100 (exclusive).")
+
+    rng = np.random.default_rng(random_state)
+    n = len(y_true)
+    scores = np.empty(n_bootstrap)
+
+    for i in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        scores[i] = metric_func(y_true[idx], y_pred[idx])
+
+    alpha = (100.0 - ci) / 2.0
+    lower = float(np.percentile(scores, alpha))
+    upper = float(np.percentile(scores, 100.0 - alpha))
+    mean = float(np.mean(scores))
+
+    return (lower, upper, mean)

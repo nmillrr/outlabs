@@ -391,9 +391,9 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want bootstrap CIs for reporting uncertainty.
 
 **Acceptance Criteria:**
-- [ ] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `eGFR/evaluate.py`
-- [ ] Returns (lower, upper, mean) tuple
-- [ ] Typecheck passes
+- [x] Add `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000)` in `eGFR/evaluate.py`
+- [x] Returns (lower, upper, mean) tuple
+- [x] Typecheck passes
 
 ---
 

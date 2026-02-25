@@ -7,7 +7,7 @@ import pytest
 
 from eGFR.evaluate import (
     bland_altman_stats, p30_accuracy, p10_accuracy, evaluate_model,
-    evaluate_by_ckd_stage,
+    evaluate_by_ckd_stage, bootstrap_ci,
 )
 
 
@@ -500,3 +500,131 @@ class TestEvaluateByCKDStageErrors:
     def test_nan_in_egfr_values(self):
         with pytest.raises(ValueError, match="NaN"):
             evaluate_by_ckd_stage([90.0], [90.0], [float("nan")])
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# bootstrap_ci — Bootstrap Confidence Intervals
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def _rmse(y_true, y_pred):
+    """Helper RMSE metric for bootstrap tests."""
+    return float(np.sqrt(np.mean((np.asarray(y_pred) - np.asarray(y_true)) ** 2)))
+
+
+def _mae(y_true, y_pred):
+    """Helper MAE metric for bootstrap tests."""
+    return float(np.mean(np.abs(np.asarray(y_pred) - np.asarray(y_true))))
+
+
+class TestBootstrapCIReturnStructure:
+    """Verify return tuple structure."""
+
+    def test_returns_tuple_of_three(self):
+        result = bootstrap_ci([90, 60, 30], [88, 62, 28], _rmse, n_bootstrap=100)
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+
+    def test_all_floats(self):
+        lower, upper, mean = bootstrap_ci(
+            [90, 60, 30], [88, 62, 28], _rmse, n_bootstrap=100
+        )
+        assert isinstance(lower, float)
+        assert isinstance(upper, float)
+        assert isinstance(mean, float)
+
+    def test_lower_le_upper(self):
+        lower, upper, _ = bootstrap_ci(
+            [90, 60, 30, 15], [88, 62, 28, 14], _rmse, n_bootstrap=500
+        )
+        assert lower <= upper
+
+
+class TestBootstrapCIKnownProperties:
+    """Verify expected statistical properties."""
+
+    def test_perfect_predictions_narrow_ci(self):
+        """Perfect predictions → CI should be very tight around 0."""
+        y = [90.0, 60.0, 30.0, 15.0, 100.0]
+        lower, upper, mean = bootstrap_ci(y, y, _rmse, n_bootstrap=500)
+        assert lower == pytest.approx(0.0)
+        assert upper == pytest.approx(0.0)
+        assert mean == pytest.approx(0.0)
+
+    def test_mean_between_bounds(self):
+        lower, upper, mean = bootstrap_ci(
+            [90, 80, 70, 60, 50], [92, 78, 73, 58, 52], _rmse, n_bootstrap=500
+        )
+        assert lower <= mean <= upper
+
+    def test_wider_ci_with_higher_confidence(self):
+        """99% CI should be wider than 90% CI."""
+        y_true = list(range(20, 120, 5))
+        y_pred = [v + np.sin(v) * 5 for v in y_true]
+        lo90, hi90, _ = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=1000, ci=90.0)
+        lo99, hi99, _ = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=1000, ci=99.0)
+        width_90 = hi90 - lo90
+        width_99 = hi99 - lo99
+        assert width_99 >= width_90
+
+    def test_works_with_mae(self):
+        """Should accept any metric function."""
+        lower, upper, mean = bootstrap_ci(
+            [100, 80, 60], [95, 85, 55], _mae, n_bootstrap=200
+        )
+        assert lower <= mean <= upper
+        assert mean > 0
+
+
+class TestBootstrapCIReproducibility:
+    """Verify deterministic results with same random_state."""
+
+    def test_same_seed_same_result(self):
+        y_true = [90, 60, 30, 15]
+        y_pred = [88, 62, 28, 14]
+        r1 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=123)
+        r2 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=123)
+        assert r1 == r2
+
+    def test_different_seed_different_result(self):
+        y_true = [90, 60, 30, 15, 100, 45, 70]
+        y_pred = [88, 62, 28, 14, 98, 47, 68]
+        r1 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=1)
+        r2 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=2)
+        assert r1 != r2
+
+
+class TestBootstrapCIErrors:
+    """Verify error handling."""
+
+    def test_empty_arrays(self):
+        with pytest.raises(ValueError, match="empty"):
+            bootstrap_ci([], [], _rmse)
+
+    def test_shape_mismatch(self):
+        with pytest.raises(ValueError, match="[Ss]hape"):
+            bootstrap_ci([1, 2, 3], [1, 2], _rmse)
+
+    def test_nan_in_y_true(self):
+        with pytest.raises(ValueError, match="NaN"):
+            bootstrap_ci([1, float("nan"), 3], [1, 2, 3], _rmse)
+
+    def test_nan_in_y_pred(self):
+        with pytest.raises(ValueError, match="NaN"):
+            bootstrap_ci([1, 2, 3], [1, float("nan"), 3], _rmse)
+
+    def test_n_bootstrap_zero(self):
+        with pytest.raises(ValueError, match="n_bootstrap"):
+            bootstrap_ci([1, 2], [1, 2], _rmse, n_bootstrap=0)
+
+    def test_n_bootstrap_negative(self):
+        with pytest.raises(ValueError, match="n_bootstrap"):
+            bootstrap_ci([1, 2], [1, 2], _rmse, n_bootstrap=-5)
+
+    def test_ci_zero(self):
+        with pytest.raises(ValueError, match="ci"):
+            bootstrap_ci([1, 2], [1, 2], _rmse, ci=0)
+
+    def test_ci_100(self):
+        with pytest.raises(ValueError, match="ci"):
+            bootstrap_ci([1, 2], [1, 2], _rmse, ci=100)
