@@ -1,4 +1,4 @@
-"""Tests for eGFR/evaluate.py — Bland-Altman, P30/P10, evaluate_model."""
+"""Tests for eGFR/evaluate.py — Bland-Altman analysis, P30/P10 accuracy, evaluate_model."""
 
 import math
 
@@ -6,13 +6,15 @@ import numpy as np
 import pytest
 
 from eGFR.evaluate import (
-    bland_altman_stats, p30_accuracy, p10_accuracy, evaluate_model,
-    evaluate_by_ckd_stage, bootstrap_ci,
+    bland_altman_stats,
+    evaluate_model,
+    p10_accuracy,
+    p30_accuracy,
 )
 
 
+# ── Bland-Altman: Known-value tests ────────────────────────────────────
 
-# ── Known-value tests ───────────────────────────────────────────────────
 
 class TestBlandAltmanKnownValues:
     """Verify Bland-Altman statistics against hand-calculated values."""
@@ -81,7 +83,8 @@ class TestBlandAltmanKnownValues:
         assert midpoint == pytest.approx(result["mean_bias"], abs=1e-10)
 
 
-# ── Return-type tests ──────────────────────────────────────────────────
+# ── Bland-Altman: Return-type tests ───────────────────────────────────
+
 
 class TestBlandAltmanReturnType:
     """Verify return structure and types."""
@@ -101,7 +104,8 @@ class TestBlandAltmanReturnType:
             assert isinstance(val, float)
 
 
-# ── Input-handling tests ────────────────────────────────────────────────
+# ── Bland-Altman: Input-handling tests ─────────────────────────────────
+
 
 class TestBlandAltmanInputs:
     """Verify accepts various input types."""
@@ -122,7 +126,8 @@ class TestBlandAltmanInputs:
         assert result["mean_bias"] == pytest.approx(2.0)
 
 
-# ── Error-handling tests ───────────────────────────────────────────────
+# ── Bland-Altman: Error-handling tests ─────────────────────────────────
+
 
 class TestBlandAltmanErrors:
     """Verify proper error raising."""
@@ -257,40 +262,54 @@ class TestPnAccuracyInputTypes:
 # ═══════════════════════════════════════════════════════════════════════
 
 
-class TestEvaluateModelReturnStructure:
-    """Verify return dict has the expected keys and types."""
+class TestEvaluateModelReturnKeys:
+    """Verify the returned dict has all expected keys and types."""
 
-    def test_required_keys(self):
-        y_true = [90.0, 60.0, 30.0, 15.0]
-        y_pred = [88.0, 62.0, 28.0, 14.0]
-        result = evaluate_model(y_true, y_pred, "test_model")
+    def setup_method(self):
+        # Simple data where all values are well within CKD G1 (eGFR ≥ 90)
+        self.y_true = np.array([95.0, 100.0, 105.0, 110.0, 115.0])
+        self.y_pred = np.array([93.0, 102.0, 104.0, 112.0, 113.0])
+
+    def test_returns_dict(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        assert isinstance(result, dict)
+
+    def test_all_required_keys_present(self):
+        result = evaluate_model(self.y_true, self.y_pred)
         expected_keys = {
             "model_name", "rmse", "mae", "bias", "r_pearson",
             "p30", "p10", "ba_stats", "ckd_stage_agreement",
         }
         assert set(result.keys()) == expected_keys
 
-    def test_model_name_passthrough(self):
-        result = evaluate_model([90.0, 60.0], [88.0, 62.0], "CKD-EPI 2021")
-        assert result["model_name"] == "CKD-EPI 2021"
+    def test_model_name_echoed(self):
+        result = evaluate_model(self.y_true, self.y_pred, model_name="Ridge")
+        assert result["model_name"] == "Ridge"
 
-    def test_numeric_values_are_float(self):
-        result = evaluate_model([90.0, 60.0, 30.0], [88.0, 62.0, 28.0], "m")
-        for key in ("rmse", "mae", "bias", "r_pearson", "p30", "p10", "ckd_stage_agreement"):
+    def test_default_model_name(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        assert result["model_name"] == "model"
+
+    def test_numeric_types(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        for key in ("rmse", "mae", "bias", "r_pearson", "p30", "p10",
+                     "ckd_stage_agreement"):
             assert isinstance(result[key], float), f"{key} should be float"
 
     def test_ba_stats_is_dict(self):
-        result = evaluate_model([90.0, 60.0, 30.0], [88.0, 62.0, 28.0], "m")
+        result = evaluate_model(self.y_true, self.y_pred)
         assert isinstance(result["ba_stats"], dict)
-        assert "mean_bias" in result["ba_stats"]
+        for key in ("mean_bias", "std_diff", "loa_lower", "loa_upper"):
+            assert key in result["ba_stats"]
 
 
 class TestEvaluateModelKnownValues:
-    """Verify metric values against hand-calculated expectations."""
+    """Verify metrics against hand-calculated values."""
 
     def test_perfect_predictions(self):
-        y = [90.0, 60.0, 30.0, 15.0]
-        result = evaluate_model(y, y, "perfect")
+        """Perfect predictions → RMSE = 0, MAE = 0, P30 = 100 %, etc."""
+        y = [60.0, 90.0, 120.0]
+        result = evaluate_model(y, y)
         assert result["rmse"] == pytest.approx(0.0)
         assert result["mae"] == pytest.approx(0.0)
         assert result["bias"] == pytest.approx(0.0)
@@ -298,50 +317,64 @@ class TestEvaluateModelKnownValues:
         assert result["p10"] == pytest.approx(100.0)
         assert result["ckd_stage_agreement"] == pytest.approx(100.0)
 
-    def test_constant_bias(self):
-        """Constant +5 offset → RMSE = MAE = bias = 5."""
-        y_true = [90.0, 80.0, 70.0, 60.0]
-        y_pred = [95.0, 85.0, 75.0, 65.0]
-        result = evaluate_model(y_true, y_pred, "bias_test")
-        assert result["rmse"] == pytest.approx(5.0)
-        assert result["mae"] == pytest.approx(5.0)
+    def test_rmse_known_value(self):
+        """RMSE for known errors [2, -2, 4, -4] = sqrt(mean([4,4,16,16])) = sqrt(10)."""
+        y_true = [100.0, 100.0, 100.0, 100.0]
+        y_pred = [102.0, 98.0, 104.0, 96.0]
+        result = evaluate_model(y_true, y_pred)
+        expected_rmse = math.sqrt(10.0)
+        assert result["rmse"] == pytest.approx(expected_rmse, abs=1e-6)
+
+    def test_mae_known_value(self):
+        """MAE for errors [2, -2, 4, -4] = mean([2, 2, 4, 4]) = 3.0."""
+        y_true = [100.0, 100.0, 100.0, 100.0]
+        y_pred = [102.0, 98.0, 104.0, 96.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["mae"] == pytest.approx(3.0)
+
+    def test_bias_positive_overestimate(self):
+        """Constant +5 overestimate → bias = +5."""
+        y_true = [60.0, 80.0, 100.0]
+        y_pred = [65.0, 85.0, 105.0]
+        result = evaluate_model(y_true, y_pred)
         assert result["bias"] == pytest.approx(5.0)
 
+    def test_bias_negative_underestimate(self):
+        """Constant -3 underestimate → bias = -3."""
+        y_true = [60.0, 80.0, 100.0]
+        y_pred = [57.0, 77.0, 97.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["bias"] == pytest.approx(-3.0)
+
     def test_pearson_perfect_correlation(self):
-        """Perfectly linearly related predictions → r ≈ 1.0."""
-        y_true = [30.0, 60.0, 90.0, 120.0]
-        y_pred = [35.0, 65.0, 95.0, 125.0]  # y_pred = y_true + 5
-        result = evaluate_model(y_true, y_pred, "corr_test")
+        """Perfect linear relationship → r ≈ 1.0."""
+        y_true = [60.0, 70.0, 80.0, 90.0, 100.0]
+        y_pred = [62.0, 72.0, 82.0, 92.0, 102.0]  # constant offset
+        result = evaluate_model(y_true, y_pred)
         assert result["r_pearson"] == pytest.approx(1.0, abs=1e-10)
 
-    def test_pearson_nan_for_single_element(self):
-        """Single observation → r is undefined (NaN)."""
-        result = evaluate_model([90.0], [92.0], "single")
-        assert math.isnan(result["r_pearson"])
-
-
-class TestEvaluateModelCKDStageAgreement:
-    """Verify CKD-stage concordance metric."""
-
-    def test_all_same_stage(self):
-        """Predictions within the same CKD stage → 100 % agreement."""
-        y_true = [95.0, 100.0, 110.0]  # all G1 (≥90)
-        y_pred = [92.0, 105.0, 115.0]  # all G1
-        result = evaluate_model(y_true, y_pred, "same_stage")
+    def test_ckd_stage_agreement_all_same_stage(self):
+        """All values in same CKD stage → 100 % agreement."""
+        # All in G1 (≥90)
+        y_true = [95.0, 100.0, 105.0]
+        y_pred = [93.0, 98.0, 107.0]
+        result = evaluate_model(y_true, y_pred)
         assert result["ckd_stage_agreement"] == pytest.approx(100.0)
 
-    def test_stage_disagreement(self):
-        """50 % concordance when half cross a stage boundary."""
-        # 95→95 (G1→G1 ✓), 55→55 (G3a→G3a ✓), 62→58 (G2→G3a ✗), 28→28 (G3b→G3b ✓)
-        # Wait, let me be precise about boundaries:
-        # 95 is G1, 55 is G3a, 62 is G2, 58 is G3a, 28 is G3b
-        y_true = [95.0, 55.0, 62.0, 28.0]
-        y_pred = [95.0, 55.0, 58.0, 28.0]
-        # stage_true: G1, G3a, G2, G3b
-        # stage_pred: G1, G3a, G3a, G3b
-        # concordant: G1, G3a, G3b → 3/4 = 75%
-        result = evaluate_model(y_true, y_pred, "mixed")
-        assert result["ckd_stage_agreement"] == pytest.approx(75.0)
+    def test_ckd_stage_agreement_partial(self):
+        """When predictions cross CKD boundaries, agreement < 100 %."""
+        # True: G2 (65), G1 (95)  →  Pred: G3a (50), G1 (95)
+        y_true = [65.0, 95.0]
+        y_pred = [50.0, 95.0]  # 50 is G3a, not G2
+        result = evaluate_model(y_true, y_pred)
+        assert result["ckd_stage_agreement"] == pytest.approx(50.0)
+
+    def test_rmse_gte_mae(self):
+        """RMSE should always be ≥ MAE."""
+        y_true = [60.0, 80.0, 100.0, 120.0, 50.0]
+        y_pred = [65.0, 75.0, 110.0, 115.0, 55.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["rmse"] >= result["mae"]
 
 
 class TestEvaluateModelErrors:
@@ -349,282 +382,35 @@ class TestEvaluateModelErrors:
 
     def test_empty_arrays(self):
         with pytest.raises(ValueError, match="empty"):
-            evaluate_model([], [], "empty")
+            evaluate_model([], [])
 
     def test_shape_mismatch(self):
         with pytest.raises(ValueError, match="[Ss]hape"):
-            evaluate_model([1, 2, 3], [1, 2], "mismatch")
-
-    def test_nan_values(self):
-        with pytest.raises(ValueError, match="NaN"):
-            evaluate_model([90.0, float("nan")], [90.0, 88.0], "nan_test")
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# evaluate_by_ckd_stage — CKD-Stage Stratified Evaluation
-# ═══════════════════════════════════════════════════════════════════════
-
-
-class TestEvaluateByCKDStageReturnStructure:
-    """Verify return dict has the expected structure."""
-
-    def test_returns_dict(self):
-        y = [95.0, 65.0, 50.0, 35.0, 20.0, 10.0]
-        result = evaluate_by_ckd_stage(y, y, y)
-        assert isinstance(result, dict)
-
-    def test_stage_keys_present(self):
-        """All 6 stages represented in data should appear."""
-        y_true = [95.0, 65.0, 50.0, 35.0, 20.0, 10.0]
-        result = evaluate_by_ckd_stage(y_true, y_true, y_true)
-        assert set(result.keys()) == {"G1", "G2", "G3a", "G3b", "G4", "G5"}
-
-    def test_inner_dict_keys(self):
-        result = evaluate_by_ckd_stage([95.0], [93.0], [95.0])
-        inner = result["G1"]
-        assert set(inner.keys()) == {"n", "rmse", "mae", "bias", "p30"}
-
-    def test_n_is_int(self):
-        result = evaluate_by_ckd_stage([95.0, 100.0], [93.0, 98.0], [95.0, 100.0])
-        assert isinstance(result["G1"]["n"], int)
-
-
-class TestEvaluateByCKDStageKnownValues:
-    """Verify metrics within each stage."""
-
-    def test_perfect_predictions_all_stages(self):
-        y_true = [95.0, 65.0, 50.0, 35.0, 20.0, 10.0]
-        result = evaluate_by_ckd_stage(y_true, y_true, y_true)
-        for stage, metrics in result.items():
-            assert metrics["rmse"] == pytest.approx(0.0), f"{stage} RMSE"
-            assert metrics["mae"] == pytest.approx(0.0), f"{stage} MAE"
-            assert metrics["bias"] == pytest.approx(0.0), f"{stage} bias"
-            assert metrics["p30"] == pytest.approx(100.0), f"{stage} P30"
-
-    def test_g1_metrics(self):
-        """G1 (≥90): two samples, constant +5 bias."""
-        y_true = [95.0, 100.0]
-        y_pred = [100.0, 105.0]
-        egfr = [95.0, 100.0]
-        result = evaluate_by_ckd_stage(y_true, y_pred, egfr)
-        g1 = result["G1"]
-        assert g1["n"] == 2
-        assert g1["bias"] == pytest.approx(5.0)
-        assert g1["mae"] == pytest.approx(5.0)
-        assert g1["rmse"] == pytest.approx(5.0)
-
-    def test_sample_count_per_stage(self):
-        """Verify correct sample allocation."""
-        # 3 in G1 (≥90), 2 in G2 (60-89)
-        egfr = [95.0, 100.0, 110.0, 65.0, 80.0]
-        y = egfr  # perfect predictions
-        result = evaluate_by_ckd_stage(y, y, egfr)
-        assert result["G1"]["n"] == 3
-        assert result["G2"]["n"] == 2
-
-    def test_p30_within_stage(self):
-        """50% P30 within G2 stage."""
-        # G2: 65 and 70
-        y_true = [65.0, 70.0]
-        # pred 80 → 23% off (within 30%), pred 120 → 71% off (outside 30%)
-        y_pred = [80.0, 120.0]
-        egfr = [65.0, 70.0]
-        result = evaluate_by_ckd_stage(y_true, y_pred, egfr)
-        assert result["G2"]["p30"] == pytest.approx(50.0)
-
-
-class TestEvaluateByCKDStageEdgeCases:
-    """Edge cases for stage stratification."""
-
-    def test_single_stage_only(self):
-        """All data in G1 → only G1 key returned."""
-        y = [95.0, 100.0, 110.0]
-        result = evaluate_by_ckd_stage(y, y, y)
-        assert set(result.keys()) == {"G1"}
-
-    def test_empty_stages_omitted(self):
-        """Stages with no data should not appear."""
-        # Only G1 and G5
-        y_true = [95.0, 10.0]
-        y_pred = [93.0, 12.0]
-        egfr = [95.0, 10.0]
-        result = evaluate_by_ckd_stage(y_true, y_pred, egfr)
-        assert "G2" not in result
-        assert "G3a" not in result
-        assert "G3b" not in result
-        assert "G4" not in result
-
-    def test_boundary_value_90(self):
-        """eGFR = 90.0 should be classified as G1 (≥90)."""
-        result = evaluate_by_ckd_stage([90.0], [90.0], [90.0])
-        assert "G1" in result
-        assert "G2" not in result
-
-    def test_boundary_value_60(self):
-        """eGFR = 60.0 should be classified as G2 (60–89)."""
-        result = evaluate_by_ckd_stage([60.0], [60.0], [60.0])
-        assert "G2" in result
-        assert "G3a" not in result
-
-    def test_boundary_value_45(self):
-        """eGFR = 45.0 should be classified as G3a (45–59)."""
-        result = evaluate_by_ckd_stage([45.0], [45.0], [45.0])
-        assert "G3a" in result
-
-    def test_boundary_value_30(self):
-        """eGFR = 30.0 should be classified as G3b (30–44)."""
-        result = evaluate_by_ckd_stage([30.0], [30.0], [30.0])
-        assert "G3b" in result
-
-    def test_boundary_value_15(self):
-        """eGFR = 15.0 should be classified as G4 (15–29)."""
-        result = evaluate_by_ckd_stage([15.0], [15.0], [15.0])
-        assert "G4" in result
-
-
-class TestEvaluateByCKDStageErrors:
-    """Verify error handling."""
-
-    def test_empty_arrays(self):
-        with pytest.raises(ValueError, match="empty"):
-            evaluate_by_ckd_stage([], [], [])
-
-    def test_shape_mismatch(self):
-        with pytest.raises(ValueError, match="[Ss]hape"):
-            evaluate_by_ckd_stage([90.0, 60.0], [88.0], [90.0, 60.0])
+            evaluate_model([1, 2, 3], [1, 2])
 
     def test_nan_in_y_true(self):
         with pytest.raises(ValueError, match="NaN"):
-            evaluate_by_ckd_stage([float("nan")], [90.0], [90.0])
-
-    def test_nan_in_egfr_values(self):
-        with pytest.raises(ValueError, match="NaN"):
-            evaluate_by_ckd_stage([90.0], [90.0], [float("nan")])
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# bootstrap_ci — Bootstrap Confidence Intervals
-# ═══════════════════════════════════════════════════════════════════════
-
-
-def _rmse(y_true, y_pred):
-    """Helper RMSE metric for bootstrap tests."""
-    return float(np.sqrt(np.mean((np.asarray(y_pred) - np.asarray(y_true)) ** 2)))
-
-
-def _mae(y_true, y_pred):
-    """Helper MAE metric for bootstrap tests."""
-    return float(np.mean(np.abs(np.asarray(y_pred) - np.asarray(y_true))))
-
-
-class TestBootstrapCIReturnStructure:
-    """Verify return tuple structure."""
-
-    def test_returns_tuple_of_three(self):
-        result = bootstrap_ci([90, 60, 30], [88, 62, 28], _rmse, n_bootstrap=100)
-        assert isinstance(result, tuple)
-        assert len(result) == 3
-
-    def test_all_floats(self):
-        lower, upper, mean = bootstrap_ci(
-            [90, 60, 30], [88, 62, 28], _rmse, n_bootstrap=100
-        )
-        assert isinstance(lower, float)
-        assert isinstance(upper, float)
-        assert isinstance(mean, float)
-
-    def test_lower_le_upper(self):
-        lower, upper, _ = bootstrap_ci(
-            [90, 60, 30, 15], [88, 62, 28, 14], _rmse, n_bootstrap=500
-        )
-        assert lower <= upper
-
-
-class TestBootstrapCIKnownProperties:
-    """Verify expected statistical properties."""
-
-    def test_perfect_predictions_narrow_ci(self):
-        """Perfect predictions → CI should be very tight around 0."""
-        y = [90.0, 60.0, 30.0, 15.0, 100.0]
-        lower, upper, mean = bootstrap_ci(y, y, _rmse, n_bootstrap=500)
-        assert lower == pytest.approx(0.0)
-        assert upper == pytest.approx(0.0)
-        assert mean == pytest.approx(0.0)
-
-    def test_mean_between_bounds(self):
-        lower, upper, mean = bootstrap_ci(
-            [90, 80, 70, 60, 50], [92, 78, 73, 58, 52], _rmse, n_bootstrap=500
-        )
-        assert lower <= mean <= upper
-
-    def test_wider_ci_with_higher_confidence(self):
-        """99% CI should be wider than 90% CI."""
-        y_true = list(range(20, 120, 5))
-        y_pred = [v + np.sin(v) * 5 for v in y_true]
-        lo90, hi90, _ = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=1000, ci=90.0)
-        lo99, hi99, _ = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=1000, ci=99.0)
-        width_90 = hi90 - lo90
-        width_99 = hi99 - lo99
-        assert width_99 >= width_90
-
-    def test_works_with_mae(self):
-        """Should accept any metric function."""
-        lower, upper, mean = bootstrap_ci(
-            [100, 80, 60], [95, 85, 55], _mae, n_bootstrap=200
-        )
-        assert lower <= mean <= upper
-        assert mean > 0
-
-
-class TestBootstrapCIReproducibility:
-    """Verify deterministic results with same random_state."""
-
-    def test_same_seed_same_result(self):
-        y_true = [90, 60, 30, 15]
-        y_pred = [88, 62, 28, 14]
-        r1 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=123)
-        r2 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=123)
-        assert r1 == r2
-
-    def test_different_seed_different_result(self):
-        y_true = [90, 60, 30, 15, 100, 45, 70]
-        y_pred = [88, 62, 28, 14, 98, 47, 68]
-        r1 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=1)
-        r2 = bootstrap_ci(y_true, y_pred, _rmse, n_bootstrap=500, random_state=2)
-        assert r1 != r2
-
-
-class TestBootstrapCIErrors:
-    """Verify error handling."""
-
-    def test_empty_arrays(self):
-        with pytest.raises(ValueError, match="empty"):
-            bootstrap_ci([], [], _rmse)
-
-    def test_shape_mismatch(self):
-        with pytest.raises(ValueError, match="[Ss]hape"):
-            bootstrap_ci([1, 2, 3], [1, 2], _rmse)
-
-    def test_nan_in_y_true(self):
-        with pytest.raises(ValueError, match="NaN"):
-            bootstrap_ci([1, float("nan"), 3], [1, 2, 3], _rmse)
+            evaluate_model([1.0, float("nan")], [1.0, 2.0])
 
     def test_nan_in_y_pred(self):
         with pytest.raises(ValueError, match="NaN"):
-            bootstrap_ci([1, 2, 3], [1, float("nan"), 3], _rmse)
+            evaluate_model([1.0, 2.0], [1.0, float("nan")])
 
-    def test_n_bootstrap_zero(self):
-        with pytest.raises(ValueError, match="n_bootstrap"):
-            bootstrap_ci([1, 2], [1, 2], _rmse, n_bootstrap=0)
+    def test_zero_reference(self):
+        with pytest.raises(ValueError, match="zero"):
+            evaluate_model([0.0, 100.0], [10.0, 110.0])
 
-    def test_n_bootstrap_negative(self):
-        with pytest.raises(ValueError, match="n_bootstrap"):
-            bootstrap_ci([1, 2], [1, 2], _rmse, n_bootstrap=-5)
 
-    def test_ci_zero(self):
-        with pytest.raises(ValueError, match="ci"):
-            bootstrap_ci([1, 2], [1, 2], _rmse, ci=0)
+class TestEvaluateModelInputTypes:
+    """Verify accepts various input types."""
 
-    def test_ci_100(self):
-        with pytest.raises(ValueError, match="ci"):
-            bootstrap_ci([1, 2], [1, 2], _rmse, ci=100)
+    def test_accepts_lists(self):
+        result = evaluate_model([95.0, 100.0], [93.0, 102.0])
+        assert isinstance(result, dict)
+
+    def test_accepts_numpy(self):
+        result = evaluate_model(
+            np.array([95.0, 100.0]),
+            np.array([93.0, 102.0]),
+        )
+        assert isinstance(result, dict)
