@@ -1,17 +1,20 @@
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-"""Tests for eGFR/evaluate.py — Bland-Altman analysis, P30/P10 accuracy."""
+"""Tests for eGFR/evaluate.py — Bland-Altman analysis, P30/P10 accuracy, evaluate_model."""
 
 import math
 
 import numpy as np
 import pytest
 
-from eGFR.evaluate import bland_altman_stats, p30_accuracy, p10_accuracy
+from eGFR.evaluate import (
+    bland_altman_stats,
+    evaluate_model,
+    p10_accuracy,
+    p30_accuracy,
+)
 
 
-# ── Known-value tests ───────────────────────────────────────────────────
+# ── Bland-Altman: Known-value tests ────────────────────────────────────
+
 
 class TestBlandAltmanKnownValues:
     """Verify Bland-Altman statistics against hand-calculated values."""
@@ -80,7 +83,8 @@ class TestBlandAltmanKnownValues:
         assert midpoint == pytest.approx(result["mean_bias"], abs=1e-10)
 
 
-# ── Return-type tests ──────────────────────────────────────────────────
+# ── Bland-Altman: Return-type tests ───────────────────────────────────
+
 
 class TestBlandAltmanReturnType:
     """Verify return structure and types."""
@@ -100,7 +104,8 @@ class TestBlandAltmanReturnType:
             assert isinstance(val, float)
 
 
-# ── Input-handling tests ────────────────────────────────────────────────
+# ── Bland-Altman: Input-handling tests ─────────────────────────────────
+
 
 class TestBlandAltmanInputs:
     """Verify accepts various input types."""
@@ -121,7 +126,8 @@ class TestBlandAltmanInputs:
         assert result["mean_bias"] == pytest.approx(2.0)
 
 
-# ── Error-handling tests ───────────────────────────────────────────────
+# ── Bland-Altman: Error-handling tests ─────────────────────────────────
+
 
 class TestBlandAltmanErrors:
     """Verify proper error raising."""
@@ -135,135 +141,10 @@ class TestBlandAltmanErrors:
             bland_altman_stats([1, 2, 3], [1, 2])
 
     def test_nan_in_y_true(self):
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-"""Tests for eGFR/evaluate.py — Bland-Altman analysis."""
-
-import numpy as np
-import pytest
-from pytest import approx
-
-from eGFR.evaluate import bland_altman_stats
-
-
-# ---- bland_altman_stats — happy path ----------------------------------
-
-
-class TestBlandAltmanStats:
-    """Tests for bland_altman_stats()."""
-
-    def test_perfect_agreement(self):
-        """When y_true == y_pred, bias and std should be zero."""
-        vals = [60.0, 70.0, 80.0, 90.0]
-        result = bland_altman_stats(vals, vals)
-        assert result["mean_bias"] == approx(0.0, abs=1e-10)
-        assert result["std_diff"] == approx(0.0, abs=1e-10)
-        assert result["loa_lower"] == approx(0.0, abs=1e-10)
-        assert result["loa_upper"] == approx(0.0, abs=1e-10)
-
-    def test_constant_bias(self):
-        """Constant offset should give that offset as mean_bias, zero std."""
-        y_true = [100.0, 110.0, 120.0, 130.0]
-        y_pred = [95.0, 105.0, 115.0, 125.0]
-        # diff = [5, 5, 5, 5]
-        result = bland_altman_stats(y_true, y_pred)
-        assert result["mean_bias"] == approx(5.0)
-        assert result["std_diff"] == approx(0.0, abs=1e-10)
-        assert result["loa_lower"] == approx(5.0, abs=1e-10)
-        assert result["loa_upper"] == approx(5.0, abs=1e-10)
-
-    def test_known_values(self):
-        """Hand-calculated example with simple numbers."""
-        y_true = np.array([10.0, 20.0, 30.0, 40.0, 50.0])
-        y_pred = np.array([12.0, 18.0, 33.0, 37.0, 50.0])
-        # diff = [-2, 2, -3, 3, 0]
-        # mean_bias = 0.0
-        # std_diff = sqrt( (4+4+9+9+0) / 4 ) = sqrt(26/4) = sqrt(6.5) ≈ 2.5495
-        diff = y_true - y_pred
-        expected_bias = float(np.mean(diff))
-        expected_std = float(np.std(diff, ddof=1))
-        expected_loa_lo = expected_bias - 1.96 * expected_std
-        expected_loa_hi = expected_bias + 1.96 * expected_std
-
-        result = bland_altman_stats(y_true, y_pred)
-        assert result["mean_bias"] == approx(expected_bias)
-        assert result["std_diff"] == approx(expected_std)
-        assert result["loa_lower"] == approx(expected_loa_lo)
-        assert result["loa_upper"] == approx(expected_loa_hi)
-
-    def test_negative_bias(self):
-        """When pred > true consistently, bias is negative."""
-        y_true = [50.0, 60.0, 70.0]
-        y_pred = [55.0, 65.0, 75.0]
-        result = bland_altman_stats(y_true, y_pred)
-        assert result["mean_bias"] == approx(-5.0)
-
-    def test_returns_all_keys(self):
-        """Result dict should contain exactly the 4 expected keys."""
-        result = bland_altman_stats([1, 2, 3], [1, 2, 3])
-        assert set(result.keys()) == {"mean_bias", "std_diff", "loa_lower", "loa_upper"}
-
-    def test_loa_symmetry(self):
-        """Limits of agreement should be symmetric around mean_bias."""
-        y_true = [10, 20, 30, 40, 50]
-        y_pred = [11, 19, 31, 39, 51]
-        result = bland_altman_stats(y_true, y_pred)
-        mid = (result["loa_lower"] + result["loa_upper"]) / 2
-        assert mid == approx(result["mean_bias"])
-
-    def test_single_pair(self):
-        """Single observation: std is NaN (ddof=1), but mean_bias works.
-        Implementation uses ddof=1 so with n=1 std_diff will be nan.
-        We accept this as correct statistical behaviour.
-        """
-        # With a single observation, std(ddof=1) = nan.
-        # We just verify it doesn't crash.
-        result = bland_altman_stats([100.0], [90.0])
-        assert result["mean_bias"] == approx(10.0)
-
-    def test_numpy_array_input(self):
-        """Should handle numpy arrays as inputs."""
-        y_true = np.array([60, 70, 80, 90, 100], dtype=float)
-        y_pred = np.array([62, 68, 82, 88, 102], dtype=float)
-        result = bland_altman_stats(y_true, y_pred)
-        assert isinstance(result["mean_bias"], float)
-
-
-# ---- bland_altman_stats — error handling ------------------------------
-
-
-class TestBlandAltmanStatsErrors:
-    """Test input validation for bland_altman_stats()."""
-
-    def test_empty_arrays(self):
-        """Empty input should raise ValueError."""
-        with pytest.raises(ValueError, match="empty"):
-            bland_altman_stats([], [])
-
-    def test_mismatched_lengths(self):
-        """Different length arrays should raise ValueError."""
-        with pytest.raises(ValueError, match="Shape mismatch"):
-            bland_altman_stats([1, 2, 3], [1, 2])
-
-    def test_nan_in_y_true(self):
-        """NaN in y_true should raise ValueError."""
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         with pytest.raises(ValueError, match="NaN"):
             bland_altman_stats([1, float("nan"), 3], [1, 2, 3])
 
     def test_nan_in_y_pred(self):
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
         with pytest.raises(ValueError, match="NaN"):
             bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
 
@@ -374,18 +255,162 @@ class TestPnAccuracyInputTypes:
     def test_accepts_numpy(self):
         result = p30_accuracy(np.array([100.0, 80.0]), np.array([100.0, 80.0]))
         assert result == pytest.approx(100.0)
-=======
-        """NaN in y_pred should raise ValueError."""
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# evaluate_model — Comprehensive Evaluation
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestEvaluateModelReturnKeys:
+    """Verify the returned dict has all expected keys and types."""
+
+    def setup_method(self):
+        # Simple data where all values are well within CKD G1 (eGFR ≥ 90)
+        self.y_true = np.array([95.0, 100.0, 105.0, 110.0, 115.0])
+        self.y_pred = np.array([93.0, 102.0, 104.0, 112.0, 113.0])
+
+    def test_returns_dict(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        assert isinstance(result, dict)
+
+    def test_all_required_keys_present(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        expected_keys = {
+            "model_name", "rmse", "mae", "bias", "r_pearson",
+            "p30", "p10", "ba_stats", "ckd_stage_agreement",
+        }
+        assert set(result.keys()) == expected_keys
+
+    def test_model_name_echoed(self):
+        result = evaluate_model(self.y_true, self.y_pred, model_name="Ridge")
+        assert result["model_name"] == "Ridge"
+
+    def test_default_model_name(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        assert result["model_name"] == "model"
+
+    def test_numeric_types(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        for key in ("rmse", "mae", "bias", "r_pearson", "p30", "p10",
+                     "ckd_stage_agreement"):
+            assert isinstance(result[key], float), f"{key} should be float"
+
+    def test_ba_stats_is_dict(self):
+        result = evaluate_model(self.y_true, self.y_pred)
+        assert isinstance(result["ba_stats"], dict)
+        for key in ("mean_bias", "std_diff", "loa_lower", "loa_upper"):
+            assert key in result["ba_stats"]
+
+
+class TestEvaluateModelKnownValues:
+    """Verify metrics against hand-calculated values."""
+
+    def test_perfect_predictions(self):
+        """Perfect predictions → RMSE = 0, MAE = 0, P30 = 100 %, etc."""
+        y = [60.0, 90.0, 120.0]
+        result = evaluate_model(y, y)
+        assert result["rmse"] == pytest.approx(0.0)
+        assert result["mae"] == pytest.approx(0.0)
+        assert result["bias"] == pytest.approx(0.0)
+        assert result["p30"] == pytest.approx(100.0)
+        assert result["p10"] == pytest.approx(100.0)
+        assert result["ckd_stage_agreement"] == pytest.approx(100.0)
+
+    def test_rmse_known_value(self):
+        """RMSE for known errors [2, -2, 4, -4] = sqrt(mean([4,4,16,16])) = sqrt(10)."""
+        y_true = [100.0, 100.0, 100.0, 100.0]
+        y_pred = [102.0, 98.0, 104.0, 96.0]
+        result = evaluate_model(y_true, y_pred)
+        expected_rmse = math.sqrt(10.0)
+        assert result["rmse"] == pytest.approx(expected_rmse, abs=1e-6)
+
+    def test_mae_known_value(self):
+        """MAE for errors [2, -2, 4, -4] = mean([2, 2, 4, 4]) = 3.0."""
+        y_true = [100.0, 100.0, 100.0, 100.0]
+        y_pred = [102.0, 98.0, 104.0, 96.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["mae"] == pytest.approx(3.0)
+
+    def test_bias_positive_overestimate(self):
+        """Constant +5 overestimate → bias = +5."""
+        y_true = [60.0, 80.0, 100.0]
+        y_pred = [65.0, 85.0, 105.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["bias"] == pytest.approx(5.0)
+
+    def test_bias_negative_underestimate(self):
+        """Constant -3 underestimate → bias = -3."""
+        y_true = [60.0, 80.0, 100.0]
+        y_pred = [57.0, 77.0, 97.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["bias"] == pytest.approx(-3.0)
+
+    def test_pearson_perfect_correlation(self):
+        """Perfect linear relationship → r ≈ 1.0."""
+        y_true = [60.0, 70.0, 80.0, 90.0, 100.0]
+        y_pred = [62.0, 72.0, 82.0, 92.0, 102.0]  # constant offset
+        result = evaluate_model(y_true, y_pred)
+        assert result["r_pearson"] == pytest.approx(1.0, abs=1e-10)
+
+    def test_ckd_stage_agreement_all_same_stage(self):
+        """All values in same CKD stage → 100 % agreement."""
+        # All in G1 (≥90)
+        y_true = [95.0, 100.0, 105.0]
+        y_pred = [93.0, 98.0, 107.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["ckd_stage_agreement"] == pytest.approx(100.0)
+
+    def test_ckd_stage_agreement_partial(self):
+        """When predictions cross CKD boundaries, agreement < 100 %."""
+        # True: G2 (65), G1 (95)  →  Pred: G3a (50), G1 (95)
+        y_true = [65.0, 95.0]
+        y_pred = [50.0, 95.0]  # 50 is G3a, not G2
+        result = evaluate_model(y_true, y_pred)
+        assert result["ckd_stage_agreement"] == pytest.approx(50.0)
+
+    def test_rmse_gte_mae(self):
+        """RMSE should always be ≥ MAE."""
+        y_true = [60.0, 80.0, 100.0, 120.0, 50.0]
+        y_pred = [65.0, 75.0, 110.0, 115.0, 55.0]
+        result = evaluate_model(y_true, y_pred)
+        assert result["rmse"] >= result["mae"]
+
+
+class TestEvaluateModelErrors:
+    """Verify error handling."""
+
+    def test_empty_arrays(self):
+        with pytest.raises(ValueError, match="empty"):
+            evaluate_model([], [])
+
+    def test_shape_mismatch(self):
+        with pytest.raises(ValueError, match="[Ss]hape"):
+            evaluate_model([1, 2, 3], [1, 2])
+
+    def test_nan_in_y_true(self):
         with pytest.raises(ValueError, match="NaN"):
-            bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
->>>>>>> Stashed changes
-=======
-        """NaN in y_pred should raise ValueError."""
+            evaluate_model([1.0, float("nan")], [1.0, 2.0])
+
+    def test_nan_in_y_pred(self):
         with pytest.raises(ValueError, match="NaN"):
-            bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
->>>>>>> Stashed changes
-=======
-        """NaN in y_pred should raise ValueError."""
-        with pytest.raises(ValueError, match="NaN"):
-            bland_altman_stats([1, 2, 3], [1, float("nan"), 3])
->>>>>>> Stashed changes
+            evaluate_model([1.0, 2.0], [1.0, float("nan")])
+
+    def test_zero_reference(self):
+        with pytest.raises(ValueError, match="zero"):
+            evaluate_model([0.0, 100.0], [10.0, 110.0])
+
+
+class TestEvaluateModelInputTypes:
+    """Verify accepts various input types."""
+
+    def test_accepts_lists(self):
+        result = evaluate_model([95.0, 100.0], [93.0, 102.0])
+        assert isinstance(result, dict)
+
+    def test_accepts_numpy(self):
+        result = evaluate_model(
+            np.array([95.0, 100.0]),
+            np.array([93.0, 102.0]),
+        )
+        assert isinstance(result, dict)

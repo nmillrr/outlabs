@@ -15,58 +15,19 @@ import numpy as np
 def bland_altman_stats(y_true, y_pred):
     """Compute Bland-Altman agreement statistics.
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     The Bland-Altman method assesses agreement between two measurement
     methods by analysing the differences between paired observations.
-=======
-    Calculates the mean bias (mean of differences), standard deviation of
-    differences, and 95% limits of agreement (LoA) between two sets of
-    measurements.
->>>>>>> Stashed changes
-=======
-    Calculates the mean bias (mean of differences), standard deviation of
-    differences, and 95% limits of agreement (LoA) between two sets of
-    measurements.
->>>>>>> Stashed changes
-=======
-    Calculates the mean bias (mean of differences), standard deviation of
-    differences, and 95% limits of agreement (LoA) between two sets of
-    measurements.
->>>>>>> Stashed changes
 
     Parameters
     ----------
     y_true : array-like
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
         Reference (measured) values.
     y_pred : array-like
         Predicted (estimated) values.
-=======
-        Reference / true values (e.g. measured GFR).
-    y_pred : array-like
-        Predicted / estimated values (e.g. eGFR).
->>>>>>> Stashed changes
-=======
-        Reference / true values (e.g. measured GFR).
-    y_pred : array-like
-        Predicted / estimated values (e.g. eGFR).
->>>>>>> Stashed changes
-=======
-        Reference / true values (e.g. measured GFR).
-    y_pred : array-like
-        Predicted / estimated values (e.g. eGFR).
->>>>>>> Stashed changes
 
     Returns
     -------
     dict
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
         mean_bias : float
             Mean difference (y_pred − y_true).  Positive ⇒ overestimation.
         std_diff : float
@@ -75,15 +36,6 @@ def bland_altman_stats(y_true, y_pred):
             Lower 95 % limit of agreement (mean_bias − 1.96 × std_diff).
         loa_upper : float
             Upper 95 % limit of agreement (mean_bias + 1.96 × std_diff).
-=======
-        Keys: ``mean_bias``, ``std_diff``, ``loa_lower``, ``loa_upper``.
->>>>>>> Stashed changes
-=======
-        Keys: ``mean_bias``, ``std_diff``, ``loa_lower``, ``loa_upper``.
->>>>>>> Stashed changes
-=======
-        Keys: ``mean_bias``, ``std_diff``, ``loa_lower``, ``loa_upper``.
->>>>>>> Stashed changes
 
     Raises
     ------
@@ -92,23 +44,8 @@ def bland_altman_stats(y_true, y_pred):
 
     References
     ----------
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     Bland JM, Altman DG. Statistical methods for assessing agreement
     between two methods of clinical measurement. Lancet. 1986;1(8476):307-10.
-=======
-    Bland JM, Altman DG. Statistical methods for assessing agreement between
-    two methods of clinical measurement. Lancet. 1986;1(8476):307-310.
->>>>>>> Stashed changes
-=======
-    Bland JM, Altman DG. Statistical methods for assessing agreement between
-    two methods of clinical measurement. Lancet. 1986;1(8476):307-310.
->>>>>>> Stashed changes
-=======
-    Bland JM, Altman DG. Statistical methods for assessing agreement between
-    two methods of clinical measurement. Lancet. 1986;1(8476):307-310.
->>>>>>> Stashed changes
     """
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
@@ -122,27 +59,9 @@ def bland_altman_stats(y_true, y_pred):
     if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
         raise ValueError("Input arrays must not contain NaN values.")
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     differences = y_pred - y_true
     mean_bias = float(np.mean(differences))
     std_diff = float(np.std(differences, ddof=1))
-=======
-    diff = y_true - y_pred
-    mean_bias = float(np.mean(diff))
-    std_diff = float(np.std(diff, ddof=1))
->>>>>>> Stashed changes
-=======
-    diff = y_true - y_pred
-    mean_bias = float(np.mean(diff))
-    std_diff = float(np.std(diff, ddof=1))
->>>>>>> Stashed changes
-=======
-    diff = y_true - y_pred
-    mean_bias = float(np.mean(diff))
-    std_diff = float(np.std(diff, ddof=1))
->>>>>>> Stashed changes
     loa_lower = mean_bias - 1.96 * std_diff
     loa_upper = mean_bias + 1.96 * std_diff
 
@@ -152,9 +71,6 @@ def bland_altman_stats(y_true, y_pred):
         "loa_lower": loa_lower,
         "loa_upper": loa_upper,
     }
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 
 
 def _pn_accuracy(y_true, y_pred, threshold: float) -> float:
@@ -238,9 +154,97 @@ def p10_accuracy(y_true, y_pred) -> float:
         contain zero reference values.
     """
     return _pn_accuracy(y_true, y_pred, threshold=10.0)
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+
+
+def evaluate_model(y_true, y_pred, model_name="model"):
+    """Compute a comprehensive suite of eGFR-relevant evaluation metrics.
+
+    Consolidates RMSE, MAE, bias, Pearson correlation, P30/P10 accuracy,
+    Bland-Altman statistics, and CKD-stage concordance into a single dict.
+
+    Parameters
+    ----------
+    y_true : array-like
+        Reference (measured) GFR values in mL/min/1.73 m².
+    y_pred : array-like
+        Predicted (estimated) GFR values in mL/min/1.73 m².
+    model_name : str, optional
+        Human-readable label for the model (default ``"model"``).
+
+    Returns
+    -------
+    dict
+        Keys returned:
+
+        - **model_name** (*str*) — echo of *model_name* parameter
+        - **rmse** (*float*) — root-mean-square error
+        - **mae** (*float*) — mean absolute error
+        - **bias** (*float*) — mean signed error (pred − true)
+        - **r_pearson** (*float*) — Pearson correlation coefficient
+        - **p30** (*float*) — % of predictions within ±30 % of reference
+        - **p10** (*float*) — % of predictions within ±10 % of reference
+        - **ba_stats** (*dict*) — Bland-Altman statistics
+          (mean_bias, std_diff, loa_lower, loa_upper)
+        - **ckd_stage_agreement** (*float*) — % of concordant CKD-stage
+          classifications between true and predicted eGFR
+
+    Raises
+    ------
+    ValueError
+        If inputs are empty, contain NaN, have mismatched shapes, or
+        contain zero reference values.
+    """
+    from eGFR.utils import egfr_to_ckd_stage
+
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+
+    # ── Input validation ────────────────────────────────────────────────
+    if y_true.size == 0 or y_pred.size == 0:
+        raise ValueError("Input arrays must not be empty.")
+    if y_true.shape != y_pred.shape:
+        raise ValueError(
+            f"Shape mismatch: y_true {y_true.shape} vs y_pred {y_pred.shape}."
+        )
+    if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
+        raise ValueError("Input arrays must not contain NaN values.")
+    if np.any(y_true == 0):
+        raise ValueError(
+            "Reference values must not be zero (division by zero in "
+            "percentage error calculation)."
+        )
+
+    # ── Core regression metrics ─────────────────────────────────────────
+    errors = y_pred - y_true
+    rmse = float(np.sqrt(np.mean(errors ** 2)))
+    mae = float(np.mean(np.abs(errors)))
+    bias = float(np.mean(errors))
+
+    # Pearson r
+    if y_true.size >= 2:
+        r_pearson = float(np.corrcoef(y_true, y_pred)[0, 1])
+    else:
+        r_pearson = float("nan")
+
+    # ── eGFR-specific metrics ───────────────────────────────────────────
+    p30 = p30_accuracy(y_true, y_pred)
+    p10 = p10_accuracy(y_true, y_pred)
+    ba_stats = bland_altman_stats(y_true, y_pred)
+
+    # ── CKD-stage concordance ───────────────────────────────────────────
+    stages_true = [egfr_to_ckd_stage(v) for v in y_true]
+    stages_pred = [egfr_to_ckd_stage(v) for v in y_pred]
+    concordant = sum(1 for st, sp in zip(stages_true, stages_pred) if st == sp)
+    ckd_stage_agreement = float(concordant / len(stages_true) * 100.0)
+
+    return {
+        "model_name": model_name,
+        "rmse": rmse,
+        "mae": mae,
+        "bias": bias,
+        "r_pearson": r_pearson,
+        "p30": p30,
+        "p10": p10,
+        "ba_stats": ba_stats,
+        "ckd_stage_agreement": ckd_stage_agreement,
+    }

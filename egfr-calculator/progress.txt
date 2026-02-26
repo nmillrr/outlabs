@@ -4,6 +4,13 @@
 (Patterns discovered during implementation)
 - Use `python3` not `python` on this machine
 - Project root is `egfr-calculator/`, package is `eGFR/`
+- PowerShell terminal output encoding issues with pytest; use subprocess + retcode to verify
+- `_normalize_sex()` in models.py is reusable for all equation functions
+- `save_model()` is generic — works for any joblib-serializable object
+- Lazy imports inside function body keep top-level imports clean
+- `_pn_accuracy` pattern with threshold parameter keeps P30/P10 DRY
+- Bland-Altman convention: differences = pred − true; LOA = bias ± 1.96 × std
+- `egfr_to_ckd_stage()` from utils is reusable for CKD stage concordance
 
 ---
 
@@ -322,25 +329,6 @@
   - Notebook follows same synthetic-data fallback pattern as notebooks 01 and 02
 ---
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-## Iteration 20 - US-020: Implement cross-validation wrapper
-- Added `cross_validate_model(model, X, y, n_splits=10)` in `eGFR/train.py`
-- Uses `sklearn.model_selection.KFold` with shuffle=True, random_state=42 for reproducibility
-- Clones the model via `sklearn.base.clone` for each fold so original estimator is untouched
-- Returns dict: RMSE_mean, RMSE_std, MAE_mean, MAE_std
-- Input validation: empty arrays, shape mismatch, n_splits > n_samples
-- Added 8 tests in `tests/test_train.py`: return keys, value types, RMSE≥MAE invariant, custom splits, error handling, model unchanged after CV
-- All 143 tests pass (8 new + 135 existing)
-- Files changed: eGFR/train.py, tests/test_train.py, PRD.md, progress.txt
-- Learnings for future iterations:
-  - `sklearn.base.clone` creates an unfitted copy — safe for CV without side-effects on the original
-  - `KFold(shuffle=True, random_state=42)` ensures deterministic folds
-  - `mean_squared_error()**0.5` gives RMSE (sklearn doesn't have a direct RMSE metric in older versions)
-  - Lazy imports inside function body continue to work well for keeping top-level clean
----
-
 ## Iteration 22 - US-022: Implement Bland-Altman analysis
 - Added `bland_altman_stats(y_true, y_pred)` in `eGFR/evaluate.py`
 - Returns dict: mean_bias, std_diff, loa_lower, loa_upper (95% limits of agreement)
@@ -364,37 +352,29 @@
 - P10: stricter ±10% threshold for precision evaluation
 - Input validation: empty arrays, shape mismatch, NaN, zero reference values
 - Added 18 tests in `tests/test_evaluate.py`: known-value (P30 & P10), boundary cases, error handling, input types
-- Also marked US-020 complete in PRD (was implemented but checkboxes not updated)
 - All 168 tests pass (18 new + 150 existing)
 - Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
 - Learnings for future iterations:
   - `_pn_accuracy` pattern with threshold parameter keeps P30/P10 DRY
   - Zero reference values cause division-by-zero — must reject explicitly
   - P10 ≤ P30 invariant is a useful sanity check in tests
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-## Iteration 22 - US-022: Implement Bland-Altman analysis
-- Added `bland_altman_stats(y_true, y_pred)` in `eGFR/evaluate.py`
-- Computes mean bias (mean of differences), std of differences (ddof=1), and 95% limits of agreement (±1.96*SD)
-- Returns dict with keys: mean_bias, std_diff, loa_lower, loa_upper
-- Input validation: empty arrays, shape mismatch, NaN values
-- Docstring references Bland & Altman (1986) Lancet
-- Created `tests/test_evaluate.py` with 13 tests: perfect agreement, constant bias, known values, negative bias, key presence, LoA symmetry, single pair, numpy input, and 4 error-handling tests
-- All 155 tests pass (12 new + 143 existing)
+---
+
+## Iteration 24 - US-024: Create comprehensive evaluation function
+- Added `evaluate_model(y_true, y_pred, model_name)` in `eGFR/evaluate.py`
+- Returns dict with 9 keys: model_name, rmse, mae, bias, r_pearson, p30, p10, ba_stats, ckd_stage_agreement
+- RMSE = sqrt(mean(errors²)); MAE = mean(|errors|); bias = mean(pred − true)
+- Pearson r via `np.corrcoef()` (NaN for single-element input)
+- CKD stage concordance via `egfr_to_ckd_stage()` from utils
+- Reuses existing `bland_altman_stats()`, `p30_accuracy()`, `p10_accuracy()` for DRY composition
+- Resolved git merge conflicts in both `eGFR/evaluate.py` and `tests/test_evaluate.py`
+- Resolved git merge conflicts in `progress.txt`
+- Added 20 tests in `tests/test_evaluate.py`: return keys, known values (perfect, RMSE, MAE, bias, Pearson, CKD agreement), error handling, input types
+- All tests pass (RETCODE: 0)
 - Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
 - Learnings for future iterations:
-  - `np.std(ddof=1)` gives sample standard deviation (Bessel's correction) — standard for Bland-Altman
-  - 95% LoA = mean_bias ± 1.96 * std_diff — classic Bland-Altman formula
-  - `tests/test_evaluate.py` created for the first time; future US-023–US-026 tests go here
-  - PowerShell terminal output encoding still garbled; use subprocess wrapper to reliably capture pytest output
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+  - `evaluate_model()` composes existing metric functions — avoids duplicating validation logic
+  - `np.corrcoef()` returns a 2×2 matrix; Pearson r is at `[0, 1]`
+  - CKD stage concordance is a simple zip-and-compare over `egfr_to_ckd_stage()` outputs
+  - Git merge conflicts in `evaluate.py` and `test_evaluate.py` needed resolution — "Updated upstream" version (pred − true convention) was canonical
 ---
