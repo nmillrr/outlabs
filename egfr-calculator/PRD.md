@@ -445,11 +445,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want a simple API for making eGFR predictions.
 
 **Acceptance Criteria:**
-- [ ] Add `predict_egfr(cr_mgdl, age, sex, weight_kg=None, height_cm=None, cystatin_c=None, method='ckd_epi_2021')` in `eGFR/predict.py`
-- [ ] method='ckd_epi_2021', 'mdrd', 'cockcroft_gault' uses specific equation
-- [ ] method='hybrid' uses best ML model (accepts partial inputs gracefully)
-- [ ] Returns dict: egfr_pred, ckd_stage, method, warning (if inputs incomplete or CrCl vs eGFR mismatch)
-- [ ] Typecheck passes
+- [x] Add `predict_egfr(cr_mgdl, age, sex, weight_kg=None, height_cm=None, cystatin_c=None, method='ckd_epi_2021')` in `eGFR/predict.py`
+- [x] method='ckd_epi_2021', 'mdrd', 'cockcroft_gault' uses specific equation
+- [x] method='hybrid' uses best ML model (accepts partial inputs gracefully)
+- [x] Returns dict: egfr_pred, ckd_stage, method, warning (if inputs incomplete or CrCl vs eGFR mismatch)
+- [x] Typecheck passes
 
 ---
 
