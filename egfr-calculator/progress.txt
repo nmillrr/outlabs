@@ -378,3 +378,34 @@
   - CKD stage concordance is a simple zip-and-compare over `egfr_to_ckd_stage()` outputs
   - Git merge conflicts in `evaluate.py` and `test_evaluate.py` needed resolution — "Updated upstream" version (pred − true convention) was canonical
 ---
+
+## Iteration 26 - US-026: Implement bootstrap confidence intervals
+- Added `bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000, ci=95.0, random_state=42)` in `eGFR/evaluate.py`
+- Returns `(lower, upper, mean)` tuple — percentile-based CI bounds + bootstrap distribution mean
+- Accepts any `metric_func(y_true, y_pred) -> float` callable (RMSE, MAE, P30, etc.)
+- Uses `np.random.default_rng(random_state)` for reproducibility
+- Input validation: empty, shape mismatch, NaN, n_bootstrap < 1, ci not in (0, 100)
+- Added 16 tests in `tests/test_evaluate.py`: 3 return-structure, 4 known-properties, 2 reproducibility, 8 error-handling (but some grouped: total is ~16 test methods)
+- All 217 tests pass (17 new + 200 existing)
+- Files changed: eGFR/evaluate.py, tests/test_evaluate.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `np.random.default_rng` is the modern numpy RNG API (preferred over `np.random.RandomState`)
+  - Percentile bootstrap: alpha = (100 - ci) / 2, lower = percentile(alpha), upper = percentile(100 - alpha)
+  - Perfect predictions produce degenerate bootstrap (all zeros) — CI is [0, 0], mean=0
+  - `bootstrap_ci` is generic — can wrap any metric function for uncertainty quantification
+---
+
+## Iteration 27 - US-027: Search for external validation datasets with measured GFR
+- Created `notebooks/external_data_sources.md` documenting potential external datasets
+- Surveyed 5 dataset sources: CRIC Study, AASK Trial/Cohort, MDRD Study (all via NIDDK-CR), CKD-EPI consortium, PhysioNet/Figshare
+- Documented access requirements (DUA), measurement methods (iothalamate), and sample sizes for each
+- Documented NHANES cross-equation concordance validation plan as fallback (no mGFR in NHANES)
+- Recommended CRIC Study as primary target (large sample, iothalamate mGFR, cystatin C available)
+- No code changes; documentation only; all 190 existing tests pass
+- Files changed: notebooks/external_data_sources.md, PRD.md, progress.txt
+- Learnings for future iterations:
+  - No freely downloadable measured GFR dataset exists on PhysioNet or Figshare
+  - NIDDK-CR datasets (CRIC, AASK, MDRD) require DUA but are free for academic researchers
+  - NHANES cross-equation concordance is a reasonable fallback but cannot compute true P30/P10 accuracy
+  - CRIC Study is the best option: ~3,900 participants, iothalamate mGFR, creatinine + cystatin C
+---

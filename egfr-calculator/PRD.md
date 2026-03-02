@@ -401,11 +401,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want to identify external CKD cohort datasets with measured GFR.
 
 **Acceptance Criteria:**
-- [ ] Research and document potential external datasets in `notebooks/external_data_sources.md`
-- [ ] Consider: CKD-EPI development cohort, CRIC Study, MDRD Study data, AASK, iGFR datasets on Physionet/Figshare
-- [ ] Document access requirements, measurement method (iothalamate vs iohexol), and sample sizes
-- [ ] If no freely accessible dataset, document NHANES cross-equation concordance validation plan
-- [ ] Typecheck passes (no code changes, documentation only)
+- [x] Research and document potential external datasets in `notebooks/external_data_sources.md`
+- [x] Consider: CKD-EPI development cohort, CRIC Study, MDRD Study data, AASK, iGFR datasets on Physionet/Figshare
+- [x] Document access requirements, measurement method (iothalamate vs iohexol), and sample sizes
+- [x] If no freely accessible dataset, document NHANES cross-equation concordance validation plan
+- [x] Typecheck passes (no code changes, documentation only)
 
 ---
 
