@@ -459,3 +459,38 @@
   - Synthetic data uses `generate_synthetic_mgfr_dataset()` from data.py — same pattern as notebook 05
   - `evaluate_model()` returns a comprehensive dict — reusable for any model comparison
 ---
+
+## Iteration 30 - US-030: Create prediction API
+- Added `predict_egfr(cr_mgdl, age, sex, weight_kg, height_cm, cystatin_c, method)` in `eGFR/predict.py`
+- Supports 4 methods: ckd_epi_2021 (default), mdrd, cockcroft_gault, hybrid
+- Returns dict: egfr_pred, ckd_stage, method, warning
+- CKD-EPI 2021: delegates to calc_egfr_ckd_epi_2021(), no warning
+- MDRD: captures >60 warning from calc_egfr_mdrd(), surfaces in warning field
+- Cockcroft-Gault: requires weight_kg, always includes CrCl vs eGFR warning
+- Hybrid: loads saved model from models/best_model.joblib, builds feature vector matching create_features() order
+  - Falls back to average of mechanistic estimators if no model found
+  - Gracefully handles partial inputs (weight, height, cystatin C) with defaults
+- Created `tests/test_predict.py` with 33 tests: 7 CKD-EPI, 4 MDRD, 4 CG, 6 hybrid, 7 validation, 5 return-structure
+- All 223 tests pass (33 new + 190 existing)
+- Files changed: eGFR/predict.py, tests/test_predict.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `warnings.catch_warnings(record=True)` captures warnings from delegated functions for surfacing in API
+  - Hybrid model may or may not exist on disk — tests must handle both scenarios
+  - Method string normalization (strip + lower) makes API robust to user input variations
+  - CrCl vs eGFR distinction is critical for Cockcroft-Gault — always warn users
+---
+
+## Iteration 31 - US-031: Create package setup.py
+- Created `setup.py` with name='eGFR', version='0.1.0'
+- Dependencies parsed from `requirements.txt`; pytest separated into `test` extras
+- README.md reading made optional (fallback description) since US-032 hasn't created it yet
+- Package installs with `pip install -e .` (verified)
+- All imports work: `from eGFR import models, utils, data, train, evaluate, predict`
+- All 223 existing tests pass
+- Files changed: setup.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `pip install -e .` with `setup.py` requires README.md to exist if `open("README.md")` is used — use `os.path.exists()` guard
+  - `find_packages(exclude=["tests", "tests.*", "notebooks"])` keeps test/notebook code out of the distribution
+  - `python_requires=">=3.9"` matches the use of modern type hints (e.g., `list[str]`)
+  - pytest is a test-only dependency — separate into `extras_require={"test": ...}`
+---

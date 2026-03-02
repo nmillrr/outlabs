@@ -457,10 +457,10 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a developer, I want the package to be pip-installable.
 
 **Acceptance Criteria:**
-- [ ] Create `setup.py` with name='eGFR', version='0.1.0'
-- [ ] Includes dependencies from requirements.txt
-- [ ] Package installs with `pip install -e .`
-- [ ] Import works: `from eGFR import models`
+- [x] Create `setup.py` with name='eGFR', version='0.1.0'
+- [x] Includes dependencies from requirements.txt
+- [x] Package installs with `pip install -e .`
+- [x] Import works: `from eGFR import models`
 
 ---
 
