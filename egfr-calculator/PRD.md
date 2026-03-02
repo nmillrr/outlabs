@@ -413,13 +413,13 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want to validate the models against an independent dataset with measured GFR so that I can demonstrate clinical accuracy.
 
 **Acceptance Criteria:**
-- [ ] Identify and download a suitable open-access CKD dataset with measured GFR
-- [ ] Write a loader/cleaning function in `eGFR/data.py` for the chosen dataset
-- [ ] Run all mechanistic equations and best ML model on external dataset
-- [ ] Report P30, P10, RMSE, MAE, bias, and CKD stage concordance
-- [ ] Create `notebooks/05_external_validation.ipynb` documenting results
-- [ ] Document any dataset limitations
-- [ ] All existing tests still pass
+- [x] Identify and download a suitable open-access CKD dataset with measured GFR
+- [x] Write a loader/cleaning function in `eGFR/data.py` for the chosen dataset
+- [x] Run all mechanistic equations and best ML model on external dataset
+- [x] Report P30, P10, RMSE, MAE, bias, and CKD stage concordance
+- [x] Create `notebooks/05_external_validation.ipynb` documenting results
+- [x] Document any dataset limitations
+- [x] All existing tests still pass
 
 ---
 

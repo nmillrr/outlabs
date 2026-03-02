@@ -536,3 +536,116 @@ def generate_quality_report(df: pd.DataFrame, output_path: str) -> str:
         f.write(report)
 
     return report
+
+
+# ---------------------------------------------------------------------------
+# Synthetic measured-GFR dataset (external validation demo)
+# ---------------------------------------------------------------------------
+
+def generate_synthetic_mgfr_dataset(
+    n_samples: int = 500,
+    random_state: int = 42,
+) -> pd.DataFrame:
+    """Generate a synthetic dataset with simulated measured GFR.
+
+    Creates realistic clinical data (serum creatinine, age, sex, weight,
+    height) together with a synthetic "measured GFR" column for
+    demonstrating the external validation pipeline.
+
+    Because no freely downloadable dataset with gold-standard measured GFR
+    (iothalamate / iohexol clearance) is publicly available, this function
+    generates plausible synthetic data based on published CKD-cohort
+    statistics (CRIC Study demographics & GFR distributions).
+
+    .. warning::
+       This is **synthetic** data and must **not** be used for clinical
+       validation conclusions.  It is intended solely to exercise the
+       validation code path and demonstrate reporting.
+
+    Parameters
+    ----------
+    n_samples : int, default 500
+        Number of synthetic patients to generate.
+    random_state : int, default 42
+        Seed for reproducibility.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns: ``cr_mgdl``, ``age_years``, ``sex``,
+        ``weight_kg``, ``height_cm``, ``measured_gfr``.
+
+    Raises
+    ------
+    ValueError
+        If *n_samples* < 1.
+    """
+    if n_samples < 1:
+        raise ValueError(f"n_samples must be >= 1, got {n_samples}.")
+
+    rng = np.random.default_rng(random_state)
+
+    # --- Demographics (based on CRIC Study distributions) ----------------
+    age = rng.normal(loc=58.0, scale=11.0, size=n_samples).clip(18, 90)
+    sex = rng.choice([1, 2], size=n_samples, p=[0.55, 0.45])  # 1=M, 2=F
+
+    weight = np.where(
+        sex == 1,
+        rng.normal(loc=87.0, scale=17.0, size=n_samples),
+        rng.normal(loc=80.0, scale=19.0, size=n_samples),
+    ).clip(40, 180)
+
+    height = np.where(
+        sex == 1,
+        rng.normal(loc=174.0, scale=8.0, size=n_samples),
+        rng.normal(loc=162.0, scale=7.0, size=n_samples),
+    ).clip(140, 210)
+
+    # --- Measured GFR (simulated iothalamate clearance) ------------------
+    # Mix of CKD and healthy: ~60% GFR 20-70, ~25% GFR 70-120, ~15% <20
+    # Based on CRIC Study enrollment criteria + healthy controls
+    mgfr = np.empty(n_samples)
+    n_ckd = int(n_samples * 0.60)
+    n_healthy = int(n_samples * 0.25)
+    n_low = n_samples - n_ckd - n_healthy
+
+    mgfr[:n_ckd] = rng.uniform(20, 70, size=n_ckd)
+    mgfr[n_ckd:n_ckd + n_healthy] = rng.uniform(70, 130, size=n_healthy)
+    mgfr[n_ckd + n_healthy:] = rng.uniform(5, 20, size=n_low)
+    rng.shuffle(mgfr)
+
+    # --- Creatinine (derived from GFR via inverted CKD-EPI 2021) ---------
+    # Add realistic biological noise
+    cr = np.empty(n_samples)
+    for i in range(n_samples):
+        is_female = sex[i] == 2
+        kappa = 0.7 if is_female else 0.9
+        alpha = -0.241 if is_female else -0.302
+        female_factor = 1.012 if is_female else 1.0
+        age_factor = 0.9938 ** age[i]
+
+        # Target: mgfr ≈ 142 × min(cr/k,1)^a × max(cr/k,1)^(-1.2) × age_f × fem_f
+        # Approximate inversion: assume cr > kappa (common for CKD)
+        # mgfr ≈ 142 × 1^a × (cr/k)^(-1.2) × age_f × fem_f
+        # => (cr/k)^(-1.2) ≈ mgfr / (142 × age_f × fem_f)
+        # => cr/k ≈ (mgfr / (142 × age_f × fem_f))^(-1/1.2)
+        base = mgfr[i] / (142.0 * age_factor * female_factor)
+        if base > 0:
+            cr_est = kappa * base ** (-1.0 / 1.2)
+        else:
+            cr_est = 5.0
+
+        # Add noise (±10% biological variability)
+        noise = rng.normal(1.0, 0.10)
+        cr[i] = max(0.3, min(cr_est * noise, 12.0))
+
+    df = pd.DataFrame({
+        "cr_mgdl": np.round(cr, 2),
+        "age_years": np.round(age).astype(int),
+        "sex": sex.astype(int),
+        "weight_kg": np.round(weight, 1),
+        "height_cm": np.round(height, 1),
+        "measured_gfr": np.round(mgfr, 1),
+    })
+
+    return df
