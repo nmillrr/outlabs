@@ -146,3 +146,110 @@ class TestEdgeCases:
         df = pd.DataFrame({"cr_mgdl": [1.0], "age_years": [50]})
         with pytest.raises(ValueError, match="Missing required columns"):
             stratified_split(df)
+
+
+# ---------------------------------------------------------------------------
+# train_ridge tests
+# ---------------------------------------------------------------------------
+
+from eGFR.train import train_ridge
+
+
+class TestTrainRidge:
+    """Tests for train_ridge function."""
+
+    def test_returns_ridge_model(self):
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        y = np.array([10, 20, 30, 40])
+        model = train_ridge(X, y)
+        assert hasattr(model, "predict")
+        assert hasattr(model, "coef_")
+
+    def test_predictions_reasonable(self):
+        X = np.array([[1], [2], [3], [4], [5]])
+        y = np.array([2, 4, 6, 8, 10])
+        model = train_ridge(X, y)
+        pred = model.predict(np.array([[3]]))
+        assert abs(pred[0] - 6) < 1.0
+
+    def test_custom_alpha(self):
+        X = np.array([[1], [2], [3], [4]])
+        y = np.array([1, 2, 3, 4])
+        model = train_ridge(X, y, alpha=10.0)
+        assert hasattr(model, "predict")
+
+    def test_empty_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            train_ridge(np.array([]).reshape(0, 1), np.array([]))
+
+    def test_shape_mismatch_raises(self):
+        with pytest.raises(ValueError):
+            train_ridge(np.array([[1], [2], [3]]), np.array([1, 2]))
+
+
+# ---------------------------------------------------------------------------
+# train_random_forest tests
+# ---------------------------------------------------------------------------
+
+from eGFR.train import train_random_forest
+
+
+class TestTrainRandomForest:
+    """Tests for train_random_forest function."""
+
+    def test_returns_rf_model(self):
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        y = np.array([10, 20, 30, 40])
+        model = train_random_forest(X, y, n_estimators=10)
+        assert hasattr(model, "predict")
+        assert hasattr(model, "feature_importances_")
+
+    def test_predictions_work(self):
+        X = np.array([[1], [2], [3], [4], [5]])
+        y = np.array([2, 4, 6, 8, 10])
+        model = train_random_forest(X, y, n_estimators=10)
+        pred = model.predict(np.array([[3]]))
+        assert pred[0] > 0
+
+    def test_empty_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            train_random_forest(np.array([]).reshape(0, 1), np.array([]))
+
+    def test_shape_mismatch_raises(self):
+        with pytest.raises(ValueError):
+            train_random_forest(np.array([[1], [2], [3]]), np.array([1, 2]))
+
+
+# ---------------------------------------------------------------------------
+# save_model tests
+# ---------------------------------------------------------------------------
+
+from eGFR.train import save_model
+
+
+class TestSaveModel:
+    """Tests for save_model function."""
+
+    def test_saves_and_loads(self, tmp_path):
+        import joblib
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
+        model = train_ridge(X, y)
+        filepath = str(tmp_path / "model.joblib")
+        save_model(model, filepath)
+
+        loaded = joblib.load(filepath)
+        pred_orig = model.predict(np.array([[2]]))
+        pred_loaded = loaded.predict(np.array([[2]]))
+        assert pred_orig[0] == pytest.approx(pred_loaded[0])
+
+    def test_creates_parent_dirs(self, tmp_path):
+        filepath = str(tmp_path / "nested" / "dir" / "model.joblib")
+        save_model("dummy_model", filepath)
+        import os
+        assert os.path.isfile(filepath)
+
+    def test_empty_filepath_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            save_model("model", "")
+

@@ -414,3 +414,148 @@ class TestEvaluateModelInputTypes:
             np.array([93.0, 102.0]),
         )
         assert isinstance(result, dict)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# evaluate_by_ckd_stage
+# ═══════════════════════════════════════════════════════════════════════
+
+from eGFR.evaluate import evaluate_by_ckd_stage
+
+
+class TestEvaluateByCkdStage:
+    """Tests for evaluate_by_ckd_stage function."""
+
+    def test_returns_dict(self):
+        y_true = np.array([95.0, 65.0, 25.0])
+        y_pred = np.array([93.0, 63.0, 23.0])
+        result = evaluate_by_ckd_stage(y_true, y_pred)
+        assert isinstance(result, dict)
+
+    def test_correct_stages_present(self):
+        """Only stages with data should appear in the result."""
+        y_true = np.array([95.0, 100.0, 65.0, 70.0])
+        y_pred = np.array([93.0, 102.0, 63.0, 72.0])
+        result = evaluate_by_ckd_stage(y_true, y_pred)
+        assert "G1" in result
+        assert "G2" in result
+        assert "G5" not in result
+
+    def test_stage_metrics_keys(self):
+        """Each stage should have expected metric keys."""
+        y_true = np.array([95.0, 100.0])
+        y_pred = np.array([93.0, 102.0])
+        result = evaluate_by_ckd_stage(y_true, y_pred)
+        expected_keys = {"n", "rmse", "mae", "bias", "p30", "p10"}
+        assert expected_keys == set(result["G1"].keys())
+
+    def test_sample_counts(self):
+        """n should reflect the number of samples in each stage."""
+        y_true = np.array([95.0, 100.0, 105.0, 65.0])
+        y_pred = np.array([93.0, 102.0, 103.0, 63.0])
+        result = evaluate_by_ckd_stage(y_true, y_pred)
+        assert result["G1"]["n"] == 3
+        assert result["G2"]["n"] == 1
+
+    def test_custom_egfr_values(self):
+        """When egfr_values is provided, staging comes from that array."""
+        y_true = np.array([95.0, 65.0])
+        y_pred = np.array([93.0, 63.0])
+        # Both assigned to G2 via custom egfr_values
+        egfr = np.array([70.0, 75.0])
+        result = evaluate_by_ckd_stage(y_true, y_pred, egfr_values=egfr)
+        assert "G2" in result
+        assert result["G2"]["n"] == 2
+
+    def test_perfect_predictions(self):
+        """Perfect predictions → RMSE=0, MAE=0, P30=100."""
+        y = np.array([95.0, 100.0, 105.0])
+        result = evaluate_by_ckd_stage(y, y)
+        assert result["G1"]["rmse"] == pytest.approx(0.0)
+        assert result["G1"]["mae"] == pytest.approx(0.0)
+        assert result["G1"]["p30"] == pytest.approx(100.0)
+
+    def test_empty_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            evaluate_by_ckd_stage([], [])
+
+    def test_shape_mismatch_raises(self):
+        with pytest.raises(ValueError, match="[Ss]hape"):
+            evaluate_by_ckd_stage([95.0, 100.0], [93.0])
+
+    def test_nan_raises(self):
+        with pytest.raises(ValueError, match="NaN"):
+            evaluate_by_ckd_stage([95.0, float("nan")], [93.0, 100.0])
+
+    def test_multiple_stages(self):
+        """Cover multiple CKD stages in a single call."""
+        y_true = np.array([95.0, 65.0, 50.0, 35.0, 20.0, 10.0])
+        y_pred = np.array([93.0, 63.0, 48.0, 33.0, 18.0, 8.0])
+        result = evaluate_by_ckd_stage(y_true, y_pred)
+        assert len(result) >= 5  # G1, G2, G3a, G3b, G4, G5 - at least 5
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# bootstrap_ci
+# ═══════════════════════════════════════════════════════════════════════
+
+from eGFR.evaluate import bootstrap_ci
+
+
+class TestBootstrapCI:
+    """Tests for bootstrap_ci function."""
+
+    def test_returns_tuple_of_three(self):
+        y_true = np.array([95.0, 100.0, 105.0, 110.0, 115.0])
+        y_pred = np.array([93.0, 102.0, 104.0, 112.0, 113.0])
+        result = bootstrap_ci(y_true, y_pred, p30_accuracy, n_bootstrap=100)
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+
+    def test_lower_leq_upper(self):
+        y_true = np.array([95.0, 100.0, 105.0, 110.0, 115.0])
+        y_pred = np.array([93.0, 102.0, 104.0, 112.0, 113.0])
+        lower, upper, mean = bootstrap_ci(
+            y_true, y_pred, p30_accuracy, n_bootstrap=500
+        )
+        assert lower <= upper
+
+    def test_reproducibility(self):
+        y_true = np.array([95.0, 100.0, 105.0, 110.0])
+        y_pred = np.array([93.0, 102.0, 104.0, 112.0])
+        a = bootstrap_ci(y_true, y_pred, p30_accuracy, random_state=42)
+        b = bootstrap_ci(y_true, y_pred, p30_accuracy, random_state=42)
+        assert a == b
+
+    def test_perfect_predictions_ci(self):
+        y = np.array([95.0, 100.0, 105.0])
+        lower, upper, mean = bootstrap_ci(y, y, p30_accuracy, n_bootstrap=100)
+        assert lower == pytest.approx(100.0)
+        assert upper == pytest.approx(100.0)
+
+    def test_custom_metric_func(self):
+        """bootstrap_ci should work with any metric function."""
+        def rmse(y_true, y_pred):
+            return float(np.sqrt(np.mean((y_pred - y_true) ** 2)))
+
+        y_true = np.array([95.0, 100.0, 105.0])
+        y_pred = np.array([93.0, 102.0, 104.0])
+        lower, upper, mean = bootstrap_ci(
+            y_true, y_pred, rmse, n_bootstrap=200
+        )
+        assert lower >= 0
+        assert mean >= 0
+
+    def test_empty_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            bootstrap_ci([], [], p30_accuracy)
+
+    def test_n_bootstrap_lt_1_raises(self):
+        with pytest.raises(ValueError, match="n_bootstrap"):
+            bootstrap_ci([95.0], [93.0], p30_accuracy, n_bootstrap=0)
+
+    def test_ci_out_of_range_raises(self):
+        with pytest.raises(ValueError, match="ci"):
+            bootstrap_ci([95.0], [93.0], p30_accuracy, ci=0)
+        with pytest.raises(ValueError, match="ci"):
+            bootstrap_ci([95.0], [93.0], p30_accuracy, ci=100)
