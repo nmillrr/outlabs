@@ -468,11 +468,11 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a user, I want clear documentation to use the package.
 
 **Acceptance Criteria:**
-- [ ] Update README.md with: Installation, Quick Start, API Reference
-- [ ] Include code examples for each equation
-- [ ] Document clinical limitations and when measured GFR is required
-- [ ] Explain drug dosing considerations (CrCl vs eGFR)
-- [ ] README renders correctly on GitHub
+- [x] Update README.md with: Installation, Quick Start, API Reference
+- [x] Include code examples for each equation
+- [x] Document clinical limitations and when measured GFR is required
+- [x] Explain drug dosing considerations (CrCl vs eGFR)
+- [x] README renders correctly on GitHub
 
 ---
 
