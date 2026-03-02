@@ -494,3 +494,36 @@
   - `python_requires=">=3.9"` matches the use of modern type hints (e.g., `list[str]`)
   - pytest is a test-only dependency — separate into `extras_require={"test": ...}`
 ---
+
+## Iteration 32 - US-032: Write README with usage examples
+- Created `README.md` with comprehensive documentation
+- Sections: Installation, Quick Start, API Reference, CKD Stage Classification, Drug Dosing (CrCl vs eGFR), Clinical Limitations, Notebooks table, Running Tests, Project Structure, License, References
+- API Reference covers: `predict_egfr()` unified API, `calc_egfr_ckd_epi_2021()`, `calc_egfr_mdrd()`, `calc_crcl_cockcroft_gault()`, `calc_crcl_cockcroft_gault_bsa()`, utility functions, and evaluation metrics
+- Code examples for each equation with expected output values
+- Drug dosing section explains CrCl (mL/min) vs eGFR (mL/min/1.73 m²) distinction
+- Clinical limitations section covers: estimation caveats, creatinine limitations, adult-only, MDRD race deprecation, measured GFR for validation
+- All 223 existing tests pass
+- Files changed: README.md, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `setup.py` already has `os.path.exists("README.md")` guard — README is now picked up as `long_description`
+  - Drug dosing CrCl vs eGFR is a critical clinical distinction — always document prominently
+  - README renders correctly in standard GitHub markdown (no special extensions used)
+---
+
+## Iteration 33 - US-033: Run full test suite
+- Ran `pytest tests/ -v --cov=eGFR` — all 253 tests pass, 0 failures, 0 errors
+- Coverage: 77% overall (target was > 70%)
+  - models.py: 100%, utils.py: 100%, predict.py: 95%, evaluate.py: 96%, train.py: 64%, data.py: 58%
+- Added 30 new tests to improve coverage:
+  - 11 tests for `evaluate_by_ckd_stage` in `tests/test_evaluate.py`
+  - 9 tests for `bootstrap_ci` in `tests/test_evaluate.py`
+  - 5 tests for `train_ridge` in `tests/test_train.py`
+  - 4 tests for `train_random_forest` in `tests/test_train.py`
+  - 3 tests for `save_model` in `tests/test_train.py`
+- Files changed: tests/test_evaluate.py, tests/test_train.py, PRD.md, progress.txt
+- Learnings for future iterations:
+  - Coverage was 66% before adding tests; targeting uncovered functions is the most efficient way to boost coverage
+  - `train.py` and `data.py` have lower coverage because many functions require real data/NHANES files
+  - All PRD tasks (US-001 through US-033) are now marked [x] — project is COMPLETE
+---
+
