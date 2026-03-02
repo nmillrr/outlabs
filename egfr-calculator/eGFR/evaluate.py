@@ -248,3 +248,159 @@ def evaluate_model(y_true, y_pred, model_name="model"):
         "ba_stats": ba_stats,
         "ckd_stage_agreement": ckd_stage_agreement,
     }
+
+
+def evaluate_by_ckd_stage(y_true, y_pred, egfr_values=None):
+    """Evaluate model performance stratified by CKD stage.
+
+    Stratifies predictions by the CKD stage derived from *egfr_values*
+    (or *y_true* if *egfr_values* is ``None``) and computes evaluation
+    metrics for each stage.
+
+    CKD stage ranges (KDIGO 2012):
+        - G1: ≥ 90  mL/min/1.73 m²
+        - G2: 60–89
+        - G3a: 45–59
+        - G3b: 30–44
+        - G4: 15–29
+        - G5: < 15
+
+    Parameters
+    ----------
+    y_true : array-like
+        Reference (measured) GFR values.
+    y_pred : array-like
+        Predicted (estimated) GFR values.
+    egfr_values : array-like, optional
+        eGFR values used for stage assignment. If ``None``, *y_true* is used.
+
+    Returns
+    -------
+    dict
+        Mapping of CKD stage string (e.g. ``"G1"``) to a metrics dict
+        containing *n*, *rmse*, *mae*, *bias*, *p30*, and *p10*.
+
+    Raises
+    ------
+    ValueError
+        If inputs are empty, contain NaN, or have mismatched shapes.
+    """
+    from eGFR.utils import egfr_to_ckd_stage
+
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+
+    if y_true.size == 0 or y_pred.size == 0:
+        raise ValueError("Input arrays must not be empty.")
+    if y_true.shape != y_pred.shape:
+        raise ValueError(
+            f"Shape mismatch: y_true {y_true.shape} vs y_pred {y_pred.shape}."
+        )
+    if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
+        raise ValueError("Input arrays must not contain NaN values.")
+
+    if egfr_values is None:
+        egfr_values = y_true
+    else:
+        egfr_values = np.asarray(egfr_values, dtype=float)
+
+    stages = np.array([egfr_to_ckd_stage(v) for v in egfr_values])
+
+    stage_order = ["G1", "G2", "G3a", "G3b", "G4", "G5"]
+    result = {}
+    for stage in stage_order:
+        mask = stages == stage
+        if mask.sum() == 0:
+            continue
+        yt = y_true[mask]
+        yp = y_pred[mask]
+        errors = yp - yt
+        rmse = float(np.sqrt(np.mean(errors ** 2)))
+        mae = float(np.mean(np.abs(errors)))
+        bias = float(np.mean(errors))
+
+        # P30/P10 — skip if any reference is zero
+        if np.any(yt == 0):
+            p30 = float("nan")
+            p10 = float("nan")
+        else:
+            p30 = p30_accuracy(yt, yp)
+            p10 = p10_accuracy(yt, yp)
+
+        result[stage] = {
+            "n": int(mask.sum()),
+            "rmse": rmse,
+            "mae": mae,
+            "bias": bias,
+            "p30": p30,
+            "p10": p10,
+        }
+
+    return result
+
+
+def bootstrap_ci(y_true, y_pred, metric_func, n_bootstrap=2000,
+                 ci=95.0, random_state=42):
+    """Compute bootstrap confidence intervals for a metric function.
+
+    Resamples *(y_true, y_pred)* pairs with replacement *n_bootstrap* times
+    and computes the given *metric_func* on each resample to estimate a
+    percentile-based confidence interval.
+
+    Parameters
+    ----------
+    y_true : array-like
+        Reference (measured) GFR values.
+    y_pred : array-like
+        Predicted (estimated) GFR values.
+    metric_func : callable
+        ``metric_func(y_true, y_pred) -> float``.
+    n_bootstrap : int, default 2000
+        Number of bootstrap resamples.
+    ci : float, default 95.0
+        Confidence level as a percentage in (0, 100).
+    random_state : int, default 42
+        Seed for reproducibility.
+
+    Returns
+    -------
+    tuple of (float, float, float)
+        ``(lower, upper, mean)`` — the percentile-based CI bounds and the
+        mean of the bootstrap distribution.
+
+    Raises
+    ------
+    ValueError
+        If inputs are empty, contain NaN, have mismatched shapes,
+        *n_bootstrap* < 1, or *ci* is not in (0, 100).
+    """
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+
+    if y_true.size == 0 or y_pred.size == 0:
+        raise ValueError("Input arrays must not be empty.")
+    if y_true.shape != y_pred.shape:
+        raise ValueError(
+            f"Shape mismatch: y_true {y_true.shape} vs y_pred {y_pred.shape}."
+        )
+    if np.any(np.isnan(y_true)) or np.any(np.isnan(y_pred)):
+        raise ValueError("Input arrays must not contain NaN values.")
+    if n_bootstrap < 1:
+        raise ValueError(f"n_bootstrap must be >= 1, got {n_bootstrap}.")
+    if not (0 < ci < 100):
+        raise ValueError(f"ci must be in (0, 100), got {ci}.")
+
+    rng = np.random.default_rng(random_state)
+    n = len(y_true)
+    scores = np.empty(n_bootstrap)
+
+    for i in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        scores[i] = metric_func(y_true[idx], y_pred[idx])
+
+    alpha = (100 - ci) / 2.0
+    lower = float(np.percentile(scores, alpha))
+    upper = float(np.percentile(scores, 100 - alpha))
+    mean = float(np.mean(scores))
+
+    return (lower, upper, mean)

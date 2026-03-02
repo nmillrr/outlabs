@@ -427,13 +427,13 @@ Plus a hybrid ML model combining all equations with additional biomarkers for im
 **Description:** As a researcher, I want a notebook with full model evaluation and plots.
 
 **Acceptance Criteria:**
-- [ ] Create `notebooks/04_evaluation.ipynb`
-- [ ] Evaluates all models and estimators on internal test set
-- [ ] Generates Bland-Altman plots
-- [ ] Shows CKD-stage reclassification analysis
-- [ ] Compares hybrid ML vs individual equations
-- [ ] Reports P30 accuracy
-- [ ] Notebook executes without errors
+- [x] Create `notebooks/04_evaluation.ipynb`
+- [x] Evaluates all models and estimators on internal test set
+- [x] Generates Bland-Altman plots
+- [x] Shows CKD-stage reclassification analysis
+- [x] Compares hybrid ML vs individual equations
+- [x] Reports P30 accuracy
+- [x] Notebook executes without errors
 
 ---
 

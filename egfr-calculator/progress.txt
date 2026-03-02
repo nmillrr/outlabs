@@ -409,3 +409,53 @@
   - NHANES cross-equation concordance is a reasonable fallback but cannot compute true P30/P10 accuracy
   - CRIC Study is the best option: ~3,900 participants, iothalamate mGFR, creatinine + cystatin C
 ---
+
+## Iteration 28 - US-028: External validation with measured GFR dataset
+- No freely downloadable mGFR dataset found — implemented fallback plan from external_data_sources.md
+- Added `generate_synthetic_mgfr_dataset(n_samples, random_state)` in `eGFR/data.py`
+  - Creates realistic synthetic data: creatinine (inverted CKD-EPI 2021 + noise), age, sex, weight, height, measured_gfr
+  - Demographics based on CRIC Study distributions (age ~58±11, mixed CKD stages)
+  - GFR distribution: 60% CKD (20-70), 25% healthy (70-130), 15% severe (<20)
+- Created `notebooks/05_external_validation.ipynb` with 8 sections:
+  1. Synthetic mGFR dataset generation (500 patients)
+  2. Run all 3 mechanistic equations (CKD-EPI, MDRD, CG) on external dataset
+  3. Evaluate each equation vs mGFR: P30, P10, RMSE, MAE, bias, CKD concordance
+  4. Scatter plots (estimated vs measured GFR)
+  5. Bland-Altman plots with LOA
+  6. CKD stage reclassification crosstabs
+  7. NHANES cross-equation concordance (fallback validation)
+  8. Dataset limitations documentation
+- Validation results (synthetic, 500 samples):
+  - CKD-EPI 2021: RMSE=8.11, MAE=5.46, Bias=-1.40, P30=98.2%, CKD Agr=83.2%
+  - MDRD: RMSE=9.86, MAE=6.93, Bias=-5.38, P30=98.0%, CKD Agr=73.8%
+  - Cockcroft-Gault: RMSE=20.74, MAE=15.45, Bias=+10.71, P30=51.4%, CKD Agr=46.4%
+- All 190 existing tests pass
+- Files changed: eGFR/data.py, notebooks/05_external_validation.ipynb, PRD.md, progress.txt
+- Learnings for future iterations:
+  - Inverting CKD-EPI 2021 for synthetic creatinine: assume cr > kappa, solve (cr/k)^(-1.2) = gfr/(142*age_f*fem_f)
+  - CG P30 is low because CrCl (mL/min) ≠ eGFR (mL/min/1.73m²) — expected mismatch
+  - `np.random.default_rng()` is the modern numpy RNG API (consistent with bootstrap_ci pattern)
+  - Synthetic data has circular dependency (cr derived from GFR) — always document this limitation
+  - NIDDK-CR DUA for CRIC Study is the recommended path for real validation data
+---
+
+## Iteration 29 - US-029: Create evaluation notebook
+- Created `notebooks/04_evaluation.ipynb` with 8 sections:
+  1. Data preparation — load NHANES or synthetic fallback (2000 samples)
+  2. Train/test split & model training (Ridge, RF, LightGBM)
+  3. Comprehensive evaluation table (RMSE, MAE, bias, Pearson r, P30, P10, CKD agreement)
+  4. Bland-Altman plots — 2×3 grid for all 6 estimators
+  5. CKD-stage reclassification heatmaps — confusion matrices for all estimators
+  6. Hybrid ML vs individual equations — scatter plots (best ML vs each equation)
+  7. P30 accuracy with 95% bootstrap CIs (n_bootstrap=2000)
+  8. Summary & clinical interpretation
+- Also restored missing `bootstrap_ci` and `evaluate_by_ckd_stage` functions to `eGFR/evaluate.py` (marked complete in PRD but were lost in a prior merge)
+- Notebook executes without errors (verified via nbconvert)
+- All 190 existing tests pass
+- Files changed: eGFR/evaluate.py, notebooks/04_evaluation.ipynb, PRD.md, progress.txt
+- Learnings for future iterations:
+  - `bootstrap_ci` and `evaluate_by_ckd_stage` were missing from evaluate.py despite PRD marking them complete — always verify code exists, not just PRD checkboxes
+  - ipykernel needed to be installed for nbconvert execution: `python3 -m ipykernel install --user`
+  - Synthetic data uses `generate_synthetic_mgfr_dataset()` from data.py — same pattern as notebook 05
+  - `evaluate_model()` returns a comprehensive dict — reusable for any model comparison
+---
